@@ -55,14 +55,23 @@ test('prints only the last 40 lines plus earlier deduplicated matches', async ()
   assert.match(r.out, /200 lines of output/);
 });
 
-test('deduplicates identical matching lines and caps them at 40', async () => {
-  const src = `for (let i = 0; i < 500; i++) { console.log('warning: same thing'); console.log('error ' + i); } for (let i = 0; i < 40; i++) console.log('ok ' + i);`;
+test('on failure, deduplicates identical matching lines and caps them at 40', async () => {
+  const src = `for (let i = 0; i < 500; i++) { console.log('warning: same thing'); console.log('error ' + i); } for (let i = 0; i < 40; i++) console.log('ok ' + i); process.exitCode = 1;`;
   const r = await runCapture([NODE, '-e', src]);
   const lines = r.out.split('\n');
   assert.equal(lines.filter((l) => l === 'warning: same thing').length, 1);
   const start = lines.findIndex((l) => l.includes('earlier lines matching'));
   const end = lines.findIndex((l) => l.startsWith('full log:'));
   assert.equal(end - start - 1, 40);
+});
+
+test('on success, prints only the closing lines and counts the matches', async () => {
+  const src = `for (let i = 0; i < 100; i++) console.log('warning ' + i); for (let i = 0; i < 30; i++) console.log('ok ' + i);`;
+  const r = await runCapture([NODE, '-e', src]);
+  assert.match(r.out, /--- last 10 lines ---/);
+  assert.match(r.out, /ok 29/);
+  assert.doesNotMatch(r.out, /ok 19\n/);
+  assert.match(r.out, /\(100 lines matching error\|fail\|warn\|panic\|exception are in the full log\)/);
 });
 
 test('keeps the full output in a log file in the temp dir', async () => {

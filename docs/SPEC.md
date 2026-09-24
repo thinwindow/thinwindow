@@ -77,8 +77,10 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
   read-tracking state, because the content read before compaction is gone.
 - **PreToolUse `Read`**
   - Large-file guard: the file has more than `maxReadLines` lines (default 400)
-    and no offset/limit → deny with a reason that gives the line count and
-    suggests grep plus a range.
+    and no offset/limit → return the first 120 lines plus a line-numbered
+    outline of the file (`updatedInput` + `additionalContext`), so no turn is
+    spent on a denial. With `"rewrite": false`, deny with the line count and a
+    grep-plus-range suggestion.
   - Re-read guard: same file and range already read in this session and the
     file is unchanged (mtime + size) → deny with "already in context".
   - Soft block: an immediate retry of the same call is allowed, so the agent
@@ -94,6 +96,8 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
     (`"rewrite": true`, the default since the first Sonnet 5 runs: a denial
     costs the agent a whole turn, which re-sends the full context). With
     `"rewrite": false`, a soft block that suggests `thinwindow-run <cmd>`.
+- **PreToolUse `Grep`**: a content search with no `head_limit` gets
+  `head_limit: 100`.
 - **`bin/thinwindow-run`**: runs the command, saves the full stdout and stderr to
   a log in the OS temp dir (never inside the user's repo), prints the exit code,
   the duration, the last 40 lines, up to 40 deduplicated lines that match

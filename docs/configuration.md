@@ -47,11 +47,14 @@ context.
 **PreToolUse `Read`**
 
 - Large-file guard: no `offset`/`limit` and more than `maxReadLines` lines →
-  denied with the line count and a suggestion to grep and read a range.
+  the Read returns the first 120 lines, plus a line-numbered outline of the
+  file's classes, functions and headings, so the agent can read the range it
+  needs in the next call. With `rewrite` off, the call is denied instead,
+  with the line count and a suggestion to grep and read a range.
 - Re-read guard: the same file and range, read earlier by the same agent
   (the main conversation and each subagent are tracked separately), with the
   same mtime and size → denied as "already in context".
-- Soft block: repeating the exact denied call within ten minutes goes through,
+- Soft block: repeating the exact denied (or shortened) call within ten minutes goes through,
   so the agent can never get stuck. Ranged reads count for Claude Code's
   read-before-edit check; only reads cut short with a `PARTIAL view` notice
   don't ([docs](https://code.claude.com/docs/en/tools-reference#edit-tool-behavior)).
@@ -71,14 +74,25 @@ context.
   a pipe, a redirect, a quiet flag or `thinwindow-run` → rewritten to
   `thinwindow-run <cmd>`, or a soft block when `rewrite` is off. Commands started
   in the background are left alone.
-- Scope issues → soft block suggesting a fix, never rewritten (the fix is a
-  flag, not `thinwindow-run`): a recursive `grep`/`egrep`/`fgrep` (with `-r`/
+- Scope issues → fixed in place, or a soft block suggesting the fix when
+  `rewrite` is off: a recursive search is limited to its first 100 lines (grep
+  also skips `node_modules`, `.git`, `dist` and `build`), and a bare
+  `git diff` runs as `git diff --stat`. What counts as a scope issue: a recursive `grep`/`egrep`/`fgrep` (with `-r`/
   `-R`/`--recursive`), or `rg`/`ag` (always recursive), over the whole tree
   with no `-m`/`--max-count`, no exclude flag (`--exclude-dir` for grep;
   `-g`/`--type` for `rg`) and no output-bounding flag (`-c`/`-l`/`-L`,
   `--count`, `--files-with-matches`); or `git diff` with no summary flag
   (`--stat` and friends) and no path after `--`. Scoping to a subdirectory,
   a single file, or a pipe/redirect (same as above) avoids it.
+
+**PreToolUse `Grep`**
+
+- A content search (`output_mode: "content"`) with no `head_limit` gets
+  `head_limit: 100`. File-list and count searches are left alone.
+
+**`thinwindow-run`** keeps the full log in the temp dir and prints the exit
+code and duration, then the last 10 lines when the command succeeded, or the
+last 40 lines plus earlier error-like lines when it failed.
 
 thinwindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any

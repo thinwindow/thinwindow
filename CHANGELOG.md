@@ -8,6 +8,14 @@ project uses [Semantic Versioning](https://semver.org).
 
 ### Changed
 
+- The rules cover four ways to spend fewer tokens: read less, print less,
+  write less code, and say less.
+- A large whole-file Read returns the first 120 lines and an outline of the
+  file instead of a denial; repeating the call returns the full file.
+- A recursive search over the whole tree is limited to 100 lines, and a bare
+  `git diff` runs as `git diff --stat`, instead of a soft block.
+- Content searches with Claude Code's Grep tool get `head_limit: 100`.
+- `thinwindow-run` prints only the last 10 lines of a command that succeeded.
 - `rewrite` is now on by default: noisy commands run through `thinwindow-run`
   instead of being denied, because each denial costs the agent a whole turn
   that re-sends the full context. `"rewrite": false` restores the soft block.

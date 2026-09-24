@@ -6,9 +6,10 @@
 //   thinwindow-run "<shell command>"    one argument runs through the shell
 //
 // The full stdout and stderr go to a log file in the OS temp dir (never the
-// current repo). The summary has the exit code, the duration, the last 40
-// lines, up to 40 deduplicated lines matching error/fail/warn/panic/exception
-// that aren't already in those last lines, and the log path. The exit code
+// current repo). The summary has the exit code, the duration, the log path,
+// and the output that matters: on success the last 10 lines; on failure the
+// last 40 plus up to 40 deduplicated earlier lines matching
+// error/fail/warn/panic/exception. The exit code
 // of the command is preserved. THINWINDOW=off runs the command unchanged.
 // No dependencies; Node >= 18.
 import { spawn } from 'node:child_process';
@@ -19,6 +20,8 @@ import { fileURLToPath } from 'node:url';
 
 export const TAIL_LINES = 40;
 export const MATCH_LINES = 40;
+// A command that succeeded rarely needs more than its closing summary.
+export const SUCCESS_TAIL_LINES = 10;
 const MAX_LINE_CHARS = 400;
 const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MATCH_RE = /error|fail|warn|panic|exception/i;
@@ -29,8 +32,9 @@ const USAGE = `usage: thinwindow-run <cmd> [args...]
        thinwindow-run "<shell command>"
 
 Runs the command, keeps its full output in a log file in the OS temp dir, and
-prints the exit code, the duration, the last ${TAIL_LINES} lines, up to ${MATCH_LINES} lines
-matching error/fail/warn/panic/exception, and the log path. Exits with the
+prints the exit code, the duration and the log path, plus the last
+${SUCCESS_TAIL_LINES} lines on success, or on failure the last ${TAIL_LINES} lines and up to ${MATCH_LINES}
+earlier lines matching error/fail/warn/panic/exception. Exits with the
 command's exit code.`;
 
 function isOff(env) {
@@ -150,12 +154,15 @@ export function formatSummary({ display, code, signal, durationMs, summary, logP
   const status = signal ? `killed by ${signal} (exit ${code})` : `exit ${code}`;
   out.push(`$ ${display}`);
   out.push(`${status} · ${formatDuration(durationMs)} · ${summary.lines} ${summary.lines === 1 ? 'line' : 'lines'} of output`);
+  const ok = code === 0 && !signal;
+  const tail = ok ? summary.tail.slice(-SUCCESS_TAIL_LINES) : summary.tail;
   if (summary.lines > 0) {
-    const shown = summary.tail.length;
-    out.push(shown < summary.lines ? `--- last ${shown} lines ---` : '--- output ---');
-    out.push(...summary.tail);
+    out.push(tail.length < summary.lines ? `--- last ${tail.length} lines ---` : '--- output ---');
+    out.push(...tail);
   }
-  if (summary.matches.length > 0) {
+  if (ok && summary.matchCount > 0) {
+    out.push(`(${summary.matchCount} lines matching error|fail|warn|panic|exception are in the full log)`);
+  } else if (summary.matches.length > 0) {
     out.push(`--- ${summary.matches.length} earlier lines matching error|fail|warn|panic|exception (${summary.matchCount} matching lines in total) ---`);
     out.push(...summary.matches);
   }

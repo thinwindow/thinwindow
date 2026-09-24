@@ -8,7 +8,9 @@ import { RETRY_WINDOW_MS, updateState } from '../hooks/lib/state.mjs';
 import { lines, makeProject } from './helpers.mjs';
 
 const proj = makeProject();
-const config = loadConfig({ projectDir: proj.root, home: proj.home, env: {} });
+// Most tests here cover the soft block, which "rewrite": false restores.
+const config = { ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: false };
+const rewriting = loadConfig({ projectDir: proj.root, home: proj.home, env: {} });
 const fresh = () => ({ v: 1, agents: {}, denied: [] });
 
 function read(state, tool_input, { agent_id, now, cfg = config } = {}) {
@@ -30,6 +32,25 @@ test('denies a whole-file read of a file over maxReadLines', () => {
   assert.equal(r.kind, 'large-file');
   assert.match(r.reason, /big\.txt has 900 lines, over the 400-line limit/);
   assert.match(r.reason, /repeat this exact Read call/);
+});
+
+test('by default a large whole-file read returns the head and an outline', () => {
+  const src = join(proj.root, 'src', 'long.ts');
+  const body = Array.from({ length: 500 }, (_, i) => `  const v${i} = ${i};`);
+  body[9] = 'export function alpha(a) {';
+  body[199] = 'export class Beta {';
+  body[299] = 'const gamma = async (x) => x;';
+  writeFileSync(src, body.join('\n'));
+  const state = fresh();
+  const r = read(state, { file_path: src }, { cfg: rewriting });
+  assert.equal(r.action, 'rewrite');
+  assert.deepEqual(r.updatedInput, { file_path: src, limit: 120 });
+  assert.match(r.context, /has 500 lines, so this Read returned lines 1-120/);
+  assert.match(r.context, /10: export function alpha\(a\) \{\n200: export class Beta \{\n300: const gamma = async \(x\) => x;/);
+  // Asking for the whole file again gets it.
+  assert.equal(read(state, { file_path: src }, { cfg: rewriting }).kind, 'retry');
+  // A text file with no symbols gets the head without an outline.
+  assert.doesNotMatch(read(fresh(), { file_path: big }, { cfg: rewriting }).context, /Outline/);
 });
 
 test('allows ranged reads of a large file', () => {

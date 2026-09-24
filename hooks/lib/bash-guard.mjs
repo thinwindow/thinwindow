@@ -243,20 +243,40 @@ function findNoisy(parsed, ctx) {
   return hits;
 }
 
+const SEARCH_CAP_LINES = 100;
+const SEARCH_EXCLUDES = ' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build';
+
 // A recursive grep/rg/ag over the whole tree, or a git diff with no summary
-// flag and no path: both can flood the context, but the fix is adding a
-// flag, not thinwindow-run, so they get their own soft block outside rewrite
-// mode. Checks only the pipeline's first stage, like findNoisy.
+// flag and no path: both can flood the context, and the fix is a flag, not
+// thinwindow-run. In rewrite mode the flag is added (`edits`, with a `note`
+// for the agent); otherwise they get a soft block. Checks only the
+// pipeline's first stage, like findNoisy.
 function findScopeIssues(parsed, ctx) {
   const hits = [];
   for (const p of parsed.pipelines) {
     if (p.background || pipelineCapped(p)) continue;
     const stage = p.stages[0];
-    const { words: cw } = commandWords(stage);
+    const { words: cw, wrappers } = commandWords(stage);
     if (cw.length === 0) continue;
     const argv = cw.map((w) => w.text);
-    const reason = checkGrep(argv, ctx) || checkGitDiff(argv);
-    if (reason) hits.push({ text: ctx.source.slice(cw[0].start, stage.end).trim(), reason });
+    const text = ctx.source.slice(cw[0].start, stage.end).trim();
+    let reason = checkGrep(argv, ctx);
+    if (reason) {
+      const grepFamily = GREP_FAMILY.has(baseName(argv[0]));
+      const edits = [{ at: stage.end, insert: ` | head -n ${SEARCH_CAP_LINES}` }];
+      if (grepFamily) edits.push({ at: cw[0].end, insert: SEARCH_EXCLUDES });
+      const skipped = grepFamily ? ', skipping node_modules, .git, dist and build' : '';
+      const note = `thinwindow limited \`${text}\` to its first ${SEARCH_CAP_LINES} lines${skipped}. Narrow the pattern or the path if you need more.`;
+      hits.push({ text, reason, wrappers, edits, note });
+      continue;
+    }
+    reason = checkGitDiff(argv);
+    if (reason) {
+      let k = 1;
+      while (k < cw.length && cw[k].text.startsWith('-')) k += cw[k].text === '-C' || cw[k].text === '-c' ? 2 : 1;
+      const note = `thinwindow ran \`${text}\` as git diff --stat to show what changed first. Run git diff -- <path> for the files you need.`;
+      hits.push({ text, reason, wrappers, edits: [{ at: cw[k].end, insert: ' --stat' }], note });
+    }
   }
   return hits;
 }
@@ -293,9 +313,27 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
 
   if (ti.run_in_background === true) return { action: 'allow', kind: 'background' };
 
-  // Scope issues (unbounded grep/rg/ag, git diff with no --stat or path):
-  // soft block with retry, same as noisy commands, but never rewritten.
+  // Scope issues (unbounded grep/rg/ag, git diff with no --stat or path) and
+  // uncapped noisy commands. Rewrite mode fixes them in this same call, so
+  // the agent doesn't spend a turn on a denial; sudo/doas commands are never
+  // rewritten.
   const scopeIssues = findScopeIssues(parsed, ctx);
+  const noisy = findNoisy(parsed, ctx);
+  const privileged = [...scopeIssues, ...noisy].some((h) => h.wrappers.includes('sudo') || h.wrappers.includes('doas'));
+  if (config.rewrite && scopeIssues.length + noisy.length > 0 && !privileged) {
+    const edits = [...scopeIssues.flatMap((s) => s.edits), ...noisy.map((h) => ({ at: h.cmdStart, insert: 'thinwindow-run ' }))];
+    let rewritten = command;
+    for (const e of edits.sort((a, b) => b.at - a.at)) rewritten = `${rewritten.slice(0, e.at)}${e.insert}${rewritten.slice(e.at)}`;
+    const notes = scopeIssues.map((s) => s.note);
+    if (noisy.length > 0) {
+      notes.push(
+        `thinwindow ran ${noisy.map((h) => `\`${h.cmd}\``).join(', ')} through thinwindow-run, so the output is a summary: ` +
+          'exit code, the last lines, the error lines, and the path of the full log.',
+      );
+    }
+    return { action: 'rewrite', kind: scopeIssues.length > 0 ? 'scope' : 'noisy', command: rewritten, context: notes.join(' ') };
+  }
+
   if (scopeIssues.length > 0) {
     const key = `bash\u0000${input.agent_id || 'main'}\u0000${command}`;
     if (consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };
@@ -303,17 +341,8 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
     return { action: 'deny', kind: 'scope', reason: scopeIssues[0].reason };
   }
 
-  // Noisy commands that aren't capped: soft block, or rewrite if enabled.
-  const noisy = findNoisy(parsed, ctx);
+  // Noisy commands that aren't capped, with rewrite mode off: soft block.
   if (noisy.length === 0) return { action: 'allow', kind: 'ok' };
-
-  if (config.rewrite && noisy.every((h) => !h.wrappers.includes('sudo') && !h.wrappers.includes('doas'))) {
-    let rewritten = command;
-    for (const h of [...noisy].sort((a, b) => b.cmdStart - a.cmdStart)) {
-      rewritten = `${rewritten.slice(0, h.cmdStart)}thinwindow-run ${rewritten.slice(h.cmdStart)}`;
-    }
-    return { action: 'rewrite', kind: 'noisy', command: rewritten, cmds: noisy.map((h) => h.cmd) };
-  }
 
   const key = `bash\u0000${input.agent_id || 'main'}\u0000${command}`;
   if (consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };

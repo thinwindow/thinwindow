@@ -248,7 +248,7 @@ const SCOPE_DENIED = [
 
 for (const cmd of SCOPE_DENIED) {
   test(`soft-blocks scope issue: ${cmd}`, () => {
-    const r = decide(cmd);
+    const r = decide(cmd, { config: soft() });
     assert.equal(r.action, 'deny', JSON.stringify(r));
     assert.equal(r.kind, 'scope');
     assert.match(r.reason, /^thinwindow: /);
@@ -296,20 +296,29 @@ for (const cmd of SCOPE_ALLOWED) {
 }
 
 test('scope issues get a soft block: an identical retry goes through once', () => {
+  const config = soft();
   const state = { v: 1, agents: {}, denied: [] };
-  assert.equal(decide('grep -rn foo .', { state }).action, 'deny');
-  assert.equal(decide('grep -rn foo .', { state }).action, 'allow');
-  assert.equal(decide('grep -rn foo .', { state }).action, 'deny');
+  assert.equal(decide('grep -rn foo .', { state, config }).action, 'deny');
+  assert.equal(decide('grep -rn foo .', { state, config }).action, 'allow');
+  assert.equal(decide('grep -rn foo .', { state, config }).action, 'deny');
 
   const state2 = { v: 1, agents: {}, denied: [] };
-  assert.equal(decide('git diff', { state: state2 }).action, 'deny');
-  assert.equal(decide('git diff', { state: state2 }).action, 'allow');
-  assert.equal(decide('git diff', { state: state2 }).action, 'deny');
+  assert.equal(decide('git diff', { state: state2, config }).action, 'deny');
+  assert.equal(decide('git diff', { state: state2, config }).action, 'allow');
+  assert.equal(decide('git diff', { state: state2, config }).action, 'deny');
 });
 
-test('scope issues are never rewritten, even with rewrite mode on', () => {
-  const config = { ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: true };
-  const r = decide('grep -rn foo .', { config });
-  assert.equal(r.action, 'deny');
-  assert.equal(r.kind, 'scope');
+test('scope issues are fixed in place by default', () => {
+  const grep = decide('grep -rn foo .');
+  assert.equal(grep.action, 'rewrite');
+  assert.equal(grep.command, 'grep --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build -rn foo . | head -n 100');
+  assert.match(grep.context, /first 100 lines/);
+  assert.equal(decide('rg -n foo .').command, 'rg -n foo . | head -n 100');
+  assert.equal(decide('git diff').command, 'git diff --stat');
+  assert.equal(decide('git -C sub diff HEAD~1').command, 'git -C sub diff --stat HEAD~1');
+  const both = decide('git diff && npm test');
+  assert.equal(both.command, 'git diff --stat && thinwindow-run npm test');
+  assert.match(both.context, /git diff --stat/);
+  assert.match(both.context, /thinwindow-run/);
+  assert.equal(decide('sudo grep -rn foo .').action, 'deny');
 });

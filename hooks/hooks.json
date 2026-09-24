@@ -16,7 +16,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Bash",
+        "matcher": "Read|Bash|Grep",
         "hooks": [
           {
             "type": "command",

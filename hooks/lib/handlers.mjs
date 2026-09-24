@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
 import { debug } from './hook-io.mjs';
 import { checkBash } from './bash-guard.mjs';
+import { checkGrepTool } from './grep-guard.mjs';
 import { checkRead } from './read-guard.mjs';
 import { pruneStates, resetState, updateState } from './state.mjs';
 
@@ -41,7 +42,7 @@ export function handleSessionStart(input, { env = process.env, home, stateBase }
 // Output schema: https://code.claude.com/docs/en/hooks#pretooluse-decision-control
 export function handlePreToolUse(input, { env = process.env, home, stateBase, now = Date.now() } = {}) {
   const tool = input.tool_name;
-  if (tool !== 'Read' && tool !== 'Bash') return null;
+  if (tool !== 'Read' && tool !== 'Bash' && tool !== 'Grep') return null;
   const projectDir = projectDirOf(input, env);
   const config = loadConfig({ projectDir, env, home });
   if (!config.enabled) return null;
@@ -52,7 +53,9 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
       const r =
         tool === 'Read'
           ? checkRead({ input, config, state, projectDir, now })
-          : checkBash({ input, config, state, projectDir, now, home });
+          : tool === 'Grep'
+            ? checkGrepTool({ input, config })
+            : checkBash({ input, config, state, projectDir, now, home });
       // Per-session counts of what thinwindow did, read back by the benchmark.
       if (r.action === 'deny' || r.action === 'rewrite') {
         const key = `${tool}.${r.action}`;
@@ -62,7 +65,7 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
     },
     { base: stateBase, now },
   );
-  const subject = tool === 'Read' ? input.tool_input?.file_path : input.tool_input?.command;
+  const subject = input.tool_input?.file_path ?? input.tool_input?.command ?? input.tool_input?.pattern;
   debug(`${tool} ${result.action} (${result.kind}): ${subject}`, env);
 
   if (result.action === 'deny') {
@@ -81,10 +84,8 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
     return {
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
-        updatedInput: { ...input.tool_input, command: result.command },
-        additionalContext:
-          `thinwindow ran this command through thinwindow-run (${result.cmds.join('; ')}), so its output is a summary: ` +
-          'exit code, last 40 lines, error lines, and the path of the full log.',
+        updatedInput: result.updatedInput || { ...input.tool_input, command: result.command },
+        additionalContext: result.context,
       },
     };
   }

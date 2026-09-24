@@ -62,13 +62,30 @@ test('SessionStart on compact resets read tracking', () => {
 });
 
 test('PreToolUse denies with the documented JSON shape', () => {
-  const r = runHook(PRE, readInput(join(proj.root, 'big.txt')));
+  const r = runHook(PRE, { session_id: 'deny', cwd: proj.root, tool_name: 'Bash', tool_input: { command: 'git log' } });
   assert.equal(r.status, 0);
   const out = r.json.hookSpecificOutput;
   assert.equal(out.hookEventName, 'PreToolUse');
   assert.equal(out.permissionDecision, 'deny');
-  assert.match(out.permissionDecisionReason, /900 lines/);
+  assert.match(out.permissionDecisionReason, /git log/);
   assert.deepEqual(Object.keys(r.json), ['hookSpecificOutput']);
+});
+
+test('PreToolUse turns a large whole-file Read into its head, with no permission decision', () => {
+  const r = runHook(PRE, readInput(join(proj.root, 'big.txt'), 'head'));
+  const out = r.json.hookSpecificOutput;
+  assert.equal(out.permissionDecision, undefined);
+  assert.equal(out.updatedInput.limit, 120);
+  assert.equal(out.updatedInput.file_path, join(proj.root, 'big.txt'));
+  assert.match(out.additionalContext, /has 900 lines, so this Read returned lines 1-120/);
+});
+
+test('PreToolUse caps a content Grep with no head_limit', () => {
+  const input = { session_id: 'g', cwd: proj.root, tool_name: 'Grep', tool_input: { pattern: 'x', output_mode: 'content' } };
+  const out = runHook(PRE, input).json.hookSpecificOutput;
+  assert.deepEqual(out.updatedInput, { pattern: 'x', output_mode: 'content', head_limit: 100 });
+  const files = runHook(PRE, { ...input, tool_input: { pattern: 'x' } });
+  assert.equal(files.stdout, '');
 });
 
 test('PreToolUse prints nothing when it has no objection', () => {
@@ -138,8 +155,8 @@ test('"enabled": false in .thinwindow.json disables both hooks', () => {
 
 test('THINWINDOW_DEBUG=1 logs decisions to stderr only', () => {
   const r = runHook(PRE, readInput(join(proj.root, 'big.txt'), 'dbg'), { THINWINDOW_DEBUG: '1' });
-  assert.match(r.stderr, /\[thinwindow\] Read deny \(large-file\)/);
-  assert.equal(r.json.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(r.stderr, /\[thinwindow\] Read rewrite \(large-file\)/);
+  assert.equal(r.json.hookSpecificOutput.updatedInput.limit, 120);
 });
 
 test('hooks.json points at the scripts under test', () => {
@@ -147,5 +164,5 @@ test('hooks.json points at the scripts under test', () => {
   assert.deepEqual(hooks.SessionStart[0].hooks[0].args, ['${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs']);
   assert.equal(hooks.SessionStart[0].matcher, 'startup|resume|clear|compact|fork');
   assert.deepEqual(hooks.PreToolUse[0].hooks[0].args, ['${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.mjs']);
-  assert.equal(hooks.PreToolUse[0].matcher, 'Read|Bash');
+  assert.equal(hooks.PreToolUse[0].matcher, 'Read|Bash|Grep');
 });
