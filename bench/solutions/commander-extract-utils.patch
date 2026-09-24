@@ -1,0 +1,195 @@
+diff --git a/lib/command.js b/lib/command.js
+index 9a3d03e..3cce601 100644
+--- a/lib/command.js
++++ b/lib/command.js
+@@ -10,6 +10,7 @@ import { CommanderError } from './error.js';
+ import { Help } from './help.js';
+ import { Option, DualOptions } from './option.js';
+ import { suggestSimilar } from './suggestSimilar.js';
++import { incrementNodeInspectorPort, useColor } from './utils.js';
+ 
+ export class Command extends EventEmitter {
+   /**
+@@ -2707,84 +2708,3 @@ Expecting one of '${allowedValues.join("', '")}'`);
+     }
+   }
+ }
+-
+-/**
+- * Scan arguments and increment port number for inspect calls (to avoid conflicts when spawning new command).
+- *
+- * @param {string[]} args - array of arguments from node.execArgv
+- * @returns {string[]}
+- * @private
+- */
+-
+-function incrementNodeInspectorPort(args) {
+-  // Testing for these options:
+-  //  --inspect[=[host:]port]
+-  //  --inspect-brk[=[host:]port]
+-  //  --inspect-port=[host:]port
+-  return args.map((arg) => {
+-    if (!arg.startsWith('--inspect')) {
+-      return arg;
+-    }
+-    let debugOption;
+-    let debugHost = '127.0.0.1';
+-    let debugPort = '9229';
+-    let match;
+-    if ((match = arg.match(/^(--inspect(-brk)?)$/)) !== null) {
+-      // e.g. --inspect
+-      debugOption = match[1];
+-    } else if (
+-      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+)$/)) !== null
+-    ) {
+-      debugOption = match[1];
+-      if (/^\d+$/.test(match[3])) {
+-        // e.g. --inspect=1234
+-        debugPort = match[3];
+-      } else {
+-        // e.g. --inspect=localhost
+-        debugHost = match[3];
+-      }
+-    } else if (
+-      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+):(\d+)$/)) !== null
+-    ) {
+-      // e.g. --inspect=localhost:1234
+-      debugOption = match[1];
+-      debugHost = match[3];
+-      debugPort = match[4];
+-    }
+-
+-    if (debugOption && debugPort !== '0') {
+-      return `${debugOption}=${debugHost}:${parseInt(debugPort) + 1}`;
+-    }
+-    return arg;
+-  });
+-}
+-
+-/**
+- * Exported for using from tests, not otherwise used outside this file.
+- *
+- * @returns {boolean | undefined}
+- * @package
+- */
+-export function useColor() {
+-  // Test for common conventions.
+-  // NB: the observed behaviour is in combination with how author adds color! For example:
+-  //   - we do not test NODE_DISABLE_COLORS, but util:styletext does
+-  //   - we do test NO_COLOR, but Chalk does not
+-  //
+-  // References:
+-  // https://no-color.org
+-  // https://bixense.com/clicolors/
+-  // https://github.com/nodejs/node/blob/0a00217a5f67ef4a22384cfc80eb6dd9a917fdc1/lib/internal/tty.js#L109
+-  // https://github.com/chalk/supports-color/blob/c214314a14bcb174b12b3014b2b0a8de375029ae/index.js#L33
+-  // (https://force-color.org recent web page from 2023, does not match major javascript implementations)
+-
+-  if (
+-    process.env.NO_COLOR ||
+-    process.env.FORCE_COLOR === '0' ||
+-    process.env.FORCE_COLOR === 'false'
+-  )
+-    return false;
+-  if (process.env.FORCE_COLOR || process.env.CLICOLOR_FORCE !== undefined)
+-    return true;
+-  return undefined;
+-}
+diff --git a/lib/utils.js b/lib/utils.js
+new file mode 100644
+index 0000000..0c28a6b
+--- /dev/null
++++ b/lib/utils.js
+@@ -0,0 +1,82 @@
++import process from 'node:process';
++
++/**
++ * Scan arguments and increment port number for inspect calls (to avoid conflicts when spawning new command).
++ *
++ * @param {string[]} args - array of arguments from node.execArgv
++ * @returns {string[]}
++ * @private
++ */
++
++export function incrementNodeInspectorPort(args) {
++  // Testing for these options:
++  //  --inspect[=[host:]port]
++  //  --inspect-brk[=[host:]port]
++  //  --inspect-port=[host:]port
++  return args.map((arg) => {
++    if (!arg.startsWith('--inspect')) {
++      return arg;
++    }
++    let debugOption;
++    let debugHost = '127.0.0.1';
++    let debugPort = '9229';
++    let match;
++    if ((match = arg.match(/^(--inspect(-brk)?)$/)) !== null) {
++      // e.g. --inspect
++      debugOption = match[1];
++    } else if (
++      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+)$/)) !== null
++    ) {
++      debugOption = match[1];
++      if (/^\d+$/.test(match[3])) {
++        // e.g. --inspect=1234
++        debugPort = match[3];
++      } else {
++        // e.g. --inspect=localhost
++        debugHost = match[3];
++      }
++    } else if (
++      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+):(\d+)$/)) !== null
++    ) {
++      // e.g. --inspect=localhost:1234
++      debugOption = match[1];
++      debugHost = match[3];
++      debugPort = match[4];
++    }
++
++    if (debugOption && debugPort !== '0') {
++      return `${debugOption}=${debugHost}:${parseInt(debugPort) + 1}`;
++    }
++    return arg;
++  });
++}
++
++/**
++ * Exported for using from tests, not otherwise used outside this file.
++ *
++ * @returns {boolean | undefined}
++ * @package
++ */
++export function useColor() {
++  // Test for common conventions.
++  // NB: the observed behaviour is in combination with how author adds color! For example:
++  //   - we do not test NODE_DISABLE_COLORS, but util:styletext does
++  //   - we do test NO_COLOR, but Chalk does not
++  //
++  // References:
++  // https://no-color.org
++  // https://bixense.com/clicolors/
++  // https://github.com/nodejs/node/blob/0a00217a5f67ef4a22384cfc80eb6dd9a917fdc1/lib/internal/tty.js#L109
++  // https://github.com/chalk/supports-color/blob/c214314a14bcb174b12b3014b2b0a8de375029ae/index.js#L33
++  // (https://force-color.org recent web page from 2023, does not match major javascript implementations)
++
++  if (
++    process.env.NO_COLOR ||
++    process.env.FORCE_COLOR === '0' ||
++    process.env.FORCE_COLOR === 'false'
++  )
++    return false;
++  if (process.env.FORCE_COLOR || process.env.CLICOLOR_FORCE !== undefined)
++    return true;
++  return undefined;
++}
+diff --git a/tests/useColor.test.js b/tests/useColor.test.js
+index 3e20759..2007bf2 100644
+--- a/tests/useColor.test.js
++++ b/tests/useColor.test.js
+@@ -1,4 +1,4 @@
+-import { useColor } from '../lib/command.js';
++import { useColor } from '../lib/utils.js';
+ import { test, describe, beforeEach, after } from 'node:test';
+ import assert from 'node:assert/strict';
+ 

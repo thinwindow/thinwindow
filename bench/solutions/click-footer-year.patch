@@ -1,0 +1,18 @@
+diff --git a/docs/conf.py b/docs/conf.py
+index 4842959..29addfd 100644
+--- a/docs/conf.py
++++ b/docs/conf.py
+@@ -1,10 +1,12 @@
++import datetime
++
+ from pallets_sphinx_themes import get_version
+ from pallets_sphinx_themes import ProjectLink
+ 
+ # Project --------------------------------------------------------------
+ 
+ project = "Click"
+-copyright = "2014 Pallets"
++copyright = f"2014-{datetime.date.today().year} Pallets"
+ author = "Pallets"
+ release, version = get_version("Click")
+ 
