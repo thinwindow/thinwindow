@@ -1,0 +1,27 @@
+name: Rule proposal
+description: Propose a new rule, or a change to a rule or threshold.
+labels: [rule]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every rule costs tokens in every session, and `rules/skinflint.md` has a hard budget (~500 tokens). A rule is accepted only with a benchmark delta from `bench/` that shows fewer total tokens at an equal success rate. See CONTRIBUTING.md.
+  - type: textarea
+    id: rule
+    attributes:
+      label: The rule
+      description: The exact wording you propose, or the hook behaviour and threshold.
+    validations:
+      required: true
+  - type: textarea
+    id: waste
+    attributes:
+      label: The waste it removes
+      description: What agents do today that burns tokens, with an example.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Benchmark delta
+      description: Commands you ran, model, number of reps, and the report table before and after. Leave empty if you're asking for help measuring it.
