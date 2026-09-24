@@ -29,6 +29,8 @@ project uses [Semantic Versioning](https://semver.org).
 - `adapters/AGENTS.md` snippet for agents that read AGENTS.md.
 - CI, issue and PR templates, contributing guide, security policy and code
   of conduct.
+- Funding links (`.github/FUNDING.yml`) and labels as code
+  (`.github/labels.json`, synced by the Labels workflow).
 - Benchmark in `bench/`: 8 tasks on tj/commander.js and pallets/click
   pinned to commits, `bench/run.mjs` (fresh clone per run, sandboxed
   `claude -p`, verify, JSONL results, `--dry-run` with a cost estimate,
