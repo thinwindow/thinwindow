@@ -1,0 +1,34 @@
+name: Bug report
+description: A hook, thinwindow-run or the skill does something wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If thinwindow blocked a tool call it shouldn't have, turn it off with `THINWINDOW=off` to keep working, then tell us what happened.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The tool call or command, what thinwindow did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: debug
+    attributes:
+      label: Debug output
+      description: Run Claude Code with `THINWINDOW_DEBUG=1 claude --debug` and paste the `[thinwindow]` lines. Remove anything private.
+      render: text
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: thinwindow version, `claude --version`, `node --version`, and your OS.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Config
+      description: Your `.thinwindow.json` or `~/.thinwindow.json`, if any.
+      render: json
