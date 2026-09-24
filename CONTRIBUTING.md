@@ -26,14 +26,20 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
 | `hooks/` | `hooks.json` and the Node hook scripts; logic in `hooks/lib/`. |
 | `bin/skinflint-run` | Put on the Bash tool's `PATH` by the plugin. |
 | `scripts/` | Repository checks and the rules sync. |
+| `bench/` | The benchmark: tasks, runner, report and raw results. |
 | `test/` | `node --test` suites. |
 
 ## Rules of the house
 
 - **A new rule, or a changed rule or threshold, must come with a benchmark
-  delta.** Run the benchmark in `bench/` for the baseline and for skinflint
-  with your change, on the same model and tasks, and paste the report table
-  in the PR. Savings that cost success rate don't count.
+  delta.** Run the benchmark for the baseline and for skinflint with your
+  change, on the same model and tasks, and paste the report table in the PR
+  (see `bench/README.md`). Savings that cost success rate don't count.
+  ```sh
+  node bench/run.mjs --condition baseline,skinflint --reps 2 --model sonnet --dry-run
+  node bench/run.mjs --condition baseline,skinflint --reps 2 --model sonnet --max-cost 20
+  node bench/report.mjs
+  ```
 - `rules/skinflint.md` stays at or under ~500 tokens (2,000 characters); CI
   enforces it. After editing it, run `node scripts/sync-rules.mjs` so the
   copies in `SKILL.md` and `adapters/AGENTS.md` match.
