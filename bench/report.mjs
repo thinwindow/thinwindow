@@ -148,6 +148,9 @@ export function markdownReport(summaries) {
         'Per task: medians over all runs, failures included; min–max in parentheses. ' +
         `Total: sum of the per-task medians over the ${T.pairedTasks} tasks that have both conditions; success counts every run. ` +
         'Δ = (thinwindow − baseline) / baseline. Cost is Claude Code\'s own estimate (`total_cost_usd`), not a bill. ' +
+        'Turns is Claude Code\'s `num_turns`: the top-level agent loop only. A run that delegates to a subagent ' +
+        '(the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already ' +
+        'include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. ' +
         'The thinwindow rules and thresholds were tuned on these same tasks.' +
         (errors ? ` ${errors} run(s) ended without usage data and count as failures.` : ''),
     );
