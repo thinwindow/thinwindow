@@ -1,0 +1,295 @@
+diff --git a/examples/color-help-replacement.mjs b/examples/color-help-replacement.mjs
+index 51e1d65..8392f60 100644
+--- a/examples/color-help-replacement.mjs
++++ b/examples/color-help-replacement.mjs
+@@ -30,7 +30,7 @@ class MyHelp extends Help {
+     }
+   }
+ 
+-  displayWidth(str) {
++  visibleTextWidth(str) {
+     return stripAnsi(str).length; // use imported package
+   }
+ 
+@@ -77,7 +77,7 @@ const program = new MyCommand();
+ // and looks for --color and --no-color command-line options.
+ // See https://github.com/chalk/chalk?tab=readme-ov-file#supportscolor
+ //
+-// In general we want stripColor() to be consistent with displayWidth().
++// In general we want stripColor() to be consistent with visibleTextWidth().
+ program.configureOutput({
+   getOutHasColors: () => supportsColorStdout,
+   getErrHasColors: () => supportsColorStderr,
+diff --git a/examples/help-centered.mjs b/examples/help-centered.mjs
+index 206a23c..6dfc180 100644
+--- a/examples/help-centered.mjs
++++ b/examples/help-centered.mjs
+@@ -7,7 +7,7 @@ class MyHelp extends Help {
+   formatItem(term, termWidth, description, helper) {
+     // Pre-pad the term at start instead of end.
+     const paddedTerm = term.padStart(
+-      termWidth + term.length - helper.displayWidth(term),
++      termWidth + term.length - helper.visibleTextWidth(term),
+     );
+ 
+     return super.formatItem(paddedTerm, termWidth, description, helper);
+diff --git a/lib/help.js b/lib/help.js
+index 6afac74..53609d6 100644
+--- a/lib/help.js
++++ b/lib/help.js
+@@ -207,7 +207,7 @@ export class Help {
+     return helper.visibleCommands(cmd).reduce((max, command) => {
+       return Math.max(
+         max,
+-        this.displayWidth(
++        this.visibleTextWidth(
+           helper.styleSubcommandTerm(helper.subcommandTerm(command)),
+         ),
+       );
+@@ -226,7 +226,7 @@ export class Help {
+     return helper.visibleOptions(cmd).reduce((max, option) => {
+       return Math.max(
+         max,
+-        this.displayWidth(helper.styleOptionTerm(helper.optionTerm(option))),
++        this.visibleTextWidth(helper.styleOptionTerm(helper.optionTerm(option))),
+       );
+     }, 0);
+   }
+@@ -243,7 +243,7 @@ export class Help {
+     return helper.visibleGlobalOptions(cmd).reduce((max, option) => {
+       return Math.max(
+         max,
+-        this.displayWidth(helper.styleOptionTerm(helper.optionTerm(option))),
++        this.visibleTextWidth(helper.styleOptionTerm(helper.optionTerm(option))),
+       );
+     }, 0);
+   }
+@@ -260,7 +260,7 @@ export class Help {
+     return helper.visibleArguments(cmd).reduce((max, argument) => {
+       return Math.max(
+         max,
+-        this.displayWidth(
++        this.visibleTextWidth(
+           helper.styleArgumentTerm(helper.argumentTerm(argument)),
+         ),
+       );
+@@ -533,7 +533,7 @@ export class Help {
+    * @param {string} str
+    * @returns {number}
+    */
+-  displayWidth(str) {
++  visibleTextWidth(str) {
+     return stripVTControlCharacters(str).length;
+   }
+ 
+@@ -655,7 +655,7 @@ export class Help {
+ 
+     // Pad the term out to a consistent width, so descriptions are aligned.
+     const paddedTerm = term.padEnd(
+-      termWidth + term.length - helper.displayWidth(term),
++      termWidth + term.length - helper.visibleTextWidth(term),
+     );
+ 
+     // Format the description.
+@@ -708,9 +708,9 @@ export class Help {
+       }
+ 
+       let sumChunks = [chunks.shift()];
+-      let sumWidth = this.displayWidth(sumChunks[0]);
++      let sumWidth = this.visibleTextWidth(sumChunks[0]);
+       chunks.forEach((chunk) => {
+-        const visibleWidth = this.displayWidth(chunk);
++        const visibleWidth = this.visibleTextWidth(chunk);
+         // Accumulate chunks while they fit into width.
+         if (sumWidth + visibleWidth <= width) {
+           sumChunks.push(chunk);
+@@ -721,7 +721,7 @@ export class Help {
+ 
+         const nextChunk = chunk.trimStart(); // trim space at line break
+         sumChunks = [nextChunk];
+-        sumWidth = this.displayWidth(nextChunk);
++        sumWidth = this.visibleTextWidth(nextChunk);
+       });
+       wrappedLines.push(sumChunks.join(''));
+     });
+diff --git a/tests/help.style.test.js b/tests/help.style.test.js
+index 9f1220d..e1fb36d 100644
+--- a/tests/help.style.test.js
++++ b/tests/help.style.test.js
+@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
+ import { Command } from '../index.js';
+ 
+ function red(str) {
+-  // Use plain characters so not stripped in failure messages. (Means displayWidth is bogus though.)
++  // Use plain characters so not stripped in failure messages. (Means visibleTextWidth is bogus though.)
+   return `RED ${str} DER`;
+ }
+ function stripRed(str) {
+   return str.replace(/RED /g, '').replace(/ DER/g, '');
+ }
+-function displayWidth(str) {
++function visibleTextWidth(str) {
+   // Not really zero width for the "color", but pretend so spacing matches no-color output.
+   return stripRed(str).length;
+ }
+@@ -35,7 +35,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+ 
+   test('styleTitle', () => {
+     const program = makeProgram();
+-    program.configureHelp({ styleTitle: (str) => red(str) }, displayWidth);
++    program.configureHelp({ styleTitle: (str) => red(str) }, visibleTextWidth);
+     const helpText = program.helpInformation();
+     assert.equal(
+       helpText,
+@@ -49,7 +49,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+ 
+   test('styleUsage', () => {
+     const program = makeProgram();
+-    program.configureHelp({ styleUsage: (str) => red(str), displayWidth });
++    program.configureHelp({ styleUsage: (str) => red(str), visibleTextWidth });
+     const helpText = program.helpInformation();
+     const usageString = program.createHelp().commandUsage(program);
+     assert.equal(
+@@ -62,7 +62,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleCommandDescription: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -78,7 +78,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleOptionDescription: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -94,7 +94,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleSubcommandDescription: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -115,7 +115,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleArgumentDescription: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -128,7 +128,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleDescriptionText: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -143,7 +143,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+ 
+   test('styleOptionTerm', () => {
+     const program = makeProgram();
+-    program.configureHelp({ styleOptionTerm: (str) => red(str), displayWidth });
++    program.configureHelp({ styleOptionTerm: (str) => red(str), visibleTextWidth });
+     const helpText = program.helpInformation();
+     assert.equal(
+       helpText,
+@@ -155,7 +155,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleSubcommandTerm: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -173,7 +173,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleArgumentTerm: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -186,7 +186,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleOptionText: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -201,7 +201,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleArgumentText: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -218,7 +218,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleSubcommandText: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -234,7 +234,7 @@ describe('Help.configureHelp() overrides of style methods', () => {
+     const program = makeProgram();
+     program.configureHelp({
+       styleCommandText: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+     const helpText = program.helpInformation();
+     assert.equal(
+@@ -260,7 +260,7 @@ describe('Help.configureHelp() overrides of color methods', () => {
+       });
+     program.configureHelp({
+       styleCommandText: (str) => red(str),
+-      displayWidth,
++      visibleTextWidth,
+     });
+ 
+     return program;
+diff --git a/typings/index.d.ts b/typings/index.d.ts
+index e3d0b72..c2a3eca 100644
+--- a/typings/index.d.ts
++++ b/typings/index.d.ts
+@@ -266,7 +266,7 @@ export class Help {
+   longestArgumentTermLength(cmd: Command, helper: Help): number;
+ 
+   /** Return display width of string, ignoring ANSI escape sequences. Used in padding and wrapping calculations. */
+-  displayWidth(str: string): number;
++  visibleTextWidth(str: string): number;
+ 
+   /** Style the titles. Called with 'Usage:', 'Options:', etc. */
+   styleTitle(title: string): string;
+diff --git a/typings/index.test-d.ts b/typings/index.test-d.ts
+index b2e8e2a..15d712b 100644
+--- a/typings/index.test-d.ts
++++ b/typings/index.test-d.ts
+@@ -602,7 +602,7 @@ expectType<number>(helper.longestGlobalOptionTermLength(helperCommand, helper));
+ expectType<number>(helper.longestArgumentTermLength(helperCommand, helper));
+ expectType<number>(helper.padWidth(helperCommand, helper));
+ 
+-expectType<number>(helper.displayWidth('some string'));
++expectType<number>(helper.visibleTextWidth('some string'));
+ expectType<string>(helper.boxWrap('a b c', 50));
+ expectType<string>(
+   helper.formatItem('--example', 12, 'example description', helper),
