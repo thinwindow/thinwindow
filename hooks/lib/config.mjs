@@ -37,7 +37,7 @@ export const DEFAULT_NOISY_COMMANDS = [
 export const DEFAULTS = Object.freeze({
   enabled: true,
   maxReadLines: 400,
-  rewrite: false,
+  rewrite: true,
   noisyCommands: [],
   allowlist: Object.freeze({ paths: Object.freeze([]), commands: Object.freeze([]) }),
 });

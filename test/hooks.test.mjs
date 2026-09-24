@@ -97,6 +97,21 @@ test('rewrite mode returns updatedInput without a permission decision', () => {
   assert.match(out.additionalContext, /thinwindow-run/);
 });
 
+test('PreToolUse counts what thinwindow did per session', () => {
+  const tmp = tempDir('thinwindow-stats-');
+  const call = (command) =>
+    spawnSync(process.execPath, [PRE], {
+      input: JSON.stringify({ session_id: 'stats', cwd: proj.root, tool_name: 'Bash', tool_input: { command } }),
+      env: { ...process.env, TMPDIR: tmp, TEMP: tmp, TMP: tmp, CLAUDE_PROJECT_DIR: proj.root },
+      encoding: 'utf8',
+    });
+  call('npm test');
+  call('git log');
+  call('ls');
+  const state = JSON.parse(readFileSync(join(tmp, 'thinwindow', 'state', 'stats.json'), 'utf8'));
+  assert.deepEqual(state.stats, { 'Bash.rewrite': 1, 'Bash.deny': 1 });
+});
+
 test('fails open: bad input, missing fields and odd tool input exit 0 silently', () => {
   for (const input of ['', 'not json', '[]', '{}', JSON.stringify({ tool_name: 'Read' }), JSON.stringify({ tool_name: 'Bash', tool_input: { command: 42 } })]) {
     for (const script of [PRE, START]) {

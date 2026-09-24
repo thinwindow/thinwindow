@@ -276,6 +276,11 @@ test('runBench end to end with a fake claude and a local repo', { skip: process.
   const failed = onDisk.find((r) => r.task === 'broken');
   assert.equal(failed.success, false);
   assert.ok(Number.isInteger(failed.verifyExitCode) && failed.verifyExitCode !== 0);
+  // A failed run keeps what the agent changed (the fake agent writes args.json).
+  assert.match(failed.agentStatus, /args\.json/);
+  assert.equal(typeof failed.agentDiff, 'string');
+  assert.equal(typeof failed.agentFinal, 'string');
+  assert.ok(!('agentDiff' in solved) && !('resultText' in solved));
   assert.match(logs.join(''), /4 runs, \$1\.60 total/);
 });
 

@@ -160,6 +160,7 @@ export function parseResult(stdout) {
     subtype: json.subtype || null,
     modelsUsed: json.modelUsage ? Object.keys(json.modelUsage) : [],
     sessionId: json.session_id || null,
+    resultText: typeof json.result === 'string' ? json.result : null,
   };
 }
 

@@ -21,6 +21,7 @@ import { appendResult, readResults, resultsPath } from './lib/results.mjs';
 import { median } from './lib/stats.mjs';
 import { loadTasks, repoLabel } from './lib/tasks.mjs';
 import { cloneAt, makeWorkdir, removeWorkdir, runVerify } from './lib/workspace.mjs';
+import { loadState, statePath } from '../hooks/lib/state.mjs';
 
 const USAGE = `usage: node bench/run.mjs --condition baseline|thinwindow --reps N --model <m> [options]
 
@@ -275,7 +276,14 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     record.success = verify.success;
     record.verifyExitCode = verify.exitCode;
     record.verifyMs = verify.durationMs;
-    if (!verify.success) record.verifyTail = verify.tail;
+    if (!verify.success) {
+      record.verifyTail = verify.tail;
+      Object.assign(record, failureFootprint(dir, record.resultText));
+    }
+    delete record.resultText;
+    if (condition === 'thinwindow' && record.sessionId) {
+      record.thinwindow = loadState(statePath(record.sessionId)).stats || {};
+    }
   } catch (err) {
     if (err instanceof StartupError) throw err;
     record.success = false;
@@ -285,6 +293,19 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     else removeWorkdir(dir);
   }
   return record;
+}
+
+// What the agent changed and said, so a failed run can be diagnosed after
+// its temp clone is gone. Untracked files are marked intent-to-add so the
+// diff includes them.
+function failureFootprint(dir, resultText) {
+  const git = (args) => runSync('git', args, { cwd: dir, allowFail: true }).stdout || '';
+  git(['add', '-A', '-N']);
+  return {
+    agentStatus: tail(git(['status', '--short']), 40, 2000),
+    agentDiff: git(['diff']).slice(0, 8000),
+    agentFinal: tail(resultText, 30, 2000),
+  };
 }
 
 function fmtTokens(n) {

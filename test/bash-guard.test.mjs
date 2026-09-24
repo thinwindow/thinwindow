@@ -7,6 +7,8 @@ import { loadConfig } from '../hooks/lib/config.mjs';
 import { lines, makeProject } from './helpers.mjs';
 
 const proj = makeProject();
+// "rewrite": false restores the soft block for noisy commands.
+const soft = () => ({ ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: false });
 
 function decide(command, { cwd = proj.root, config, state, extra = {} } = {}) {
   const cfg = config || loadConfig({ projectDir: proj.root, home: proj.home, env: {} });
@@ -139,7 +141,7 @@ const NOISY = [
 
 for (const cmd of NOISY) {
   test(`soft-blocks noisy command: ${cmd}`, () => {
-    const r = decide(cmd);
+    const r = decide(cmd, { config: soft() });
     assert.equal(r.action, 'deny', JSON.stringify(r));
     assert.equal(r.kind, 'noisy');
     assert.match(r.reason, /thinwindow-run/);
@@ -177,10 +179,17 @@ test('background commands are not soft-blocked', () => {
 
 test('an identical retry of a soft-blocked command goes through once', () => {
   const state = { v: 1, agents: {}, denied: [] };
-  assert.equal(decide('npm test', { state }).action, 'deny');
-  assert.equal(decide('npm test', { state }).action, 'allow');
-  assert.equal(decide('npm test', { state }).action, 'deny');
-  assert.equal(decide('npm test -- --watch=false', { state }).action, 'deny');
+  const config = soft();
+  assert.equal(decide('npm test', { state, config }).action, 'deny');
+  assert.equal(decide('npm test', { state, config }).action, 'allow');
+  assert.equal(decide('npm test', { state, config }).action, 'deny');
+  assert.equal(decide('npm test -- --watch=false', { state, config }).action, 'deny');
+});
+
+test('noisy commands are rewritten through thinwindow-run by default', () => {
+  const r = decide('npm test');
+  assert.equal(r.action, 'rewrite');
+  assert.equal(r.command, 'thinwindow-run npm test');
 });
 
 test('anti-pattern denials are not bypassed by retrying', () => {
@@ -203,7 +212,7 @@ test('rewrite mode leaves sudo commands to the soft block', () => {
 });
 
 test('allowlist.commands exempts matching commands', () => {
-  const config = loadConfig({ projectDir: proj.root, home: proj.home, env: {} });
+  const config = soft();
   config.allowCommandPatterns = [/^npm test$/, /^git log/];
   assert.equal(decide('npm test', { config }).action, 'allow');
   assert.equal(decide('git log', { config }).action, 'allow');

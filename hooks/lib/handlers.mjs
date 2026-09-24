@@ -48,10 +48,18 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
 
   const result = updateState(
     input.session_id,
-    (state) =>
-      tool === 'Read'
-        ? checkRead({ input, config, state, projectDir, now })
-        : checkBash({ input, config, state, projectDir, now, home }),
+    (state) => {
+      const r =
+        tool === 'Read'
+          ? checkRead({ input, config, state, projectDir, now })
+          : checkBash({ input, config, state, projectDir, now, home });
+      // Per-session counts of what thinwindow did, read back by the benchmark.
+      if (r.action === 'deny' || r.action === 'rewrite') {
+        const key = `${tool}.${r.action}`;
+        state.stats = { ...state.stats, [key]: (state.stats?.[key] || 0) + 1 };
+      }
+      return r;
+    },
     { base: stateBase, now },
   );
   const subject = tool === 'Read' ? input.tool_input?.file_path : input.tool_input?.command;

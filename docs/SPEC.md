@@ -90,9 +90,10 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
     `-maxdepth` from the repo root, printing lockfiles or minified or binary
     files.
   - Noisy commands (install/build/test/lint, configurable list) that aren't
-    already capped → soft block that suggests `thinwindow-run <cmd>`.
-  - Optional `"rewrite": true` (off by default): wrap noisy commands with
-    `thinwindow-run` through `updatedInput` instead of denying.
+    already capped → wrapped with `thinwindow-run` through `updatedInput`
+    (`"rewrite": true`, the default since the first Sonnet 5 runs: a denial
+    costs the agent a whole turn, which re-sends the full context). With
+    `"rewrite": false`, a soft block that suggests `thinwindow-run <cmd>`.
 - **`bin/thinwindow-run`**: runs the command, saves the full stdout and stderr to
   a log in the OS temp dir (never inside the user's repo), prints the exit code,
   the duration, the last 40 lines, up to 40 deduplicated lines that match

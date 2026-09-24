@@ -6,7 +6,17 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Changed
+
+- `rewrite` is now on by default: noisy commands run through `thinwindow-run`
+  instead of being denied, because each denial costs the agent a whole turn
+  that re-sends the full context. `"rewrite": false` restores the soft block.
+
 ### Added
+
+- The benchmark records what thinwindow did in each run (`thinwindow`: denials
+  and rewrites per tool) and, for failed runs, the agent's changes and final
+  message (`agentStatus`, `agentDiff`, `agentFinal`).
 
 - `rules/thinwindow.md`: the reading rules, within a 2,000-character budget
   enforced in CI.

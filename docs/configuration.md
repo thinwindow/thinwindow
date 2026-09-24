@@ -9,7 +9,7 @@ directory. Values in the project file override the home file; lists
 {
   "enabled": true,
   "maxReadLines": 400,
-  "rewrite": false,
+  "rewrite": true,
   "noisyCommands": ["^just (build|test)\\b"],
   "allowlist": {
     "paths": ["docs/**", "*.lock"],
@@ -22,7 +22,7 @@ directory. Values in the project file override the home file; lists
 | --- | --- | --- |
 | `enabled` | `true` | `false` turns every hook off for that project (or everywhere, in `~/.thinwindow.json`). |
 | `maxReadLines` | `400` | A whole-file `Read` (no `offset`/`limit`) of a file with more lines than this is denied, and so is `cat` of such a file. |
-| `rewrite` | `false` | `true` runs uncapped noisy commands through `thinwindow-run` automatically (via the hook's `updatedInput`) instead of denying them. The rewritten command still goes through your normal permission rules. |
+| `rewrite` | `true` | Runs uncapped noisy commands through `thinwindow-run` automatically (via the hook's `updatedInput`), so the agent gets a summary without spending a turn on a denial. The rewritten command still goes through your normal permission rules. `false` denies them instead, with a soft block. |
 | `noisyCommands` | see below | Extra regular expressions for noisy commands. They are added to the built-in list. |
 | `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files thinwindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
 | `allowlist.commands` | `[]` | Regular expressions for Bash commands thinwindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
@@ -68,8 +68,8 @@ context.
 - Noisy commands (install, build, test and lint for npm, pnpm, yarn, bun,
   pip, uv, poetry, pytest, cargo, go, gradle, maven, dotnet, make and more;
   see `DEFAULT_NOISY_COMMANDS` in `hooks/lib/config.mjs`) that aren't capped by
-  a pipe, a redirect, a quiet flag or `thinwindow-run` → soft block suggesting
-  `thinwindow-run <cmd>`, or a rewrite when `rewrite` is on. Commands started
+  a pipe, a redirect, a quiet flag or `thinwindow-run` → rewritten to
+  `thinwindow-run <cmd>`, or a soft block when `rewrite` is off. Commands started
   in the background are left alone.
 - Scope issues → soft block suggesting a fix, never rewritten (the fix is a
   flag, not `thinwindow-run`): a recursive `grep`/`egrep`/`fgrep` (with `-r`/

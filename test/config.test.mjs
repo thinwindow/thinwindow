@@ -10,7 +10,7 @@ test('defaults apply without config files', () => {
   assert.equal(c.enabled, true);
   assert.equal(c.maxReadLines, DEFAULTS.maxReadLines);
   assert.equal(c.maxReadLines, 400);
-  assert.equal(c.rewrite, false);
+  assert.equal(c.rewrite, true);
   assert.ok(c.noisyPatterns.length > 10);
 });
 
