@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+// thinwindow-run: the Claude Code plugin puts bin/ on the Bash tool's PATH
+// (https://code.claude.com/docs/en/plugins-reference#file-locations-reference).
+// The implementation ships inside the skill so `npx skills add` gets it too.
+import { main } from '../skills/thinwindow/scripts/thinwindow-run.mjs';
+
+main();
