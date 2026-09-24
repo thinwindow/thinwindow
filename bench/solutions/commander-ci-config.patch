@@ -1,0 +1,12 @@
+diff --git a/answer.json b/answer.json
+new file mode 100644
+index 0000000..a949b77
+--- /dev/null
++++ b/answer.json
+@@ -0,0 +1,6 @@
++{
++  "ciNodeVersions": ["22.x", "24.x", "26.x"],
++  "ciOperatingSystems": ["ubuntu-latest", "windows-latest", "macos-latest"],
++  "minNodeVersion": "22.12.0",
++  "typingsTestScript": "check:type:ts"
++}

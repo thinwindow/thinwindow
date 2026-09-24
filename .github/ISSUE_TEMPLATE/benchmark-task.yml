@@ -1,0 +1,35 @@
+name: Benchmark task
+description: Propose a task for bench/tasks.
+labels: [benchmark]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tasks run on permissively licensed public repos pinned to a commit. `verify` is a shell command whose exit code 0 means the task was done correctly.
+  - type: input
+    id: repo
+    attributes:
+      label: Repository and commit
+      description: Public git URL, full commit SHA, and the repo's license.
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt
+      description: Exactly what the agent is asked to do.
+    validations:
+      required: true
+  - type: textarea
+    id: verify
+    attributes:
+      label: Verify command
+      description: The command that exits 0 only when the task is done. Say how you checked that it fails before the change and passes after.
+      render: sh
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this task
+      description: Which kind of waste it exercises (big files, noisy logs, broad searches...).

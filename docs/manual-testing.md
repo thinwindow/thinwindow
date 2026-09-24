@@ -1,0 +1,141 @@
+# Checking the hooks in a real Claude Code session
+
+The unit tests (`node --test`) run the hook scripts with the same JSON that
+Claude Code sends, but only a real session proves that Claude Code loads the
+plugin and acts on the hook output. These steps take about ten minutes and use
+a handful of short prompts.
+
+Requirements: Claude Code 2.1.139 or newer (hooks use the exec form with
+`args`), and Node.js 18 or newer on `PATH`.
+
+## 1. Prepare a scratch project
+
+Use a throwaway git repo so nothing real is touched:
+
+```sh
+mkdir -p /tmp/skinflint-manual && cd /tmp/skinflint-manual
+git init -q
+seq 1 1000 | sed 's/^/line /' > big.txt
+printf 'export const answer = 42;\n' > small.ts
+printf '{ "scripts": { "test": "node -e \\"for (let i = 0; i < 300; i++) console.log(i)\\"" } }\n' > package.json
+git add . && git commit -qm init
+```
+
+## 2. Load the plugin
+
+Pick one:
+
+- For a single session: `claude --plugin-dir /path/to/skinflint`
+- Through the marketplace, from a local checkout:
+  ```
+  /plugin marketplace add /path/to/skinflint
+  /plugin install skinflint@skinflint
+  ```
+  (Once the repository is public: `/plugin marketplace add imprvhub/skinflint`.)
+
+To record every decision, start the session like this and keep the log open
+in another terminal:
+
+```sh
+SKINFLINT_DEBUG=1 claude --debug-file /tmp/skinflint-debug.txt --plugin-dir /path/to/skinflint
+tail -f /tmp/skinflint-debug.txt | grep -i -E 'skinflint|hook'
+```
+
+## 3. The hooks are registered
+
+Run `/hooks`. Expect a `SessionStart` hook and a `PreToolUse` hook (matcher
+`Read|Bash`), both with source `Plugin Hooks`.
+
+## 4. SessionStart injects the rules
+
+Prompt: `What does skinflint ask you to do before reading a file? Answer in one line.`
+
+Expect an answer based on the first rule ("Locate before reading: grep or glob
+for the symbol..."). The debug log shows `SessionStart` running
+`hooks/session-start.mjs`.
+
+## 5. Large-file guard (soft block)
+
+Prompt: `Use the Read tool to read big.txt in full, with no offset or limit.`
+
+Expect the first Read to be denied with `skinflint: big.txt has 1000 lines,
+over the 400-line limit...`. Claude then either reads a range or repeats the
+identical call, which goes through (debug: `Read allow (retry)`).
+
+## 6. Re-read guard
+
+Prompt: `Read small.ts. Then read small.ts again with the Read tool.`
+
+Expect the second Read to be denied with `already in your context`. Then run
+`echo 'export const other = 1;' >> small.ts` in your terminal and ask for
+another read: it goes through because the file changed.
+
+## 7. Bash anti-patterns (hard deny)
+
+Prompt: `Run exactly this command: git log`
+
+Expect a denial suggesting `git log -n 10 --oneline`. Try `cat big.txt`,
+`ls -R` and `find . -name "*.txt"` the same way; each is denied with a cheaper
+replacement. `git log -n 3 --oneline` runs normally.
+
+## 8. Noisy commands and skinflint-run
+
+Prompt: `Run exactly this command: npm test`
+
+Expect a denial suggesting `skinflint-run npm test`. When Claude runs that,
+the output is a summary: an `exit 0 · <duration> · <n> lines of output`
+header, the last 40 lines, and `full log: <temp dir>/skinflint/logs/...log`.
+The log file holds every line. `skinflint-run` is found because the plugin puts its `bin/` on
+the Bash tool's `PATH`.
+
+## 9. Rewrite mode
+
+```sh
+echo '{ "rewrite": true }' > /tmp/skinflint-manual/.skinflint.json
+```
+
+Start a new session and prompt: `Run exactly this command: npm test`
+
+Expect no denial: the command runs as `skinflint-run npm test` (the tool
+call shows the rewritten command, and the output is the summary). A normal
+permission prompt still appears if your settings would prompt for it.
+Remove the file afterwards.
+
+## 10. Compaction resets read tracking
+
+Read `small.ts`, run `/compact`, then ask to read `small.ts` again. Expect the
+read to go through (debug: `SessionStart(compact): read-tracking state
+reset`).
+
+## 11. Off switches
+
+- `SKINFLINT=off claude --plugin-dir /path/to/skinflint`: no rules injected,
+  no denials.
+- `{ "enabled": false }` in `.skinflint.json`: same, for that project.
+
+## 12. Fail open
+
+Break the state file on purpose and check that tool calls still work:
+
+```sh
+cd "$(node -p 'require("os").tmpdir()')/skinflint/state"
+echo 'garbage' > "$(ls -t | head -n 1)"   # the newest file is the current session
+```
+
+Any Read or Bash call in that session proceeds normally; skinflint starts a
+fresh state.
+
+## Headless variant
+
+To check the wiring without an interactive session, stream the hook events
+of a one-shot run. It uses the model, so it costs a small amount:
+
+```sh
+cd /tmp/skinflint-manual
+claude -p "Read big.txt in full with the Read tool, then stop." \
+  --plugin-dir /path/to/skinflint --output-format stream-json --verbose \
+  --include-hook-events --max-turns 4 | grep -E 'hook|skinflint'
+```
+
+Expect a `SessionStart` hook event and a tool result containing
+`skinflint: big.txt has 1000 lines`.

@@ -1,0 +1,24 @@
+{
+  "name": "skinflint",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Makes coding agents read less: fewer tokens per task, same results, proven by a public benchmark.",
+  "license": "MIT",
+  "author": "Iván Luna (https://github.com/imprvhub)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imprvhub/skinflint.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check.mjs",
+    "sync-rules": "node scripts/sync-rules.mjs",
+    "bench": "node bench/run.mjs",
+    "bench:report": "node bench/report.mjs",
+    "bench:validate": "node bench/validate-tasks.mjs"
+  }
+}

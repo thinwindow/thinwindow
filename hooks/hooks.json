@@ -1,0 +1,31 @@
+{
+  "description": "skinflint: inject the reading rules at session start and guard wasteful Read and Bash calls. Schema: https://code.claude.com/docs/en/hooks#configuration and https://code.claude.com/docs/en/plugins-reference#hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
