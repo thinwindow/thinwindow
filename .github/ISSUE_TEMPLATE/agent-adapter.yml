@@ -1,0 +1,23 @@
+name: Agent adapter
+description: Enforcement (hooks) or install support for an agent other than Claude Code.
+labels: [adapter]
+body:
+  - type: input
+    id: agent
+    attributes:
+      label: Agent
+      description: Name and version.
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: Hook or extension docs
+      description: Links to the agent's current docs for its hook, plugin or rules system. Adapters are only claimed as supported after checking these.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: What the adapter would do
+      description: Which thinwindow behaviours map onto the agent (rules injection, read guard, bash guard, output capping) and what can't.

@@ -1,0 +1,7 @@
+{
+  "repo": "https://github.com/tj/commander.js.git",
+  "commit": "ba6d13ddb4243e5913367734f8c159089ffe7834",
+  "prompt": "lib/command.js is getting long. Move the two module-level helper functions at the bottom of it, `incrementNodeInspectorPort` and `useColor`, into a new module `lib/utils.js` that exports both, and import them from there wherever they are used, including the tests. Do not change their behavior. `node --test` and `npm run check:type:js` must pass.",
+  "verify": "npm ci --no-audit --no-fund --loglevel=error > /dev/null 2>&1 && node \"$THINWINDOW_BENCH_FIXTURES\"/commander-extract-utils/check-extract.mjs && node --test && npm run check:type:js",
+  "timeout": 1200
+}

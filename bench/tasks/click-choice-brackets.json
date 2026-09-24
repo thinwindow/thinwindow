@@ -1,0 +1,7 @@
+{
+  "repo": "https://github.com/pallets/click.git",
+  "commit": "8929d392781c8113bc569f388c15c47b94f86581",
+  "prompt": "The usage line doubles the square brackets for optional arguments whose type already puts brackets around its metavar. For example `@click.argument(\"method\", type=click.Choice([\"foo\", \"bar\", \"baz\"]), nargs=-1)` shows `Usage: cli [OPTIONS] [[foo|bar|baz]]...` instead of `[foo|bar|baz]...`, and an optional `click.DateTime(formats=[\"%Y-%m-%d\"])` argument shows `[[%Y-%m-%d]]`. Fix it so these get a single pair of brackets without changing how other arguments are shown, and add a regression test. The existing tests must keep passing.",
+  "verify": "python3 -m venv .bench-venv && .bench-venv/bin/python -m pip install -q --disable-pip-version-check -e . pytest==9.0.2 > /dev/null 2>&1 && cp \"$THINWINDOW_BENCH_FIXTURES\"/click-choice-brackets/test_bench_choice_brackets.py tests/ && .bench-venv/bin/python -m pytest -q -p no:cacheprovider tests",
+  "timeout": 1200
+}

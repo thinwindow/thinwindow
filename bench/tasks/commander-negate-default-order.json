@@ -1,0 +1,7 @@
+{
+  "repo": "https://github.com/tj/commander.js.git",
+  "commit": "2e96cd388764064fe271f7f452d0dff780355b42",
+  "prompt": "Bug: the default value of a boolean option that has both a positive and a negated form depends on the order the two options are added. With `program.option('--no-pepper').option('--pepper')` and no arguments, `program.opts().pepper` is `true`, but with `program.option('--pepper').option('--no-pepper')` it is `undefined`. Order must not matter. Only a lone negated option (`--no-foo` without a matching `--foo`) should get the implicit default of `true`; when both forms are defined there is no implicit default, and an explicit default given to the negated option (for example `.option('--pepper').option('--no-pepper', 'remove pepper', 'plain')`) must be used. Fix this in the library and add tests. The existing test suite must keep passing.",
+  "verify": "cp \"$THINWINDOW_BENCH_FIXTURES\"/commander-negate-default-order/negate-order.hidden.js tests/zz-bench-negate-order.test.js && npm ci --no-audit --no-fund --loglevel=error > /dev/null 2>&1 && npx jest --silent",
+  "timeout": 1200
+}

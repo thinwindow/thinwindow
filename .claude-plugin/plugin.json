@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "thinwindow",
+  "version": "0.1.0",
+  "description": "Makes coding agents read less: injects short reading rules at session start and blocks wasteful Read and Bash calls (whole-file reads of big files, re-reads, uncapped logs).",
+  "author": {
+    "name": "Iván Luna",
+    "url": "https://github.com/imprvhub"
+  },
+  "homepage": "https://github.com/imprvhub/thinwindow",
+  "repository": "https://github.com/imprvhub/thinwindow",
+  "license": "MIT",
+  "keywords": ["tokens", "context", "cost", "hooks", "read", "benchmark"]
+}
