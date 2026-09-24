@@ -71,6 +71,14 @@ context.
   a pipe, a redirect, a quiet flag or `skinflint-run` → soft block suggesting
   `skinflint-run <cmd>`, or a rewrite when `rewrite` is on. Commands started
   in the background are left alone.
+- Scope issues → soft block suggesting a fix, never rewritten (the fix is a
+  flag, not `skinflint-run`): a recursive `grep`/`egrep`/`fgrep` (with `-r`/
+  `-R`/`--recursive`), or `rg`/`ag` (always recursive), over the whole tree
+  with no `-m`/`--max-count`, no exclude flag (`--exclude-dir` for grep;
+  `-g`/`--type` for `rg`) and no output-bounding flag (`-c`/`-l`/`-L`,
+  `--count`, `--files-with-matches`); or `git diff` with no summary flag
+  (`--stat` and friends) and no path after `--`. Scoping to a subdirectory,
+  a single file, or a pipe/redirect (same as above) avoids it.
 
 skinflint never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any

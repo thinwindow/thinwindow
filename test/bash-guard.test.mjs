@@ -220,3 +220,87 @@ test('unparseable commands are allowed', () => {
   assert.equal(decide('cat "big.txt').action, 'allow');
   assert.equal(decide('').action, 'allow');
 });
+
+const SCOPE_DENIED = [
+  'grep -rn foo .',
+  'grep -rn foo',
+  'egrep -r foo .',
+  'fgrep -r foo .',
+  'rg foo',
+  'rg -n foo .',
+  'ag foo',
+  'grep -R foo .',
+  'grep --recursive foo .',
+  'git diff',
+  'git diff main..HEAD',
+  'git diff --cached',
+  'git diff HEAD~1',
+];
+
+for (const cmd of SCOPE_DENIED) {
+  test(`soft-blocks scope issue: ${cmd}`, () => {
+    const r = decide(cmd);
+    assert.equal(r.action, 'deny', JSON.stringify(r));
+    assert.equal(r.kind, 'scope');
+    assert.match(r.reason, /^skinflint: /);
+  });
+}
+
+const SCOPE_ALLOWED = [
+  // grep on a single file (must keep passing)
+  'grep -n lodash package-lock.json',
+  'grep foo big.txt',
+  // scoped to a subdirectory, not the whole tree
+  'grep -rn foo src',
+  'rg -n foo src',
+  'rg foo src',
+  // capped
+  'grep -rn --max-count=5 foo .',
+  'grep -rn -m5 foo .',
+  'grep -rn -m 5 foo .',
+  'rg -m 20 foo',
+  'rg --max-count=20 foo',
+  // excluded
+  'grep -rn foo . --exclude-dir=node_modules',
+  "rg -g '!node_modules' foo",
+  'rg -tjs foo',
+  // inherently bounded output (filenames or counts only, not match lines)
+  'grep -rl foo .',
+  'grep -rc foo .',
+  'rg -l foo',
+  'rg --count foo',
+  // already capped by a later pipeline stage or a redirect
+  'grep -r foo . | head',
+  'grep -r foo . > out.txt',
+  // git diff (must keep passing)
+  'git diff -- src/foo.ts',
+  'git diff --stat',
+  'git diff --shortstat',
+  'git diff --name-only',
+  'git diff HEAD~1 -- src/foo.ts',
+];
+
+for (const cmd of SCOPE_ALLOWED) {
+  test(`allows: ${JSON.stringify(cmd)} (scope check)`, () => {
+    assert.equal(decide(cmd).action, 'allow', JSON.stringify(decide(cmd)));
+  });
+}
+
+test('scope issues get a soft block: an identical retry goes through once', () => {
+  const state = { v: 1, agents: {}, denied: [] };
+  assert.equal(decide('grep -rn foo .', { state }).action, 'deny');
+  assert.equal(decide('grep -rn foo .', { state }).action, 'allow');
+  assert.equal(decide('grep -rn foo .', { state }).action, 'deny');
+
+  const state2 = { v: 1, agents: {}, denied: [] };
+  assert.equal(decide('git diff', { state: state2 }).action, 'deny');
+  assert.equal(decide('git diff', { state: state2 }).action, 'allow');
+  assert.equal(decide('git diff', { state: state2 }).action, 'deny');
+});
+
+test('scope issues are never rewritten, even with rewrite mode on', () => {
+  const config = { ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: true };
+  const r = decide('grep -rn foo .', { config });
+  assert.equal(r.action, 'deny');
+  assert.equal(r.kind, 'scope');
+});

@@ -102,6 +102,83 @@ function checkGitLog(argv) {
   return 'skinflint: git log without -n prints the whole history. Use git log -n 10 --oneline, then git show --stat <sha> for the commits that matter.';
 }
 
+// grep/egrep/fgrep short flags that bundle -r/-R (recursive) or -c/-l/-L
+// (count/filenames-only, which can't flood the context regardless of scope).
+const RECURSIVE_SHORT = /^-[a-zA-Z]*[rR][a-zA-Z]*$/;
+const RECURSIVE_LONG = new Set(['--recursive', '--dereference-recursive']);
+const BOUNDED_SHORT = /^-[a-zA-Z]*[clL][a-zA-Z]*$/;
+const BOUNDED_LONG = new Set(['--count', '--count-matches', '--files-with-matches', '--files-without-match', '--files']);
+const GREP_FAMILY = new Set(['grep', 'egrep', 'fgrep']);
+const RECURSIVE_BY_DEFAULT = new Set(['rg', 'ag']);
+
+function hasMaxCountFlag(argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (/^-m\d+$/.test(a) || /^--max-count=\d+$/.test(a)) return true;
+    if ((a === '-m' || a === '--max-count') && /^\d+$/.test(argv[i + 1] || '')) return true;
+  }
+  return false;
+}
+
+function hasExcludeFlag(argv, ripgrep) {
+  const prefixes = ripgrep
+    ? ['-g', '-t', '-T', '--glob', '--iglob', '--type', '--type-not', '--ignore-file']
+    : ['--exclude'];
+  return argv.some((a) => prefixes.some((p) => a === p || a.startsWith(p)));
+}
+
+// A recursive grep/rg/ag with no cap and no scope: it can print thousands of
+// matches from node_modules, .git or a build output directory.
+function checkGrep(argv, ctx) {
+  const name = baseName(argv[0]);
+  const ripgrep = RECURSIVE_BY_DEFAULT.has(name);
+  const family = GREP_FAMILY.has(name);
+  if (!ripgrep && !family) return null;
+  const rest = argv.slice(1);
+  if (family && !rest.some((a) => RECURSIVE_SHORT.test(a) || RECURSIVE_LONG.has(a))) return null;
+  if (rest.some((a) => BOUNDED_SHORT.test(a) || BOUNDED_LONG.has(a))) return null;
+  if (hasMaxCountFlag(rest) || hasExcludeFlag(rest, ripgrep)) return null;
+
+  // First positional is the pattern; anything after it is a path. No path
+  // argument means grep/rg default to the current directory.
+  const positionals = rest.filter((a) => !a.startsWith('-'));
+  const paths = positionals.length >= 2 ? positionals.slice(1) : ['.'];
+  if (!paths.some((p) => isRootish(p, ctx))) return null;
+
+  const cap = ripgrep ? `rg -m 20 "<pattern>"` : `${name} -rn --max-count=20 "<pattern>" .`;
+  const exclude = ripgrep
+    ? "rg already skips .git and gitignored directories; add -g '!node_modules' -g '!dist' for more"
+    : '--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist';
+  return (
+    `skinflint: ${name} recursed over the whole tree with no result cap or exclusions; it can print thousands of matches ` +
+    `from node_modules, .git or a build output directory. Cap it (${cap}) and exclude noisy trees (${exclude}).`
+  );
+}
+
+const DIFF_SUMMARY_FLAGS = new Set([
+  '--stat', '--shortstat', '--numstat', '--name-only', '--name-status', '--compact-summary', '--summary',
+]);
+
+// git diff with no summary flag and no explicit path can print an unbounded
+// amount of changed code.
+function checkGitDiff(argv) {
+  if (baseName(argv[0]) !== 'git') return null;
+  let k = 1;
+  while (k < argv.length && argv[k].startsWith('-')) {
+    if (argv[k] === '-C' || argv[k] === '-c') k++;
+    k++;
+  }
+  if (argv[k] !== 'diff') return null;
+  const rest = argv.slice(k + 1);
+  if (rest.some((a) => DIFF_SUMMARY_FLAGS.has(a) || a.startsWith('--stat='))) return null;
+  const dashIdx = rest.indexOf('--');
+  if (dashIdx !== -1 && rest.length > dashIdx + 1) return null;
+  return (
+    'skinflint: git diff with no --stat and no path can print an unbounded amount of changed code. ' +
+    'Run git diff --stat first to see what changed, then git diff -- <path> for just the file you need.'
+  );
+}
+
 function checkListing(argv, ctx) {
   const name = baseName(argv[0]);
   if (name === 'ls' && argv.slice(1).some((a) => /^-[A-Za-z1]*R[A-Za-z1]*$/.test(a) || a === '--recursive')) {
@@ -166,6 +243,24 @@ function findNoisy(parsed, ctx) {
   return hits;
 }
 
+// A recursive grep/rg/ag over the whole tree, or a git diff with no summary
+// flag and no path: both can flood the context, but the fix is adding a
+// flag, not skinflint-run, so they get their own soft block outside rewrite
+// mode. Checks only the pipeline's first stage, like findNoisy.
+function findScopeIssues(parsed, ctx) {
+  const hits = [];
+  for (const p of parsed.pipelines) {
+    if (p.background || pipelineCapped(p)) continue;
+    const stage = p.stages[0];
+    const { words: cw } = commandWords(stage);
+    if (cw.length === 0) continue;
+    const argv = cw.map((w) => w.text);
+    const reason = checkGrep(argv, ctx) || checkGitDiff(argv);
+    if (reason) hits.push({ text: ctx.source.slice(cw[0].start, stage.end).trim(), reason });
+  }
+  return hits;
+}
+
 // Decides one Bash call. Mutates `state` for soft blocks.
 // Returns { action: 'allow' | 'deny' | 'rewrite', kind, reason?, command? }.
 export function checkBash({ input, config, state, projectDir, now = Date.now(), home }) {
@@ -196,8 +291,19 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
     }
   }
 
-  // Noisy commands that aren't capped: soft block, or rewrite if enabled.
   if (ti.run_in_background === true) return { action: 'allow', kind: 'background' };
+
+  // Scope issues (unbounded grep/rg/ag, git diff with no --stat or path):
+  // soft block with retry, same as noisy commands, but never rewritten.
+  const scopeIssues = findScopeIssues(parsed, ctx);
+  if (scopeIssues.length > 0) {
+    const key = `bash\u0000${input.agent_id || 'main'}\u0000${command}`;
+    if (consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };
+    recordDenied(state, key, now);
+    return { action: 'deny', kind: 'scope', reason: scopeIssues[0].reason };
+  }
+
+  // Noisy commands that aren't capped: soft block, or rewrite if enabled.
   const noisy = findNoisy(parsed, ctx);
   if (noisy.length === 0) return { action: 'allow', kind: 'ok' };
 

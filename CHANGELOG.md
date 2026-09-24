@@ -37,3 +37,12 @@ project uses [Semantic Versioning](https://semver.org).
   `--max-cost`), `bench/report.mjs` (markdown table and SVG chart) and
   `bench/validate-tasks.mjs` (each task fails before and passes with its
   reference solution).
+- PreToolUse `Bash` guard: soft-blocks a recursive `grep`/`egrep`/`fgrep`/
+  `rg`/`ag` over the whole tree with no result cap and no exclude, and
+  `git diff` with no `--stat` (or similar) and no path.
+
+### Fixed
+
+- The `Bash` guard's `~` handling no longer treats a `~` inside a path
+  (Windows short names like `RUNNER~1`) as the home directory; only a
+  leading `~` is.
