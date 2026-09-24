@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { checkBash } from '../hooks/lib/bash-guard.mjs';
 import { loadConfig } from '../hooks/lib/config.mjs';
-import { makeProject } from './helpers.mjs';
+import { lines, makeProject } from './helpers.mjs';
 
 const proj = makeProject();
 
@@ -94,6 +95,14 @@ for (const cmd of ALLOWED) {
     assert.equal(r.action, 'allow', JSON.stringify(r));
   });
 }
+
+test('a ~ inside a path is literal (Windows short names)', () => {
+  const tilde = join(proj.root, 'src', 'dir~1');
+  mkdirSync(tilde, { recursive: true });
+  writeFileSync(join(tilde, 'big.txt'), lines(900));
+  assert.equal(decide(`cat ${join('src', 'dir~1', 'big.txt').replace(/\\/g, '/')}`).action, 'deny');
+  assert.equal(decide('cat ~/big.txt').action, 'allow');
+});
 
 test('find . from a subdirectory of the repo is not "from the root"', () => {
   assert.equal(decide('find . -name "*.ts"', { cwd: join(proj.root, 'packages', 'app') }).action, 'allow');

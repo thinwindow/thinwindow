@@ -35,8 +35,10 @@ export function pipelineCapped(p) {
   return stdoutRedirected(p.stages[p.stages.length - 1]);
 }
 
+// Words the shell would expand: globs, variables, substitutions, and a
+// leading ~ (a ~ elsewhere, as in Windows short names like RUNNER~1, is literal).
 function isDynamic(text) {
-  return /[*?[$`~]/.test(text);
+  return /[*?[$`]/.test(text) || text.startsWith('~');
 }
 
 function findGitRoot(start) {
