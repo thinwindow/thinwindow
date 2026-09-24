@@ -27,10 +27,10 @@ async function runCapture(args, env = {}) {
 
 // Prints `n` numbered lines, with an error line every 10th line, then exits.
 const script = (n, exit = 0) =>
-  `for (let i = 1; i <= ${n}; i++) console.log(i % 10 === 0 ? 'line ' + i + ' Error: bad thing ' + (i % 30) : 'line ' + i); process.exit(${exit});`;
+  `for (let i = 1; i <= ${n}; i++) console.log(i % 10 === 0 ? 'line ' + i + ' Error: bad thing ' + (i % 30) : 'line ' + i); process.exitCode = ${exit};`;
 
 test('preserves the exit code and reports it', async () => {
-  const r = await runCapture([NODE, '-e', 'process.exit(7)']);
+  const r = await runCapture([NODE, '-e', 'process.exitCode = 7']);
   assert.equal(r.code, 7);
   assert.match(r.out, /^exit 7 · /m);
   const ok = await runCapture([NODE, '-e', '']);
@@ -76,7 +76,7 @@ test('keeps the full output in a log file in the temp dir', async () => {
 });
 
 test('captures stderr too', async () => {
-  const r = await runCapture([NODE, '-e', 'console.error("panic: stderr line"); process.exit(2)']);
+  const r = await runCapture([NODE, '-e', 'console.error("panic: stderr line"); process.exitCode = 2']);
   assert.equal(r.code, 2);
   assert.match(r.out, /panic: stderr line/);
   assert.match(readFileSync(r.logPath, 'utf8'), /panic: stderr line/);
@@ -101,7 +101,7 @@ test('no arguments prints usage and exits 2', async () => {
 });
 
 test('SKINFLINT=off passes output through untouched', async () => {
-  const res = spawnSync(NODE, [BIN, NODE, '-e', 'console.log("raw"); process.exit(5)'], {
+  const res = spawnSync(NODE, [BIN, NODE, '-e', 'console.log("raw"); process.exitCode = 5'], {
     encoding: 'utf8',
     env: { ...process.env, SKINFLINT: 'off' },
   });
@@ -111,7 +111,7 @@ test('SKINFLINT=off passes output through untouched', async () => {
 
 test('bin/skinflint-run works as an executable entry point', () => {
   const tmp = tempDir('skinflint-tmp-');
-  const res = spawnSync(NODE, [BIN, NODE, '-e', 'console.log("via bin"); process.exit(4)'], {
+  const res = spawnSync(NODE, [BIN, NODE, '-e', 'console.log("via bin"); process.exitCode = 4'], {
     encoding: 'utf8',
     env: { ...process.env, SKINFLINT: '', TMPDIR: tmp, TEMP: tmp, TMP: tmp },
   });
