@@ -5,6 +5,8 @@
 //   - SKILL.md frontmatter (Agent Skills fields)
 //   - the token budget of rules/skinflint.md
 //   - the rules copies in SKILL.md and adapters/AGENTS.md are in sync
+//   - .github/labels.json is valid and defines every label the issue
+//     templates and the stale workflow use
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -159,6 +161,46 @@ export function validateSkill(text, dirName) {
   return e;
 }
 
+// Labels as code: .github/labels.json, synced by .github/workflows/labels.yml.
+// GitHub limits names to 50 characters and descriptions to 100.
+export function validateLabels(labels) {
+  if (!Array.isArray(labels)) return ['must be an array of labels'];
+  const e = [];
+  const seen = new Set();
+  for (const [i, l] of labels.entries()) {
+    if (!l || typeof l.name !== 'string' || l.name.trim() === '' || l.name.length > 50) {
+      e.push(`[${i}]: name must be 1-50 characters`);
+      continue;
+    }
+    if (seen.has(l.name.toLowerCase())) e.push(`duplicate label "${l.name}"`);
+    seen.add(l.name.toLowerCase());
+    if (typeof l.color !== 'string' || !/^[0-9a-f]{6}$/.test(l.color)) e.push(`"${l.name}": color must be 6 lowercase hex digits, no #`);
+    if (typeof l.description !== 'string' || l.description.length > 100) e.push(`"${l.name}": description must be a string of at most 100 characters`);
+    for (const k of Object.keys(l)) if (!['name', 'color', 'description'].includes(k)) e.push(`"${l.name}": unknown field ${k}`);
+  }
+  return e;
+}
+
+// Label names used by the issue templates (`labels: [a, b]`) and the stale
+// workflow (its *-label and *-labels settings).
+export function referencedLabels(root = ROOT) {
+  const out = new Set();
+  const templates = join(root, '.github', 'ISSUE_TEMPLATE');
+  if (existsSync(templates)) {
+    for (const name of readdirSync(templates).filter((n) => /\.ya?ml$/.test(n))) {
+      const m = /^labels:\s*\[([^\]]*)\]/m.exec(readFileSync(join(templates, name), 'utf8'));
+      if (m) m[1].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean).forEach((x) => out.add(x));
+    }
+  }
+  const stale = join(root, '.github', 'workflows', 'stale.yml');
+  if (existsSync(stale)) {
+    for (const m of readFileSync(stale, 'utf8').matchAll(/^\s*(?:stale|exempt)-(?:issue|pr)-labels?:\s*(.+)$/gm)) {
+      m[1].split(',').map((x) => x.trim()).filter(Boolean).forEach((x) => out.add(x));
+    }
+  }
+  return [...out].sort();
+}
+
 export function rulesBudget(text) {
   return { chars: text.length, estTokens: Math.ceil(text.length / 4), ok: text.length <= RULES_MAX_CHARS };
 }
@@ -187,6 +229,21 @@ export function runChecks(root = ROOT) {
       if (!task) continue;
       add(file, validateTask(task));
       if (!/^[a-z0-9][a-z0-9-]*\.json$/.test(name)) errors.push(`${rel(file)}: task id must be kebab-case`);
+    }
+  }
+
+  const labelsFile = join(root, '.github', 'labels.json');
+  if (existsSync(labelsFile)) {
+    const labels = readJson(labelsFile, errors);
+    if (labels) {
+      const problems = validateLabels(labels);
+      add(labelsFile, problems);
+      if (!problems.length) {
+        const defined = new Set(labels.map((l) => l.name));
+        for (const name of referencedLabels(root)) {
+          if (!defined.has(name)) errors.push(`${rel(labelsFile)}: label "${name}" is used but not defined`);
+        }
+      }
     }
   }
 

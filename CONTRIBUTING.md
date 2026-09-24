@@ -57,6 +57,9 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
 - [Conventional Commits](https://www.conventionalcommits.org) in English:
   `feat(hooks): …`, `fix(run): …`, `docs: …`, `test: …`, `ci: …`.
 - One topic per PR. Fill in the PR template checklist.
+- Labels live in `.github/labels.json`. The Labels workflow creates or
+  updates them on GitHub when that file changes on `main`; add a label there
+  instead of in the GitHub UI.
 - Agent adapters for other tools (label `adapter`) are welcome; link the
   agent's current hook docs and don't claim support that wasn't checked.
 
