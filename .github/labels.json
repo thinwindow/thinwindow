@@ -1,0 +1,22 @@
+[
+  { "name": "bug", "color": "d73a4a", "description": "Something thinwindow does wrong" },
+  { "name": "enhancement", "color": "a2eeef", "description": "New feature or improvement" },
+  { "name": "chore", "color": "bfdadc", "description": "Maintenance: tooling, CI, repository settings" },
+  { "name": "rule", "color": "5319e7", "description": "New or changed rule or threshold; needs a benchmark delta" },
+  { "name": "hooks", "color": "fef2c0", "description": "Claude Code plugin: hooks, config, thinwindow-run" },
+  { "name": "adapter", "color": "0e8a16", "description": "Support for an agent other than Claude Code" },
+  { "name": "benchmark", "color": "1d76db", "description": "Benchmark tasks, runner or report" },
+  { "name": "documentation", "color": "0075ca", "description": "Docs only" },
+  { "name": "question", "color": "d876e3", "description": "Further information is requested" },
+  { "name": "good first issue", "color": "7057ff", "description": "Good for newcomers" },
+  { "name": "help wanted", "color": "008672", "description": "Extra attention is needed" },
+  { "name": "duplicate", "color": "cfd3d7", "description": "This issue or pull request already exists" },
+  { "name": "invalid", "color": "e4e669", "description": "This doesn't seem right" },
+  { "name": "wontfix", "color": "ffffff", "description": "This will not be worked on" },
+  { "name": "dependencies", "color": "0366d6", "description": "Dependency updates (Dependabot)" },
+  { "name": "github_actions", "color": "000000", "description": "GitHub Actions updates (Dependabot)" },
+  { "name": "security", "color": "b60205", "description": "Security related; never marked stale" },
+  { "name": "pinned", "color": "fbca04", "description": "Never marked stale" },
+  { "name": "roadmap", "color": "c5def5", "description": "Planned work; never marked stale" },
+  { "name": "stale", "color": "ededed", "description": "No activity for 60 days; closes after 14 more" }
+]

@@ -8,9 +8,11 @@ import { fileURLToPath } from 'node:url';
 import {
   RULES_MAX_CHARS,
   parseFrontmatter,
+  referencedLabels,
   rulesBudget,
   runChecks,
   validateHooks,
+  validateLabels,
   validateMarketplace,
   validatePlugin,
   validateSkill,
@@ -105,4 +107,26 @@ test('sync-rules replaces only the marked block', () => {
   const target = 'before\n<!-- rules:start (x) -->\nold\n<!-- rules:end -->\nafter\n';
   assert.equal(syncedContent(target, 'new rules\n'), 'before\n<!-- rules:start (x) -->\nnew rules\n<!-- rules:end -->\nafter\n');
   assert.throws(() => syncedContent('no markers', 'x'));
+});
+
+test('validateLabels', () => {
+  const ok = [{ name: 'rule', color: '5319e7', description: 'Rules' }];
+  assert.deepEqual(validateLabels(ok), []);
+  assert.ok(validateLabels({}).length > 0);
+  assert.ok(validateLabels([{ name: 'a', color: '#5319e7', description: '' }]).length > 0);
+  assert.ok(validateLabels([{ name: 'a', color: 'ABCDEF', description: '' }]).length > 0);
+  assert.ok(validateLabels([{ name: 'a', color: 'abcdef', description: 'x'.repeat(101) }]).length > 0);
+  assert.ok(validateLabels([...ok, { name: 'Rule', color: 'abcdef', description: '' }]).some((e) => /duplicate/.test(e)));
+  assert.ok(validateLabels([{ name: 'a', color: 'abcdef', description: '', default: true }]).length > 0);
+});
+
+test('labels.json defines every label the templates and the stale workflow use', () => {
+  const labels = JSON.parse(readFileSync(join(ROOT, '.github', 'labels.json'), 'utf8'));
+  assert.deepEqual(validateLabels(labels), []);
+  const defined = new Set(labels.map((l) => l.name));
+  const used = referencedLabels(ROOT);
+  for (const name of ['bug', 'rule', 'adapter', 'benchmark', 'stale', 'pinned', 'security', 'roadmap']) {
+    assert.ok(used.includes(name), `${name} not found in templates/stale workflow`);
+  }
+  for (const name of used) assert.ok(defined.has(name), `${name} is used but not defined`);
 });
