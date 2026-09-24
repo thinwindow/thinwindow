@@ -1,0 +1,17 @@
+{
+  "name": "thinwindow",
+  "owner": {
+    "name": "Iván Luna",
+    "url": "https://github.com/imprvhub"
+  },
+  "description": "thinwindow: make coding agents read less.",
+  "plugins": [
+    {
+      "name": "thinwindow",
+      "source": "./",
+      "description": "Makes coding agents read less: reading rules at session start, plus hooks that block wasteful Read and Bash calls.",
+      "category": "productivity",
+      "keywords": ["tokens", "context", "cost", "hooks"]
+    }
+  ]
+}
