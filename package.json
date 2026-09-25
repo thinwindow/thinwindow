@@ -1,6 +1,6 @@
 {
   "name": "thinwindow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Makes coding agents read less: fewer tokens per task, same results, proven by a public benchmark.",
   "license": "MIT",
