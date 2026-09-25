@@ -1,16 +1,17 @@
 # thinwindow: spend fewer tokens
 
-Everything you read stays in context and is re-sent on every later turn, so most of the cost is reading. Read only what the task needs, then write and say only what it needs.
+Everything you read stays in context and is re-sent on every later turn, so most of the cost is reading, and every extra turn re-sends all of it. Read only what the task needs, in as few turns as possible, then write and say only what it needs.
 
 Read less
 - Locate before reading: grep or glob for the symbol, then read only the range around it.
 - Don't read whole files over ~300 lines. Don't re-read what is already in context unless it changed.
-- Batch independent lookups into one call. Stop exploring once you have enough to act.
+- Batch independent lookups into one call, and chain edit and check steps (`&&`) instead of one call each. Stop exploring once you have enough to act.
 - To count, search or summarize across many files, run one command that prints only the answer.
 - Don't send a subagent to explore what one grep answers.
 
 Print less
-- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, or `thinwindow-run <cmd>` for installs, builds and tests.
+- Cap command output when noisy: quiet flags, `| tail -n 40`, `--max-count`, or `thinwindow-run <cmd>` for installs, builds and tests.
+- Never cut output you need: a short file read whole beats a second turn to fetch the rest.
 - Summaries first: `git diff --stat`, `git log -n 10 --oneline`.
 
 Write less
