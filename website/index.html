@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ThinWindow documentation</title>
+  <meta name="description" content="ThinWindow makes coding agents read less: short reading rules plus Claude Code hooks that keep whole files, re-reads and noisy logs out of the context window. Measured with a public, re-runnable benchmark.">
+  <meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121317" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../assets/favicon/favicon.ico" sizes="16x16 32x32">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon/favicon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/favicon-180-precomposed.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <a class="brand" href="#overview">
+      <img src="../assets/icon.iconset/icon_32x32@2x.png" alt="" width="32" height="32">
+      <span>ThinWindow <small>docs · v0.1.0</small></span>
+    </a>
+    <nav aria-label="Documentation">
+      <div class="nav-group">
+        <h2>Introduction</h2>
+        <ol>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#problem">Why context is the bill</a></li>
+        </ol>
+      </div>
+      <div class="nav-group">
+        <h2>Concepts</h2>
+        <ol>
+          <li><a href="#how-it-works">How it works</a></li>
+          <li><a href="#rules">The rules</a></li>
+          <li><a href="#hooks">Hooks reference</a></li>
+          <li><a href="#examples">Examples</a></li>
+        </ol>
+      </div>
+      <div class="nav-group">
+        <h2>Usage</h2>
+        <ol>
+          <li><a href="#install">Install</a></li>
+          <li><a href="#configuration">Configuration</a></li>
+        </ol>
+      </div>
+      <div class="nav-group">
+        <h2>Evidence</h2>
+        <ol>
+          <li><a href="#benchmark">Benchmark</a></li>
+          <li><a href="#limitations">Limitations</a></li>
+        </ol>
+      </div>
+      <div class="nav-group">
+        <h2>Project</h2>
+        <ol>
+          <li><a href="#status">Status</a></li>
+          <li><a href="#repository">Repository</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      MIT licensed · Node 18+ · zero dependencies<br>
+      <a href="https://github.com/thinwindow/thinwindow">Source on GitHub</a>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="content">
+
+      <header class="hero" id="overview">
+        <img src="../assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="96" height="96">
+        <div>
+          <h1>ThinWindow</h1>
+          <p class="lede"><strong>Make coding agents read less.</strong> Fewer tokens per task, the same results, and a benchmark you can re-run yourself.</p>
+        </div>
+      </header>
+
+      <section aria-labelledby="overview-h">
+        <h2 id="overview-h"><span class="num">01</span>Overview</h2>
+        <p>ThinWindow is a small, local layer that sits between a coding agent and its tools. It keeps what the agent does not need out of the context window: whole-file reads of large files, re-reads of files already in context, thousands of lines of install and test logs, unbounded searches and listings.</p>
+        <p>It has three parts:</p>
+        <div class="cards">
+          <div class="card">
+            <h3>Rules <span class="tag">any agent</span></h3>
+            <p>A short set of reading, printing, writing and answering rules, loaded into the agent's context at session start. Under 2,000 characters, enforced in CI.</p>
+          </div>
+          <div class="card">
+            <h3>Hooks <span class="tag">Claude Code</span></h3>
+            <p>Checks that run on each <code>Read</code>, <code>Bash</code> and <code>Grep</code> call before the result reaches the context, and shrink or redirect the wasteful ones.</p>
+          </div>
+          <div class="card">
+            <h3>thinwindow-run <span class="tag">CLI</span></h3>
+            <p>Runs a noisy command, keeps the full log in a temp file, and prints only the exit code, the tail and the error lines.</p>
+          </div>
+        </div>
+        <p><strong>Who it is for:</strong> people who use coding agents on real repositories and pay for them, in money or in subscription usage limits, and want the same work done while the agent carries less.</p>
+        <p><strong>What it is not:</strong> a model, a proxy, or a service. Nothing is hosted, nothing is sent anywhere, and it has no runtime dependencies. It removes waste; it does not make an agent smarter.</p>
+      </section>
+
+      <section id="problem" aria-labelledby="problem-h">
+        <h2 id="problem-h"><span class="num">02</span>Why context is the bill</h2>
+        <p>A coding agent does not pay mostly for what it writes. It pays for what it carries. Every file it opens, every log it prints and every wide search it runs is appended to the conversation, and the whole conversation is sent again on every later turn. So the cost of a session is much closer to</p>
+        <div class="formula" role="img" aria-label="tokens roughly equal context size times turns">
+          <span>tokens</span><span class="op">≈</span><span class="term ctx">context size</span><span class="op">×</span><span class="term turns">turns</span>
+        </div>
+        <p>than to the length of the answer. In the benchmark runs, <strong>roughly 87% to 96% of all tokens billed were cache reads</strong>: context being re-sent, turn after turn. The agent's own output was under 2%.</p>
+        <p>That is the whole idea. Telling an agent to be brief touches the ~1% column. Stopping it from pulling a 2,000-line file into context on turn 3 touches the ~90% one, on every turn that follows.</p>
+
+        <figure class="illustration">
+          <div class="figure-box">
+            <svg viewBox="0 0 640 215" role="img" aria-labelledby="ill-t ill-d">
+              <title id="ill-t">How one early read is paid on every later turn</title>
+              <desc id="ill-d">Two sets of six bars. Each bar is the context sent on one turn. On the left, a whole file read on turn 2 adds a large block that is re-sent on turns 2 to 6. On the right, a ranged read adds a small block instead. The total area on the left is much larger.</desc>
+              <text class="title" x="20" y="16">Whole file read on turn 2</text>
+              <text class="title" x="350" y="16">Range read on turn 2</text>
+              <line class="axis" x1="10" y1="185" x2="300" y2="185"/>
+              <line class="axis" x1="340" y1="185" x2="630" y2="185"/>
+              <!-- left: base context grows a little each turn; the big read stays -->
+              <rect class="base" x="20" y="161" width="30" height="24"/>
+              <rect class="base" x="66" y="151.4" width="30" height="33.6"/><rect class="read" x="66" y="79.4" width="30" height="72"/>
+              <rect class="base" x="112" y="141.8" width="30" height="43.2"/><rect class="read" x="112" y="69.8" width="30" height="72"/>
+              <rect class="base" x="158" y="132.2" width="30" height="52.8"/><rect class="read" x="158" y="60.2" width="30" height="72"/>
+              <rect class="base" x="204" y="122.6" width="30" height="62.4"/><rect class="read" x="204" y="50.6" width="30" height="72"/>
+              <rect class="base" x="250" y="113" width="30" height="72"/><rect class="read" x="250" y="41" width="30" height="72"/>
+              <!-- right: same turns, a small ranged read -->
+              <rect class="base" x="350" y="161" width="30" height="24"/>
+              <rect class="base" x="396" y="151.4" width="30" height="33.6"/><rect class="read-small" x="396" y="137" width="30" height="14.4"/>
+              <rect class="base" x="442" y="141.8" width="30" height="43.2"/><rect class="read-small" x="442" y="127.4" width="30" height="14.4"/>
+              <rect class="base" x="488" y="132.2" width="30" height="52.8"/><rect class="read-small" x="488" y="117.8" width="30" height="14.4"/>
+              <rect class="base" x="534" y="122.6" width="30" height="62.4"/><rect class="read-small" x="534" y="108.2" width="30" height="14.4"/>
+              <rect class="base" x="580" y="113" width="30" height="72"/><rect class="read-small" x="580" y="98.6" width="30" height="14.4"/>
+              <g text-anchor="middle">
+                <text x="35" y="202">1</text><text x="81" y="202">2</text><text x="127" y="202">3</text><text x="173" y="202">4</text><text x="219" y="202">5</text><text x="265" y="202">6</text>
+                <text x="365" y="202">1</text><text x="411" y="202">2</text><text x="457" y="202">3</text><text x="503" y="202">4</text><text x="549" y="202">5</text><text x="595" y="202">6</text>
+              </g>
+            </svg>
+          </div>
+          <figcaption>Illustration, not measured data. Each bar is the context sent on one turn (1–6). A whole-file read on turn 2 (blue) is re-sent on every turn after it; a ranged read (orange) costs a fraction of that. The billed total is the area of all the bars.</figcaption>
+        </figure>
+
+        <p>ThinWindow therefore works on both factors: it shrinks what enters the context, and it avoids the extra turns an agent spends recovering from output it never needed. A denial also costs a turn, which is why the hooks prefer to <em>fix a call in place</em> rather than refuse it.</p>
+      </section>
+
+      <section id="how-it-works" aria-labelledby="how-h">
+        <h2 id="how-h"><span class="num">03</span>How it works</h2>
+        <p>The rules tell the agent what to do. The hooks make sure the expensive part actually happens, because a rule the agent can forget under pressure is not a rule. The hooks run on the tool call itself, before its result reaches the context, so enforcing them costs no extra turn.</p>
+
+        <h3>The workflow of one tool call</h3>
+        <div class="flow">
+          <div class="flow-step">
+            <span class="dot">1</span>
+            <div>
+              <h3>Session start</h3>
+              <p>The <code>SessionStart</code> hook adds the rules to the agent's context. After a compaction or <code>/clear</code>, it also forgets which files were read, because that content is gone from the context.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="dot">2</span>
+            <div>
+              <h3>The agent decides on a tool call</h3>
+              <p>A <code>Read</code> of a file, a <code>Bash</code> command, or a <code>Grep</code> search.</p>
+            </div>
+          </div>
+          <div class="flow-step tw">
+            <span class="dot">3</span>
+            <div>
+              <h3>ThinWindow's <code>PreToolUse</code> hook inspects it</h3>
+              <p>Locally, in a Node script, with no network access. It ends in one of three outcomes:</p>
+              <div class="outcomes">
+                <div><b>Passes unchanged</b>Most calls. Already ranged, capped, or allowlisted.</div>
+                <div><b>Fixed in place</b>The input is rewritten to a cheaper equivalent, with a note to the agent. No turn is lost.</div>
+                <div><b>Refused, with a replacement</b>The agent is told why and what to run instead.</div>
+              </div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="dot">4</span>
+            <div>
+              <h3>The result enters the context</h3>
+              <p>Smaller than it would have been, and therefore cheaper on every turn that follows.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3>Design principles</h3>
+        <ul>
+          <li><strong>Fails open.</strong> If a hook errors for any reason, the tool call proceeds. ThinWindow must never block someone's work because of its own bug.</li>
+          <li><strong>Can't get stuck.</strong> Repeating a refused <code>Read</code>, or a refused noisy or unbounded command, within ten minutes lets it through. The commands that are always refused (such as <code>cat</code> of a lockfile) come with a cheaper replacement that works.</li>
+          <li><strong>Never approves anything.</strong> ThinWindow never returns an <code>allow</code> decision, so it can't approve a call your permission settings would have prompted for. A rewritten command still goes through your normal permission rules.</li>
+          <li><strong>Its own footprint is budgeted.</strong> The always-loaded rules must stay under 2,000 characters (about 500 tokens); CI fails otherwise. The current rules are 1,439 characters.</li>
+          <li><strong>Never phones home.</strong> No telemetry, no analytics, no update or license checks.</li>
+          <li><strong>Easy to turn off.</strong> <code>THINWINDOW=off</code>, or <code>"enabled": false</code> in the config file.</li>
+        </ul>
+      </section>
+
+      <section id="rules" aria-labelledby="rules-h">
+        <h2 id="rules-h"><span class="num">04</span>The rules</h2>
+        <p>This is the complete text loaded into the agent's context, from <code>rules/thinwindow.md</code>. The same block is copied into the Agent Skill and the <code>AGENTS.md</code> snippet by <code>scripts/sync-rules.mjs</code>, and CI checks that the copies stay in sync.</p>
+<pre><code># thinwindow: spend fewer tokens
+
+Everything you read stays in context and is re-sent on every later turn, so most of the cost is reading. Read only what the task needs, then write and say only what it needs.
+
+Read less
+- Locate before reading: grep or glob for the symbol, then read only the range around it.
+- Don't read whole files over ~300 lines. Don't re-read what is already in context unless it changed.
+- Batch independent lookups into one call. Stop exploring once you have enough to act.
+- To count, search or summarize across many files, run one command that prints only the answer.
+- Don't send a subagent to explore what one grep answers.
+
+Print less
+- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, or `thinwindow-run &lt;cmd&gt;` for installs, builds and tests.
+- Summaries first: `git diff --stat`, `git log -n 10 --oneline`.
+
+Write less
+- Before adding code, check that it needs to exist, that the codebase doesn't have it already, and that the standard library or platform doesn't do it. Then make the smallest change that works.
+- Never cut validation, error handling, security or tests to save lines.
+- Don't add comments or docstrings that restate the code.
+
+Say less
+- Don't narrate between tool calls; just make the next call.
+- End with at most three lines: what changed and where. No preamble, no restating the task, no step-by-step recap unless asked.
+- Cite `file:line` instead of pasting code back.</code></pre>
+        <p class="muted small">"Read less" and "Print less" target the large, repeatedly re-sent part of the bill. "Write less" and "Say less" target output, the small part. The rules are tuned against the benchmark: a proposed rule is kept only if it measurably helps, and an attempt to add explicit "use fewer turns" rules was reverted after it made Sonnet 5 worse.</p>
+      </section>
+
+      <section id="hooks" aria-labelledby="hooks-h">
+        <h2 id="hooks-h"><span class="num">05</span>Hooks reference</h2>
+        <p>The hooks are part of the Claude Code plugin, and they're what does most of the work. Every threshold below is configurable; see <a href="#configuration">Configuration</a>.</p>
+
+        <h3><code>SessionStart</code></h3>
+        <p>On startup, resume, clear, compact and fork: adds <code>rules/thinwindow.md</code> to the context. On compact and clear, it also resets read tracking.</p>
+
+        <h3><code>PreToolUse</code> · <code>Read</code></h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Guard</th><th>When</th><th>What happens</th></tr></thead>
+          <tbody>
+            <tr><td>Large file</td><td>No <code>offset</code>/<code>limit</code>, and the file has more than 400 lines</td><td>The Read returns the first 120 lines plus a line-numbered outline of the file's classes, functions and headings, so the next read can target a range. With <code>"rewrite": false</code>, it is refused with the line count and a grep-plus-range suggestion.</td></tr>
+            <tr><td>Re-read</td><td>Same file and range, read earlier by the same agent, with the same mtime and size</td><td>Refused as "already in context". The main conversation and each subagent are tracked separately.</td></tr>
+            <tr><td>Soft block</td><td>The exact refused call is repeated within ten minutes</td><td>Goes through.</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted">Images, PDFs, notebooks, binary files and missing paths are left alone. Ranged reads count for Claude Code's read-before-edit check.</p>
+
+        <h3><code>PreToolUse</code> · <code>Bash</code></h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Category</th><th>Examples</th><th>What happens</th></tr></thead>
+          <tbody>
+            <tr><td>Noisy commands</td><td>install, build, test and lint for npm, pnpm, yarn, bun, pip, uv, poetry, pytest, cargo, go, gradle, maven, dotnet, make and more</td><td>Run through <code>thinwindow-run</code> automatically, unless already capped by a pipe, a redirect, a quiet flag or <code>thinwindow-run</code>. Background commands are left alone. With <code>"rewrite": false</code>, a soft block.</td></tr>
+            <tr><td>Unbounded scope</td><td>Recursive <code>grep</code>/<code>rg</code>/<code>ag</code> over the whole tree with no cap or exclude; a bare <code>git diff</code></td><td>Fixed in place: the search is limited to its first 100 lines (grep also skips <code>node_modules</code>, <code>.git</code>, <code>dist</code>, <code>build</code>), and <code>git diff</code> runs as <code>git diff --stat</code>. With <code>"rewrite": false</code>, a soft block.</td></tr>
+            <tr><td>Anti-patterns</td><td><code>cat</code> (or <code>bat</code>, <code>less</code>, <code>more</code>, <code>nl</code>, <code>tac</code>) of a big, lock, minified or binary file; <code>git log</code> without <code>-n</code>, a range or <code>--since</code>; <code>ls -R</code>; <code>tree</code> without <code>-L</code>; <code>find</code> from the repo root without <code>-maxdepth</code></td><td>Refused, with a cheaper replacement. Output piped into <code>head</code>, <code>tail</code>, <code>grep</code>, <code>wc</code> and similar, or redirected to a file, counts as capped and is not blocked.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3><code>PreToolUse</code> · <code>Grep</code></h3>
+        <p>A content search (<code>output_mode: "content"</code>) with no <code>head_limit</code> gets <code>head_limit: 100</code>. File-list and count searches are left alone.</p>
+
+        <h3><code>thinwindow-run</code></h3>
+        <p>Runs a command and keeps its full stdout and stderr in a log under the OS temp directory, never inside your repository. It prints the exit code and duration, then:</p>
+        <ul>
+          <li>on success, the last 10 lines;</li>
+          <li>on failure, the last 40 lines plus earlier error-like lines (error, fail, warn, panic, exception), deduplicated;</li>
+          <li>and the path of the full log, so the agent can read exactly the part it needs.</li>
+        </ul>
+        <p>The command's exit code is preserved.</p>
+
+        <h3>State and logs</h3>
+        <p>Read tracking lives in one JSON file per session in <code>&lt;os temp dir&gt;/thinwindow/state/</code>; <code>thinwindow-run</code> logs go to <code>&lt;os temp dir&gt;/thinwindow/logs/</code>. Both are cleaned up after a week. Nothing is written inside your repository, and nothing is sent anywhere.</p>
+      </section>
+
+      <section id="examples" aria-labelledby="examples-h">
+        <h2 id="examples-h"><span class="num">06</span>Examples</h2>
+        <p>What the agent asks for, and what it gets with ThinWindow installed. All of these are default behaviours of the Claude Code plugin.</p>
+
+        <div class="example">
+          <div class="call">Read src/command.js   <span class="muted"># a file over 400 lines, no range</span></div>
+          <div class="result"><b>Fixed in place.</b> The agent gets the first 120 lines and a line-numbered outline of the rest, then reads the one range it needs.</div>
+        </div>
+        <div class="example">
+          <div class="call">npm test</div>
+          <div class="result"><b>Fixed in place.</b> Runs as <code>thinwindow-run npm test</code>. If the tests pass, the agent sees the exit code, the duration and 10 lines. If they fail, it sees the last 40 lines, the error lines, and where the full log is.</div>
+        </div>
+        <div class="example">
+          <div class="call">grep -rn useColor .</div>
+          <div class="result"><b>Fixed in place.</b> Limited to its first 100 lines, skipping <code>node_modules</code>, <code>.git</code>, <code>dist</code> and <code>build</code>.</div>
+        </div>
+        <div class="example">
+          <div class="call">git diff</div>
+          <div class="result"><b>Fixed in place.</b> Runs as <code>git diff --stat</code>; the agent can then diff the one path it cares about.</div>
+        </div>
+        <div class="example">
+          <div class="call">cat package-lock.json</div>
+          <div class="result"><b>Refused</b>, with a cheaper way to get the answer. A lockfile is rarely worth its size in context.</div>
+        </div>
+        <div class="example">
+          <div class="call">Read src/utils.js   <span class="muted"># again, unchanged since the last read</span></div>
+          <div class="result"><b>Refused</b> as already in context. If the agent really needs it again, repeating the call goes through.</div>
+        </div>
+
+        <h3>Typical use</h3>
+        <p>The benchmark tasks show the kind of everyday work where this matters: fixing a bug that has a failing test, adding a small feature with tests, renaming a method across files and typings, moving helpers into a new module, answering a question from a repository's configuration, and "make the footer copyright year update automatically". The last one is the origin of the project: an agent that burned a large share of a plan's budget on a one-line change.</p>
+      </section>
+
+      <section id="install" aria-labelledby="install-h">
+        <h2 id="install-h"><span class="num">07</span>Install</h2>
+
+        <h3>Claude Code: rules and hooks</h3>
+        <p>The full version. The repository is its own plugin marketplace.</p>
+<pre><code>/plugin marketplace add thinwindow/thinwindow
+/plugin install thinwindow@thinwindow</code></pre>
+
+        <h3>Any agent with Agent Skills: rules only</h3>
+        <p>Codex, Cursor, Copilot, Gemini CLI, OpenCode and other agents that support the Agent Skills standard. The skill also bundles <code>thinwindow-run</code>.</p>
+<pre><code>npx skills add thinwindow/thinwindow</code></pre>
+
+        <h3>Agents that read <code>AGENTS.md</code>: rules only</h3>
+        <p>Paste <code>adapters/AGENTS.md</code> into your project's <code>AGENTS.md</code>, or into whichever instructions file your agent loads.</p>
+
+        <div class="callout">
+          <strong>Hooks are Claude Code only.</strong>
+          <p>They depend on Claude Code's tool-call hook API. Other agents get the rules, which the agent may or may not follow. Enforcement for other agents' hook systems is open to contributions.</p>
+        </div>
+
+        <h3>Turning it off</h3>
+        <p>Set <code>THINWINDOW=off</code> in the environment, or <code>"enabled": false</code> in <code>.thinwindow.json</code>. With it off, <code>thinwindow-run</code> runs commands with their output untouched.</p>
+        <p class="small muted">Requirements: Node.js 18 or newer. No other dependencies.</p>
+      </section>
+
+      <section id="configuration" aria-labelledby="config-h">
+        <h2 id="config-h"><span class="num">08</span>Configuration</h2>
+        <p>ThinWindow works without configuration. To change it, create <code>.thinwindow.json</code> in the project root or <code>~/.thinwindow.json</code> in your home directory. Project values override home values; lists from both files are combined.</p>
+<pre><code>{
+  "enabled": true,
+  "maxReadLines": 400,
+  "rewrite": true,
+  "noisyCommands": ["^just (build|test)\\b"],
+  "allowlist": {
+    "paths": ["docs/**", "*.lock"],
+    "commands": ["^make lint$"]
+  }
+}</code></pre>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Key</th><th>Default</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>enabled</code></td><td><code>true</code></td><td><code>false</code> turns every hook off for that project, or everywhere in <code>~/.thinwindow.json</code>.</td></tr>
+            <tr><td><code>maxReadLines</code></td><td><code>400</code></td><td>Line count above which a whole-file <code>Read</code> is shortened, and <code>cat</code> of the file is refused.</td></tr>
+            <tr><td><code>rewrite</code></td><td><code>true</code></td><td>Fix wasteful calls in place. <code>false</code> refuses them instead, as a soft block, at the cost of a turn each.</td></tr>
+            <tr><td><code>noisyCommands</code></td><td>built-in list</td><td>Extra regular expressions for noisy commands, added to the built-in list.</td></tr>
+            <tr><td><code>allowlist.paths</code></td><td><code>[]</code></td><td>Globs for files ThinWindow never blocks.</td></tr>
+            <tr><td><code>allowlist.commands</code></td><td><code>[]</code></td><td>Regular expressions for Bash commands ThinWindow never blocks.</td></tr>
+          </tbody>
+        </table></div>
+        <p>A missing, unreadable or mistyped file is ignored, and a key with the wrong type keeps its default.</p>
+
+        <h3>Environment variables</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Variable</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>THINWINDOW=off</code></td><td>Turns ThinWindow off, whatever the config files say.</td></tr>
+            <tr><td><code>THINWINDOW_DEBUG=1</code></td><td>The hooks write each decision to stderr, which Claude Code keeps in its debug log (<code>claude --debug</code>).</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted">The complete reference is <code>docs/configuration.md</code> in the repository.</p>
+      </section>
+
+      <section id="benchmark" aria-labelledby="bench-h">
+        <h2 id="bench-h"><span class="num">09</span>Benchmark</h2>
+        <p>Every number on this page comes from the raw run files in <code>bench/results/</code>, through <code>bench/report.mjs</code>. None is typed by hand.</p>
+
+        <h3>Current results</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Model</th><th class="n">Tokens</th><th class="n">Cost</th><th class="n">Turns</th><th class="n">Success baseline → ThinWindow</th><th class="n">Runs</th></tr></thead>
+          <tbody>
+            <tr><td>Opus 5.5</td><td class="n win">−15.8%</td><td class="n win">−19.4%</td><td class="n">77.5 → 67.5</td><td class="n">16/16 → 16/16</td><td class="n">32</td></tr>
+            <tr><td>Sonnet 5</td><td class="n win">−11.6%</td><td class="n win">−7.4%</td><td class="n">62 → 63</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
+            <tr><td>Haiku 4.5</td><td class="n win">−23.0%</td><td class="n win">−20.2%</td><td class="n">230.5 → 220.5</td><td class="n">14/16 → 13/16</td><td class="n">32</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted">Same 8 tasks, 112 runs, one agent per run. Claude Code 2.1.282, 2026-09-25, ThinWindow 0.1.0 at commits 528598a (Sonnet), a6ebe93 (Opus), and 05cc89d and a6ebe93 (Haiku). Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run.</p>
+
+        <div class="callout warn">
+          <strong>These numbers are still being improved.</strong>
+          <p>They're a current measurement, not a ceiling. The project's own launch target is at least 25% fewer total tokens at an equal success rate, and no model has reached it yet. The results will be re-measured, and the raw files re-published, as the rules, the models and Claude Code change.</p>
+        </div>
+
+        <h3>Per-task change</h3>
+        <p>Bars left of zero are tokens saved with ThinWindow; bars to the right are tokens lost. Not every task improves.</p>
+        <figure>
+          <div class="figure-box"><img src="../bench/results/chart-claude-opus-5-5.svg" alt="Change in total tokens per task for Opus 5.5" loading="lazy"></div>
+          <figcaption>Opus 5.5 · 32 runs, up to 2 per task and condition.</figcaption>
+        </figure>
+        <figure>
+          <div class="figure-box"><img src="../bench/results/chart-claude-sonnet-5.svg" alt="Change in total tokens per task for Sonnet 5" loading="lazy"></div>
+          <figcaption>Sonnet 5 · 48 runs, up to 3 per task and condition.</figcaption>
+        </figure>
+        <figure>
+          <div class="figure-box"><img src="../bench/results/chart-claude-haiku-4-5.svg" alt="Change in total tokens per task for Haiku 4.5" loading="lazy"></div>
+          <figcaption>Haiku 4.5 · 32 runs, up to 2 per task and condition.</figcaption>
+        </figure>
+        <p>The per-task tables, with medians and min–max ranges, are in <code>bench/results/report.md</code> and in the README.</p>
+
+        <h3>How a run is measured</h3>
+        <ol>
+          <li>Clone a real open-source repository (<a href="https://github.com/pallets/click">pallets/click</a>, Python, or <a href="https://github.com/tj/commander.js">tj/commander.js</a>, Node) at a pinned commit, into a fresh temporary directory. The remote is removed, so the agent can't read later history.</li>
+          <li>Install its dependencies before the agent starts, so install logs are billed to neither side.</li>
+          <li>Run Claude Code headless (<code>claude -p</code>) with the chosen model, capped at 40 turns, inside Claude Code's sandbox. The <em>baseline</em> gets plain Claude Code with <code>THINWINDOW=off</code>; the <em>ThinWindow</em> condition gets the same plus the plugin. No user settings, no MCP servers, no memory carried between runs.</li>
+          <li>Run the task's hidden check, a test or script the agent never sees. Exit code 0 is a success.</li>
+          <li>Record input, cache-write, cache-read and output tokens (subagents included), cost, turns, wall time and the tool-call trace, as one JSON line.</li>
+        </ol>
+        <p>Runs are sequential and interleaved, alternating which condition goes first, so neither side always runs first or competes for rate limits.</p>
+
+        <h3>The tasks</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Task</th><th>Kind</th></tr></thead>
+          <tbody>
+            <tr><td><code>commander-negate-default-order</code></td><td>Bug fix</td></tr>
+            <tr><td><code>commander-command-clash</code></td><td>Small feature + tests</td></tr>
+            <tr><td><code>commander-rename-display-width</code></td><td>Cross-file rename, including typings</td></tr>
+            <tr><td><code>commander-extract-utils</code></td><td>Refactor into a new module</td></tr>
+            <tr><td><code>commander-ci-config</code></td><td>Config lookup, written to an answer file</td></tr>
+            <tr><td><code>click-choice-brackets</code></td><td>Bug fix</td></tr>
+            <tr><td><code>click-help-spec</code></td><td>Small feature + tests</td></tr>
+            <tr><td><code>click-footer-year</code></td><td>"Make the footer copyright year update automatically"</td></tr>
+          </tbody>
+        </table></div>
+        <p><code>bench/validate-tasks.mjs</code> proves each task is fair without running an agent: in a fresh clone its check must fail, and after applying the reference solution it must pass.</p>
+
+        <h3>How to read the numbers</h3>
+        <ul>
+          <li><strong>Tokens</strong> are input + cache writes + cache reads + output, summed over every model a run used. Per task, the table reports the median over all runs, failures included, with the min–max spread.</li>
+          <li><strong>Cost</strong> is Claude Code's own estimate (<code>total_cost_usd</code>), not a bill. On a subscription you pay in usage limits instead, but the ratio is the same.</li>
+          <li><strong>Turns</strong> count the top-level agent loop only. Work delegated to a subagent is included in tokens and cost but not in turns, so tokens and cost are the fair comparison.</li>
+          <li><strong>The rules and thresholds were tuned on these same tasks.</strong> Savings on other work will differ.</li>
+        </ul>
+
+        <h3>Where the remaining headroom is</h3>
+        <ul>
+          <li><strong>Not every task improves.</strong> On Sonnet 5, three of the eight tasks cost more with ThinWindow. Just neutralising those regressions, without saving a token anywhere else, would take Sonnet from −11.6% to about −17.5%, and Opus from −15.8% to about −17.7%. Most of the near-term headroom is in not making short tasks worse.</li>
+          <li><strong>Turns are the untapped factor.</strong> Opus took 12.9% fewer turns and shows the largest cost cut; Sonnet took 1.6% more and shows the smallest. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was reverted rather than kept and quietly excluded. That experiment is still in the history.</li>
+        </ul>
+
+        <h3>Re-run it yourself</h3>
+<pre><code>node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
+node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
+node bench/report.mjs</code></pre>
+        <p class="small muted"><code>--dry-run</code> clones nothing and prints the plan and a cost estimate. <code>--max-cost</code> stops before the next run once the spend passes the limit. Runs need Claude Code with its sandbox, git, Node.js 22.12+, Python 3.10+ and network access to GitHub, npm and PyPI; on Windows, use WSL2. Every option is in <code>bench/README.md</code>.</p>
+      </section>
+
+      <section id="limitations" aria-labelledby="limits-h">
+        <h2 id="limits-h"><span class="num">10</span>Limitations and disclaimer</h2>
+        <p>ThinWindow started as a personal tool, built to make one person's workflow cheaper, and published because the measurements might be useful to someone else. It is not a finished product with a support contract behind it.</p>
+        <ul>
+          <li><strong>The benchmark is narrow and self-selected.</strong> Eight tasks, two repositories, three models, a few repetitions each, with rules tuned on those same tasks. That's enough to show a direction, not to promise you a percentage. It is published in full, raw files included, so you can judge how well it generalises.</li>
+          <li><strong>Token accounting is volatile.</strong> What lands in a context window depends on the model version, the agent harness and its system prompt, cache hit rates, enabled tools, MCP servers, repository size, and how the task happens to unfold. Any of these can move the result by more than the effect measured here, and two identical runs can differ substantially.</li>
+          <li><strong>The results will age.</strong> They were measured with one Claude Code version and specific model snapshots, both of which change often.</li>
+          <li><strong>Hooks are Claude Code only.</strong> Other agents get the rules, not the enforcement.</li>
+          <li><strong>It is not a substitute for a good prompt.</strong> It removes waste; it doesn't make an agent smarter.</li>
+          <li><strong>No warranty.</strong> The software is provided "as is" under the MIT License, without warranty of any kind. You are responsible for what runs in your environment and for what you spend. The hooks are designed to fail open, and the test suite covers that, but no amount of testing is a guarantee. Review the code, run the tests, and try it on a branch before trusting it with real work.</li>
+        </ul>
+      </section>
+
+      <section id="status" aria-labelledby="status-h">
+        <h2 id="status-h"><span class="num">11</span>Project status</h2>
+        <div class="table-wrap"><table>
+          <tbody>
+            <tr><td>Version</td><td><code>0.1.0</code> in the plugin and package manifests. No release has been tagged yet.</td></tr>
+            <tr><td>Built</td><td>Rules, Agent Skill, <code>AGENTS.md</code> snippet, Claude Code plugin with <code>SessionStart</code>, <code>Read</code>, <code>Bash</code> and <code>Grep</code> hooks, <code>thinwindow-run</code>, configuration, tests and CI on macOS, Linux and Windows (Node 18 and 22).</td></tr>
+            <tr><td>Measured</td><td>Three models, 112 runs, as above. The launch target (≥25% fewer tokens at equal success) is not met yet.</td></tr>
+            <tr><td>In progress</td><td>Removing the regressions on short tasks, and reducing turns without hurting success.</td></tr>
+            <tr><td>Out of scope for v0.1</td><td>An npm package, a hosted service, and telemetry of any kind.</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section id="repository" aria-labelledby="repo-h">
+        <h2 id="repo-h"><span class="num">12</span>Repository</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+          <tbody>
+            <tr><td><code>rules/thinwindow.md</code></td><td>The rules: the single source of truth for the behaviour.</td></tr>
+            <tr><td><code>skills/thinwindow/</code></td><td>The Agent Skill, with a bundled <code>thinwindow-run</code>.</td></tr>
+            <tr><td><code>.claude-plugin/</code>, <code>hooks/</code></td><td>The Claude Code plugin manifest, its marketplace entry and the hooks.</td></tr>
+            <tr><td><code>bin/</code></td><td><code>thinwindow-run</code>.</td></tr>
+            <tr><td><code>adapters/AGENTS.md</code></td><td>The rules as a snippet for agents that read <code>AGENTS.md</code>.</td></tr>
+            <tr><td><code>bench/</code></td><td>Tasks, runner, report, hidden checks, reference solutions and raw results.</td></tr>
+            <tr><td><code>docs/</code></td><td>Product spec, configuration reference and manual testing guide.</td></tr>
+            <tr><td><code>test/</code>, <code>scripts/</code></td><td>The test suite (<code>node --test</code>) and the repository checks CI runs.</td></tr>
+            <tr><td><code>assets/</code>, <code>website/</code></td><td>The ThinWindow logo and icon set, and this documentation site.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Contributing</h3>
+        <p>The benchmark is one person's sample, so other people's workloads are the most valuable input. Roughly in order of usefulness:</p>
+        <ol>
+          <li><strong>A benchmark task from your own stack:</strong> another language, a monorepo, a framework with heavy generated code.</li>
+          <li><strong>A reproducible regression:</strong> a case where ThinWindow costs more than the baseline, with the run file to prove it.</li>
+          <li><strong>Rule and hook proposals</strong>, together with the measurement that justifies them. A new rule must come with a benchmark delta.</li>
+        </ol>
+        <p>The workflow is in <code>CONTRIBUTING.md</code>. The project uses Conventional Commits and the MIT License.</p>
+      </section>
+
+      <section id="faq" aria-labelledby="faq-h">
+        <h2 id="faq-h"><span class="num">13</span>FAQ</h2>
+        <details>
+          <summary>Does it make my agent worse at the task?</summary>
+          <p>That is what the success column measures; a saving that fails the task is not a saving. Across the three models, success was identical to the baseline except for a single Haiku run, on a task where both conditions were already hitting the 40-turn cap.</p>
+        </details>
+        <details>
+          <summary>Why not just tell the agent to be brief?</summary>
+          <p>Because output is under 2% of the bill. A long answer is paid once; a long read is paid again on every turn that follows it. ThinWindow trims output too, but that's the small half of the problem.</p>
+        </details>
+        <details>
+          <summary>Does it send my code or telemetry anywhere?</summary>
+          <p>No. There is no network code in the project: no analytics, crash reports, usage statistics, or license or update checks. The hooks are local Node scripts that read the tool call and return a decision, and truncated logs go to a temporary file on your own disk. This site loads no external fonts or scripts either.</p>
+        </details>
+        <details>
+          <summary>Does it work outside Claude Code?</summary>
+          <p>The rules do, through Agent Skills or <code>AGENTS.md</code>. The hooks, which do most of the work, are Claude Code only, because they depend on its tool-call hook API.</p>
+        </details>
+        <details>
+          <summary>Can it block something I actually need?</summary>
+          <p>It's designed not to. A refused <code>Read</code> or noisy command goes through when repeated, the always-refused commands come with a working replacement, paths and commands can be allowlisted, and <code>THINWINDOW=off</code> disables everything. If a hook itself fails, the call proceeds.</p>
+        </details>
+      </section>
+
+      <footer class="page-foot">
+        <span><img src="../assets/favicon/favicon-48.png" alt="" width="20" height="20">ThinWindow · MIT License · by Iván Luna</span>
+        <a href="https://github.com/thinwindow/thinwindow">GitHub</a>
+        <a href="https://github.com/sponsors/imprvhub">GitHub Sponsors</a>
+        <a href="https://ko-fi.com/ivanlunadev">Ko-fi</a>
+      </footer>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
