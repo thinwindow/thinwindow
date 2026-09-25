@@ -263,7 +263,7 @@ test('runBench end to end with a fake claude and a local repo', { skip: process.
   assert.equal(solved.commit, repo.commit);
   assert.equal(solved.claudeVersion, '0.0.1');
   assert.equal(solved.modelResolved, 'claude-sonnet-5');
-  assert.equal(solved.thinwindowVersion, '0.1.0');
+  assert.equal(solved.thinwindowVersion, JSON.parse(readFileSync(join(ROOT_DIR, '.claude-plugin', 'plugin.json'), 'utf8')).version);
   const argsSkin = JSON.parse(readFileSync(join(solved.workdir, 'args.json'), 'utf8'));
   assert.ok(argsSkin.args.includes('--plugin-dir'));
   assert.equal(argsSkin.THINWINDOW, null);
