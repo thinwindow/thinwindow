@@ -1,55 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="446" viewBox="0 0 760 446" role="img" aria-labelledby="t d">
-<title id="t">thinwindow benchmark: median total tokens per task, claude-sonnet-5</title>
-<desc id="d">Baseline versus thinwindow, median total tokens per task. Total 1.19M versus 1.05M (−11.6%); success 24/24 versus 24/24.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="448" viewBox="0 0 780 448" role="img" aria-labelledby="t d">
+<title id="t">thinwindow benchmark: change in total tokens per task, claude-sonnet-5</title>
+<desc id="d">One bar per task, showing the change in median total tokens against plain Claude Code. Bars left of the zero line are tokens saved, bars to the right are tokens lost. Overall 1.19M versus 1.05M (−11.6%); success 24/24 versus 24/24.</desc>
 <style>
-  .t1{fill:#1f2328}.t2{fill:#59636e}.grid{stroke:#d1d9e0}.base{fill:#2a78d6}.skin{fill:#eb6834}
-  text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}
-  @media (prefers-color-scheme: dark){.t1{fill:#e6edf3}.t2{fill:#9198a1}.grid{stroke:#3d444d}.base{fill:#3987e5}.skin{fill:#d95926}}
+  /* Edit these six lines to restyle every chart. Light values first, dark
+     below; both are validated categorical slots 1 and 2. */
+  svg{--surface:#fcfcfb;--ink:#0b0b0b;--ink-2:#52514e;--grid:#d1d9e0;--base:#2a78d6;--tw:#eb6834}
+  @media (prefers-color-scheme: dark){
+    svg{--surface:#1a1a19;--ink:#ffffff;--ink-2:#c3c2b7;--grid:#3d444d;--base:#3987e5;--tw:#d95926}
+  }
+  text{font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums}
+  .ink{fill:var(--ink)}.ink2{fill:var(--ink-2)}
+  .grid{stroke:var(--grid);stroke-width:1}
+  .zero{stroke:var(--ink-2);stroke-width:1.5}
+  .win{fill:var(--tw)}.lose{fill:var(--base)}
+  .h1{font-size:16px;font-weight:650;letter-spacing:-.01em}
+  .h2{font-size:12px}.lbl{font-size:12px}.val{font-size:11px}
+  .delta{font-size:12px;font-weight:650}
 </style>
-<text class="t1" x="0" y="20" font-size="16" font-weight="600">Median total tokens per task (lower is better)</text>
-<text class="t2" x="0" y="40" font-size="12">claude-sonnet-5 · Claude Code 2.1.282 · up to 3 runs per task and condition · medians</text>
-<text class="t2" x="0" y="58" font-size="12">Total 1.19M → 1.05M (−11.6%) · success 24/24 → 24/24</text>
-<rect class="base" x="0" y="72" width="12" height="12" rx="2"/><text class="t1" x="18" y="82" font-size="12">baseline</text>
-<rect class="skin" x="90" y="72" width="12" height="12" rx="2"/><text class="t1" x="108" y="82" font-size="12">thinwindow</text>
-<text class="t2" x="756" y="82" font-size="12" text-anchor="end">Δ tokens</text>
-<line class="grid" x1="230.0" y1="100" x2="230.0" y2="416" stroke-width="1"/>
-<text class="t2" x="230.0" y="426" font-size="11" text-anchor="middle">0</text>
-<line class="grid" x1="364.7" y1="100" x2="364.7" y2="416" stroke-width="1"/>
-<text class="t2" x="364.7" y="426" font-size="11" text-anchor="middle">100k</text>
-<line class="grid" x1="499.3" y1="100" x2="499.3" y2="416" stroke-width="1"/>
-<text class="t2" x="499.3" y="426" font-size="11" text-anchor="middle">200k</text>
-<line class="grid" x1="634.0" y1="100" x2="634.0" y2="416" stroke-width="1"/>
-<text class="t2" x="634.0" y="426" font-size="11" text-anchor="middle">300k</text>
-<text class="t1" x="220" y="123" font-size="12" text-anchor="end">click-choice-brackets</text>
-<path class="base" d="M230,108H499.8Q503.8,108 503.8,112V114Q503.8,118 499.8,118H230Z"><title>click-choice-brackets, baseline: 203k tokens (median of 3), success 3/3</title></path><text class="t2" x="507.8" y="117" font-size="10">203k</text>
-<path class="skin" d="M230,120H487.0Q491.0,120 491.0,124V126Q491.0,130 487.0,130H230Z"><title>click-choice-brackets, thinwindow: 194k tokens (median of 3), success 3/3</title></path><text class="t2" x="495.0" y="129" font-size="10">194k</text>
-<text class="t1" x="756" y="123" font-size="12" font-weight="600" text-anchor="end">−4.7%</text>
-<text class="t1" x="220" y="161" font-size="12" text-anchor="end">click-footer-year</text>
-<path class="base" d="M230,146H323.8Q327.8,146 327.8,150V152Q327.8,156 323.8,156H230Z"><title>click-footer-year, baseline: 73k tokens (median of 3), success 3/3</title></path><text class="t2" x="331.8" y="155" font-size="10">73k</text>
-<path class="skin" d="M230,158H324.1Q328.1,158 328.1,162V164Q328.1,168 324.1,168H230Z"><title>click-footer-year, thinwindow: 73k tokens (median of 3), success 3/3</title></path><text class="t2" x="332.1" y="167" font-size="10">73k</text>
-<text class="t1" x="756" y="161" font-size="12" font-weight="600" text-anchor="end">+0.4%</text>
-<text class="t1" x="220" y="199" font-size="12" text-anchor="end">click-help-spec</text>
-<path class="base" d="M230,184H476.7Q480.7,184 480.7,188V190Q480.7,194 476.7,194H230Z"><title>click-help-spec, baseline: 186k tokens (median of 3), success 3/3</title></path><text class="t2" x="484.7" y="193" font-size="10">186k</text>
-<path class="skin" d="M230,196H338.1Q342.1,196 342.1,200V202Q342.1,206 338.1,206H230Z"><title>click-help-spec, thinwindow: 83k tokens (median of 3), success 3/3</title></path><text class="t2" x="346.1" y="205" font-size="10">83k</text>
-<text class="t1" x="756" y="199" font-size="12" font-weight="600" text-anchor="end">−55.3%</text>
-<text class="t1" x="220" y="237" font-size="12" text-anchor="end">commander-ci-config</text>
-<path class="base" d="M230,222H326.5Q330.5,222 330.5,226V228Q330.5,232 326.5,232H230Z"><title>commander-ci-config, baseline: 75k tokens (median of 3), success 3/3</title></path><text class="t2" x="334.5" y="231" font-size="10">75k</text>
-<path class="skin" d="M230,234H356.0Q360.0,234 360.0,238V240Q360.0,244 356.0,244H230Z"><title>commander-ci-config, thinwindow: 97k tokens (median of 3), success 3/3</title></path><text class="t2" x="364.0" y="243" font-size="10">97k</text>
-<text class="t1" x="756" y="237" font-size="12" font-weight="600" text-anchor="end">+29.3%</text>
-<text class="t1" x="220" y="275" font-size="12" text-anchor="end">commander-command-clash</text>
-<path class="base" d="M230,260H468.6Q472.6,260 472.6,264V266Q472.6,270 468.6,270H230Z"><title>commander-command-clash, baseline: 180k tokens (median of 3), success 3/3</title></path><text class="t2" x="476.6" y="269" font-size="10">180k</text>
-<path class="skin" d="M230,272H410.8Q414.8,272 414.8,276V278Q414.8,282 410.8,282H230Z"><title>commander-command-clash, thinwindow: 137k tokens (median of 3), success 3/3</title></path><text class="t2" x="418.8" y="281" font-size="10">137k</text>
-<text class="t1" x="756" y="275" font-size="12" font-weight="600" text-anchor="end">−23.8%</text>
-<text class="t1" x="220" y="313" font-size="12" text-anchor="end">commander-extract-utils</text>
-<path class="base" d="M230,298H416.5Q420.5,298 420.5,302V304Q420.5,308 416.5,308H230Z"><title>commander-extract-utils, baseline: 141k tokens (median of 3), success 3/3</title></path><text class="t2" x="424.5" y="307" font-size="10">141k</text>
-<path class="skin" d="M230,310H481.1Q485.1,310 485.1,314V316Q485.1,320 481.1,320H230Z"><title>commander-extract-utils, thinwindow: 189k tokens (median of 3), success 3/3</title></path><text class="t2" x="489.1" y="319" font-size="10">189k</text>
-<text class="t1" x="756" y="313" font-size="12" font-weight="600" text-anchor="end">+33.9%</text>
-<text class="t1" x="220" y="351" font-size="12" text-anchor="end">commander-negate-default-order</text>
-<path class="base" d="M230,336H572.9Q576.9,336 576.9,340V342Q576.9,346 572.9,346H230Z"><title>commander-negate-default-order, baseline: 258k tokens (median of 3), success 3/3</title></path><text class="t2" x="580.9" y="345" font-size="10">258k</text>
-<path class="skin" d="M230,348H502.5Q506.5,348 506.5,352V354Q506.5,358 502.5,358H230Z"><title>commander-negate-default-order, thinwindow: 205k tokens (median of 3), success 3/3</title></path><text class="t2" x="510.5" y="357" font-size="10">205k</text>
-<text class="t1" x="756" y="351" font-size="12" font-weight="600" text-anchor="end">−20.3%</text>
-<text class="t1" x="220" y="389" font-size="12" text-anchor="end">commander-rename-display-width</text>
-<path class="base" d="M230,374H326.3Q330.3,374 330.3,378V380Q330.3,384 326.3,384H230Z"><title>commander-rename-display-width, baseline: 74k tokens (median of 3), success 3/3</title></path><text class="t2" x="334.3" y="383" font-size="10">74k</text>
-<path class="skin" d="M230,386H326.0Q330.0,386 330.0,390V392Q330.0,396 326.0,396H230Z"><title>commander-rename-display-width, thinwindow: 74k tokens (median of 3), success 3/3</title></path><text class="t2" x="334.0" y="395" font-size="10">74k</text>
-<text class="t1" x="756" y="389" font-size="12" font-weight="600" text-anchor="end">−0.3%</text>
+<rect width="780" height="448" fill="var(--surface)"/>
+<text class="ink h1" x="0" y="24">Change in total tokens per task</text>
+<text class="ink2 h2" x="0" y="44">claude-sonnet-5 · Claude Code 2.1.282 · medians of up to 3 runs per task and condition</text>
+<text class="ink" x="0" y="76" font-size="24" font-weight="680">−11.6%</text>
+<text class="ink2 h2" x="104" y="76">overall · 1.19M → 1.05M · success 24/24 → 24/24</text>
+<rect class="win" x="0" y="94" width="11" height="11" rx="2"/><text class="ink lbl" x="17" y="104">fewer tokens with ThinWindow</text>
+<rect class="lose" x="200" y="94" width="11" height="11" rx="2"/><text class="ink lbl" x="217" y="104">fewer tokens without it</text>
+<line class="grid" x1="276.0" y1="115" x2="276.0" y2="387"/>
+<text class="ink2 val" x="276.0" y="426" text-anchor="middle">−60%</text>
+<line class="grid" x1="362.0" y1="115" x2="362.0" y2="387"/>
+<text class="ink2 val" x="362.0" y="426" text-anchor="middle">−40%</text>
+<line class="grid" x1="448.0" y1="115" x2="448.0" y2="387"/>
+<text class="ink2 val" x="448.0" y="426" text-anchor="middle">−20%</text>
+<line class="grid" x1="620.0" y1="115" x2="620.0" y2="387"/>
+<text class="ink2 val" x="620.0" y="426" text-anchor="middle">+20%</text>
+<line class="grid" x1="706.0" y1="115" x2="706.0" y2="387"/>
+<text class="ink2 val" x="706.0" y="426" text-anchor="middle">+40%</text>
+<line class="zero" x1="534.0" y1="115" x2="534.0" y2="387"/>
+<text class="ink2 val" x="534.0" y="426" text-anchor="middle">0</text>
+<text class="ink lbl" x="202" y="131" text-anchor="end">click-help-spec</text>
+<text class="ink2 val" x="202" y="144" text-anchor="end">186k → 83k</text>
+<path class="win" d="M300.4,124.5H534.0V139.5H300.4A4,4 0 0 1 296.4,135.5V128.5A4,4 0 0 1 300.4,124.5Z"><title>click-help-spec: 186k → 83k tokens (−55.3%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="288.4" y="136" text-anchor="end">−55.3%</text>
+<text class="ink lbl" x="202" y="165" text-anchor="end">commander-command-clash</text>
+<text class="ink2 val" x="202" y="178" text-anchor="end">180k → 137k</text>
+<path class="win" d="M435.5,158.5H534.0V173.5H435.5A4,4 0 0 1 431.5,169.5V162.5A4,4 0 0 1 435.5,158.5Z"><title>commander-command-clash: 180k → 137k tokens (−23.8%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="423.5" y="170" text-anchor="end">−23.8%</text>
+<text class="ink lbl" x="202" y="199" text-anchor="end">commander-negate-default-order</text>
+<text class="ink2 val" x="202" y="212" text-anchor="end">258k → 205k</text>
+<path class="win" d="M450.8,192.5H534.0V207.5H450.8A4,4 0 0 1 446.8,203.5V196.5A4,4 0 0 1 450.8,192.5Z"><title>commander-negate-default-order: 258k → 205k tokens (−20.3%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="438.8" y="204" text-anchor="end">−20.3%</text>
+<text class="ink lbl" x="202" y="233" text-anchor="end">click-choice-brackets</text>
+<text class="ink2 val" x="202" y="246" text-anchor="end">203k → 194k</text>
+<path class="win" d="M517.9,226.5H534.0V241.5H517.9A4,4 0 0 1 513.9,237.5V230.5A4,4 0 0 1 517.9,226.5Z"><title>click-choice-brackets: 203k → 194k tokens (−4.7%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="505.9" y="238" text-anchor="end">−4.7%</text>
+<text class="ink lbl" x="202" y="267" text-anchor="end">commander-rename-display-width</text>
+<text class="ink2 val" x="202" y="280" text-anchor="end">74k → 74k</text>
+<path class="win" d="M534.0,260.5H534.0V275.5H534.0A1.5,1.5 0 0 1 532.5,274.0V262.0A1.5,1.5 0 0 1 534.0,260.5Z"><title>commander-rename-display-width: 74k → 74k tokens (−0.3%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="524.5" y="272" text-anchor="end">−0.3%</text>
+<text class="ink lbl" x="202" y="301" text-anchor="end">click-footer-year</text>
+<text class="ink2 val" x="202" y="314" text-anchor="end">73k → 73k</text>
+<path class="lose" d="M534.0,294.5H534.0A1.5993057277461276,1.5993057277461276 0 0 1 535.6,296.1V307.9A1.5993057277461276,1.5993057277461276 0 0 1 534.0,309.5H534.0Z"><title>click-footer-year: 73k → 73k tokens (+0.4%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="543.6" y="306" text-anchor="start">+0.4%</text>
+<text class="ink lbl" x="202" y="335" text-anchor="end">commander-ci-config</text>
+<text class="ink2 val" x="202" y="348" text-anchor="end">75k → 97k</text>
+<path class="lose" d="M534.0,328.5H656.0A4,4 0 0 1 660.0,332.5V339.5A4,4 0 0 1 656.0,343.5H534.0Z"><title>commander-ci-config: 75k → 97k tokens (+29.3%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="668.0" y="340" text-anchor="start">+29.3%</text>
+<text class="ink lbl" x="202" y="369" text-anchor="end">commander-extract-utils</text>
+<text class="ink2 val" x="202" y="382" text-anchor="end">141k → 189k</text>
+<path class="lose" d="M534.0,362.5H675.8A4,4 0 0 1 679.8,366.5V373.5A4,4 0 0 1 675.8,377.5H534.0Z"><title>commander-extract-utils: 141k → 189k tokens (+33.9%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="687.8" y="374" text-anchor="start">+33.9%</text>
 </svg>
