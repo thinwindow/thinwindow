@@ -56,7 +56,7 @@ turnos extras gastos lidando com saída que o agente nunca precisou.
 **Claude Code** (regras + hooks, a versão completa):
 
 ```
-/plugin marketplace add imprvhub/thinwindow
+/plugin marketplace add thinwindow/thinwindow
 /plugin install thinwindow@thinwindow
 ```
 
@@ -64,7 +64,7 @@ turnos extras gastos lidando com saída que o agente nunca precisou.
 OpenCode...), somente as regras:
 
 ```
-npx skills add imprvhub/thinwindow
+npx skills add thinwindow/thinwindow
 ```
 
 **Agentes que leem `AGENTS.md`**: cole [`adapters/AGENTS.md`](adapters/AGENTS.md)

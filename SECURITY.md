@@ -4,7 +4,7 @@
 
 Please report vulnerabilities privately through GitHub:
 **Security → Report a vulnerability** on
-[imprvhub/thinwindow](https://github.com/imprvhub/thinwindow/security/advisories/new).
+[thinwindow/thinwindow](https://github.com/thinwindow/thinwindow/security/advisories/new).
 Don't open a public issue for security problems.
 
 You'll get an acknowledgement as soon as the maintainer sees it, and a fix

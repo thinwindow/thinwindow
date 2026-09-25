@@ -31,7 +31,7 @@ Pick one:
   /plugin marketplace add /path/to/thinwindow
   /plugin install thinwindow@thinwindow
   ```
-  (Once the repository is public: `/plugin marketplace add imprvhub/thinwindow`.)
+  (Once the repository is public: `/plugin marketplace add thinwindow/thinwindow`.)
 
 To record every decision, start the session like this and keep the log open
 in another terminal:

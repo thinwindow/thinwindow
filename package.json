@@ -7,7 +7,7 @@
   "author": "Iván Luna (https://github.com/imprvhub)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/imprvhub/thinwindow.git"
+    "url": "git+https://github.com/thinwindow/thinwindow.git"
   },
   "type": "module",
   "engines": {
