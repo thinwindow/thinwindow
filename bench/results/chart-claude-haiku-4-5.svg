@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="446" viewBox="0 0 760 446" role="img" aria-labelledby="t d">
+<title id="t">thinwindow benchmark: median total tokens per task, claude-haiku-4-5</title>
+<desc id="d">Baseline versus thinwindow, median total tokens per task. Total 11.10M versus 8.54M (−23.0%); success 14/16 versus 13/16.</desc>
+<style>
+  .t1{fill:#1f2328}.t2{fill:#59636e}.grid{stroke:#d1d9e0}.base{fill:#2a78d6}.skin{fill:#eb6834}
+  text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif}
+  @media (prefers-color-scheme: dark){.t1{fill:#e6edf3}.t2{fill:#9198a1}.grid{stroke:#3d444d}.base{fill:#3987e5}.skin{fill:#d95926}}
+</style>
+<text class="t1" x="0" y="20" font-size="16" font-weight="600">Median total tokens per task (lower is better)</text>
+<text class="t2" x="0" y="40" font-size="12">claude-haiku-4-5 · Claude Code 2.1.282 · up to 2 runs per task and condition · medians</text>
+<text class="t2" x="0" y="58" font-size="12">Total 11.10M → 8.54M (−23.0%) · success 14/16 → 13/16</text>
+<rect class="base" x="0" y="72" width="12" height="12" rx="2"/><text class="t1" x="18" y="82" font-size="12">baseline</text>
+<rect class="skin" x="90" y="72" width="12" height="12" rx="2"/><text class="t1" x="108" y="82" font-size="12">thinwindow</text>
+<text class="t2" x="756" y="82" font-size="12" text-anchor="end">Δ tokens</text>
+<line class="grid" x1="230.0" y1="100" x2="230.0" y2="416" stroke-width="1"/>
+<text class="t2" x="230.0" y="426" font-size="11" text-anchor="middle">0</text>
+<line class="grid" x1="364.7" y1="100" x2="364.7" y2="416" stroke-width="1"/>
+<text class="t2" x="364.7" y="426" font-size="11" text-anchor="middle">1.00M</text>
+<line class="grid" x1="499.3" y1="100" x2="499.3" y2="416" stroke-width="1"/>
+<text class="t2" x="499.3" y="426" font-size="11" text-anchor="middle">2.00M</text>
+<line class="grid" x1="634.0" y1="100" x2="634.0" y2="416" stroke-width="1"/>
+<text class="t2" x="634.0" y="426" font-size="11" text-anchor="middle">3.00M</text>
+<text class="t1" x="220" y="123" font-size="12" text-anchor="end">click-choice-brackets</text>
+<path class="base" d="M230,108H429.7Q433.7,108 433.7,112V114Q433.7,118 429.7,118H230Z"><title>click-choice-brackets, baseline: 1.51M tokens (median of 2), success 2/2</title></path><text class="t2" x="437.7" y="117" font-size="10">1.51M</text>
+<path class="skin" d="M230,120H381.4Q385.4,120 385.4,124V126Q385.4,130 381.4,130H230Z"><title>click-choice-brackets, thinwindow: 1.15M tokens (median of 2), success 2/2</title></path><text class="t2" x="389.4" y="129" font-size="10">1.15M</text>
+<text class="t1" x="756" y="123" font-size="12" font-weight="600" text-anchor="end">−23.7%</text>
+<text class="t1" x="220" y="161" font-size="12" text-anchor="end">click-footer-year</text>
+<path class="base" d="M230,146H260.9Q264.9,146 264.9,150V152Q264.9,156 260.9,156H230Z"><title>click-footer-year, baseline: 259k tokens (median of 2), success 2/2</title></path><text class="t2" x="268.9" y="155" font-size="10">259k</text>
+<path class="skin" d="M230,158H254.1Q258.1,158 258.1,162V164Q258.1,168 254.1,168H230Z"><title>click-footer-year, thinwindow: 209k tokens (median of 2), success 2/2</title></path><text class="t2" x="262.1" y="167" font-size="10">209k</text>
+<text class="t1" x="756" y="161" font-size="12" font-weight="600" text-anchor="end">−19.5%</text>
+<text class="t1" x="220" y="199" font-size="12" text-anchor="end">click-help-spec</text>
+<path class="base" d="M230,184H473.6Q477.6,184 477.6,188V190Q477.6,194 473.6,194H230Z"><title>click-help-spec, baseline: 1.84M tokens (median of 2), success 2/2</title></path><text class="t2" x="481.6" y="193" font-size="10">1.84M</text>
+<path class="skin" d="M230,196H445.2Q449.2,196 449.2,200V202Q449.2,206 445.2,206H230Z"><title>click-help-spec, thinwindow: 1.63M tokens (median of 2), success 2/2</title></path><text class="t2" x="453.2" y="205" font-size="10">1.63M</text>
+<text class="t1" x="756" y="199" font-size="12" font-weight="600" text-anchor="end">−11.4%</text>
+<text class="t1" x="220" y="237" font-size="12" text-anchor="end">commander-ci-config</text>
+<path class="base" d="M230,222H243.4Q247.4,222 247.4,226V228Q247.4,232 243.4,232H230Z"><title>commander-ci-config, baseline: 129k tokens (median of 2), success 2/2</title></path><text class="t2" x="251.4" y="231" font-size="10">129k</text>
+<path class="skin" d="M230,234H245.2Q249.2,234 249.2,238V240Q249.2,244 245.2,244H230Z"><title>commander-ci-config, thinwindow: 142k tokens (median of 2), success 2/2</title></path><text class="t2" x="253.2" y="243" font-size="10">142k</text>
+<text class="t1" x="756" y="237" font-size="12" font-weight="600" text-anchor="end">+10.3%</text>
+<text class="t1" x="220" y="275" font-size="12" text-anchor="end">commander-command-clash</text>
+<path class="base" d="M230,260H468.4Q472.4,260 472.4,264V266Q472.4,270 468.4,270H230Z"><title>commander-command-clash, baseline: 1.80M tokens (median of 2), success 1/2</title></path><text class="t2" x="476.4" y="269" font-size="10">1.80M</text>
+<path class="skin" d="M230,272H448.2Q452.2,272 452.2,276V278Q452.2,282 448.2,282H230Z"><title>commander-command-clash, thinwindow: 1.65M tokens (median of 2), success 1/2</title></path><text class="t2" x="456.2" y="281" font-size="10">1.65M</text>
+<text class="t1" x="756" y="275" font-size="12" font-weight="600" text-anchor="end">−8.3%</text>
+<text class="t1" x="220" y="313" font-size="12" text-anchor="end">commander-extract-utils</text>
+<path class="base" d="M230,298H399.3Q403.3,298 403.3,302V304Q403.3,308 399.3,308H230Z"><title>commander-extract-utils, baseline: 1.29M tokens (median of 2), success 2/2</title></path><text class="t2" x="407.3" y="307" font-size="10">1.29M</text>
+<path class="skin" d="M230,310H315.2Q319.2,310 319.2,314V316Q319.2,320 315.2,320H230Z"><title>commander-extract-utils, thinwindow: 662k tokens (median of 2), success 2/2</title></path><text class="t2" x="323.2" y="319" font-size="10">662k</text>
+<text class="t1" x="756" y="313" font-size="12" font-weight="600" text-anchor="end">−48.6%</text>
+<text class="t1" x="220" y="351" font-size="12" text-anchor="end">commander-negate-default-order</text>
+<path class="base" d="M230,336H489.8Q493.8,336 493.8,340V342Q493.8,346 489.8,346H230Z"><title>commander-negate-default-order, baseline: 1.96M tokens (median of 2), success 2/2</title></path><text class="t2" x="497.8" y="345" font-size="10">1.96M</text>
+<path class="skin" d="M230,348H465.3Q469.3,348 469.3,352V354Q469.3,358 465.3,358H230Z"><title>commander-negate-default-order, thinwindow: 1.78M tokens (median of 2), success 2/2</title></path><text class="t2" x="473.3" y="357" font-size="10">1.78M</text>
+<text class="t1" x="756" y="351" font-size="12" font-weight="600" text-anchor="end">−9.3%</text>
+<text class="t1" x="220" y="389" font-size="12" text-anchor="end">commander-rename-display-width</text>
+<path class="base" d="M230,374H537.4Q541.4,374 541.4,378V380Q541.4,384 537.4,384H230Z"><title>commander-rename-display-width, baseline: 2.31M tokens (median of 2), success 1/2</title></path><text class="t2" x="545.4" y="383" font-size="10">2.31M</text>
+<path class="skin" d="M230,386H403.8Q407.8,386 407.8,390V392Q407.8,396 403.8,396H230Z"><title>commander-rename-display-width, thinwindow: 1.32M tokens (median of 2), success 0/2</title></path><text class="t2" x="411.8" y="395" font-size="10">1.32M</text>
+<text class="t1" x="756" y="389" font-size="12" font-weight="600" text-anchor="end">−42.9%</text>
+</svg>
