@@ -1,9 +1,17 @@
-# ThinWindow
+<p align="center">
+  <img src="assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="112" height="112">
+</p>
 
-**English** · [Español](README.es.md) · [Português](README.pt-BR.md)
+<h1 align="center">ThinWindow</h1>
 
-**Make coding agents read less.** Fewer tokens per task, the same results, and a
-benchmark you can re-run yourself.
+<p align="center">
+  <strong>Make coding agents read less.</strong><br>
+  Fewer tokens per task, the same results, and a benchmark you can re-run yourself.
+</p>
+
+<p align="center">
+  <b>English</b> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português</a>
+</p>
 
 <!-- RESULTS:START -->
 | Model | Tokens | Cost | Success baseline → ThinWindow | Runs |
@@ -241,7 +249,7 @@ Two things are visible in the data above:
   further.
 - **Turns are the untapped factor.** Since cost is roughly context × turns, a
   turn saved is worth as much as a large read avoided. Opus took 12.9% fewer
-  turns here and shows the largest cost cut; Sonnet took 1.6% fewer and shows
+  turns here and shows the largest cost cut; Sonnet took 1.6% more and shows
   the smallest. An earlier attempt at explicit "use fewer turns" rules made
   Sonnet measurably worse and was reverted rather than kept and quietly
   excluded — that reverted experiment is still in the history.
