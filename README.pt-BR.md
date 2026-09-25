@@ -1,9 +1,17 @@
-# ThinWindow
+<p align="center">
+  <img src="assets/icon.iconset/icon_128x128@2x.png" alt="Logo do ThinWindow" width="112" height="112">
+</p>
 
-[English](README.md) · [Español](README.es.md) · **Português**
+<h1 align="center">ThinWindow</h1>
 
-**Faça os agentes de código lerem menos.** Menos tokens por tarefa, os mesmos
-resultados e um benchmark que você mesmo pode rodar de novo.
+<p align="center">
+  <strong>Faça os agentes de código lerem menos.</strong><br>
+  Menos tokens por tarefa, os mesmos resultados e um benchmark que você mesmo pode rodar de novo.
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.es.md">Español</a> · <b>Português</b>
+</p>
 
 | Modelo | Tokens | Custo | Sucesso base → ThinWindow | Execuções |
 | --- | ---: | ---: | :---: | ---: |
@@ -187,7 +195,7 @@ Duas coisas aparecem nos dados:
 - **Os turnos são o fator inexplorado.** Como o custo é aproximadamente contexto
   × turnos, um turno economizado vale tanto quanto uma leitura grande evitada. O
   Opus usou 12,9% menos turnos aqui e mostra o maior corte de custo; o Sonnet
-  usou 1,6% menos e mostra o menor. Uma tentativa anterior de regras explícitas
+  usou 1,6% mais e mostra o menor. Uma tentativa anterior de regras explícitas
   de "use menos turnos" piorou o Sonnet de forma mensurável e foi revertida, em
   vez de mantida e silenciosamente excluída: esse experimento revertido continua
   no histórico.
