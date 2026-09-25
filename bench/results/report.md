@@ -2,7 +2,7 @@
 
 ## claude-haiku-4-5
 
-Model `claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.282 · thinwindow 0.1.0 (ce45cd1), 0.1.0 (05cc89d), 0.1.0 (a6ebe93) · 32 runs, up to 2 per task and condition · 2026-09-25
+Model `claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.282 · thinwindow 0.1.0 (05cc89d), 0.1.0 (a6ebe93) · 32 runs, up to 2 per task and condition · 2026-09-25
 
 | Task | Tokens baseline (min–max) | Tokens thinwindow (min–max) | Δ tokens | Cost baseline | Cost thinwindow | Δ cost | Turns baseline | Turns thinwindow | Success baseline | Success thinwindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
