@@ -34,6 +34,6 @@ Say less
 <!-- rules:end -->
 
 `thinwindow-run` ships with the thinwindow Agent Skill
-(`npx skills add imprvhub/thinwindow`) as `scripts/thinwindow-run.mjs`; run it
+(`npx skills add thinwindow/thinwindow`) as `scripts/thinwindow-run.mjs`; run it
 with `node <skill dir>/scripts/thinwindow-run.mjs <cmd>`. If it isn't
 installed, cap output with a quiet flag or `| tail -n 40` instead.

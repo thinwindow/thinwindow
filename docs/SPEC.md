@@ -56,13 +56,13 @@ Short imperative rules, final wording tuned with the benchmark. Starting set:
 Agent Skills standard (`name` and `description` frontmatter). The body holds the
 rules plus how to use `thinwindow-run`. Works with any agent that supports
 skills (Claude Code, Codex, Cursor, Copilot, Gemini CLI, OpenCode...). The layout
-must also work with `npx skills add imprvhub/thinwindow`.
+must also work with `npx skills add thinwindow/thinwindow`.
 
 ### 3. Claude Code plugin (enforcement)
 
 The repo is its own plugin marketplace: `.claude-plugin/plugin.json` and
 `.claude-plugin/marketplace.json`. Install with
-`/plugin marketplace add imprvhub/thinwindow`, then
+`/plugin marketplace add thinwindow/thinwindow`, then
 `/plugin install thinwindow@thinwindow`.
 
 Before coding, read the current Claude Code docs for hooks (input/output JSON,

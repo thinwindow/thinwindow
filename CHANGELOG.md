@@ -29,9 +29,9 @@ project uses [Semantic Versioning](https://semver.org).
 - `rules/thinwindow.md`: the reading rules, within a 2,000-character budget
   enforced in CI.
 - Agent Skill `skills/thinwindow` with the rules and a bundled
-  `thinwindow-run`, installable with `npx skills add imprvhub/thinwindow`.
+  `thinwindow-run`, installable with `npx skills add thinwindow/thinwindow`.
 - Claude Code plugin and marketplace (`/plugin marketplace add
-  imprvhub/thinwindow`, `/plugin install thinwindow@thinwindow`).
+  thinwindow/thinwindow`, `/plugin install thinwindow@thinwindow`).
 - SessionStart hook that injects the rules and resets read tracking after
   compaction.
 - PreToolUse `Read` guard: large-file guard, re-read guard, soft block.

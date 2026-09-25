@@ -58,7 +58,7 @@ avoids the extra turns spent recovering from output the agent never needed.
 **Claude Code** (rules + hooks, the full version):
 
 ```
-/plugin marketplace add imprvhub/thinwindow
+/plugin marketplace add thinwindow/thinwindow
 /plugin install thinwindow@thinwindow
 ```
 
@@ -66,7 +66,7 @@ avoids the extra turns spent recovering from output the agent never needed.
 OpenCode...), rules only:
 
 ```
-npx skills add imprvhub/thinwindow
+npx skills add thinwindow/thinwindow
 ```
 
 **Agents that read `AGENTS.md`**: paste [`adapters/AGENTS.md`](adapters/AGENTS.md)

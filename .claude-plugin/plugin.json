@@ -7,8 +7,8 @@
     "name": "Iván Luna",
     "url": "https://github.com/imprvhub"
   },
-  "homepage": "https://github.com/imprvhub/thinwindow",
-  "repository": "https://github.com/imprvhub/thinwindow",
+  "homepage": "https://github.com/thinwindow/thinwindow",
+  "repository": "https://github.com/thinwindow/thinwindow",
   "license": "MIT",
   "keywords": ["tokens", "context", "cost", "hooks", "read", "benchmark"]
 }
