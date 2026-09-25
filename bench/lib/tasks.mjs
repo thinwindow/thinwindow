@@ -3,6 +3,7 @@
 //   repo     public git URL
 //   commit   full SHA the repo is pinned to
 //   prompt   what the agent is asked to do
+//   setup    optional shell command, run in the clone before the agent (installs); not measured.
 //   verify   shell command, run in the clone after the agent; exit 0 = success.
 //            $THINWINDOW_BENCH_FIXTURES points at bench/fixtures/.
 //   timeout  seconds the agent gets

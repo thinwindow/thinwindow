@@ -67,8 +67,11 @@ export function buildClaudeArgs({
   const args = [
     '-p',
     prompt,
+    // stream-json (which needs --verbose) so the tool calls can be traced;
+    // parseResult reads the final result line either way.
     '--output-format',
-    'json',
+    'stream-json',
+    '--verbose',
     '--model',
     model,
     '--max-turns',
@@ -162,6 +165,29 @@ export function parseResult(stdout) {
     sessionId: json.session_id || null,
     resultText: typeof json.result === 'string' ? json.result : null,
   };
+}
+
+// The agent's tool calls, one short line each, so a run can be compared with
+// its twin after the temp clone and the session are gone.
+export function parseTrace(stdout, { maxSteps = 80 } = {}) {
+  const steps = [];
+  for (const line of String(stdout || '').split('\n')) {
+    let e;
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const content = e && e.type === 'assistant' && Array.isArray(e.message?.content) ? e.message.content : [];
+    for (const c of content) {
+      if (c.type !== 'tool_use' || steps.length >= maxSteps) continue;
+      const i = c.input || {};
+      const range = i.offset != null || i.limit != null ? ` [${i.offset ?? 1}+${i.limit ?? ''}]` : '';
+      const arg = String(i.file_path ?? i.command ?? i.pattern ?? i.description ?? '').replace(/\s+/g, ' ');
+      steps.push(`${c.name}${range} ${arg}`.slice(0, 140));
+    }
+  }
+  return steps;
 }
 
 export function claudeVersion(cmd = 'claude', prefixArgs = []) {

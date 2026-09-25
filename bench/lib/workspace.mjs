@@ -43,6 +43,13 @@ export function shellFor() {
 
 // Runs the task's verify command in `cwd`. Resolves to
 // { success, exitCode, durationMs, timedOut, tail }.
+// The task's setup (dependency installs), run before the agent starts so
+// neither condition spends turns installing packages. Not measured.
+export async function runSetup(task, cwd, { timeoutMs = 20 * 60 * 1000, env = process.env } = {}) {
+  const res = await runProcess(shellFor(), ['-c', task.setup], { cwd, timeoutMs, env: { ...env, CI: '1' } });
+  return { success: res.code === 0 && !res.timedOut, tail: tail(`${res.stdout}\n${res.stderr}`) };
+}
+
 export async function runVerify(task, cwd, { timeoutMs = 20 * 60 * 1000, env = process.env } = {}) {
   const res = await runProcess(shellFor(), ['-c', task.verify], {
     cwd,

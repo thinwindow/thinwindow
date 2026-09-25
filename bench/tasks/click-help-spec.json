@@ -2,6 +2,7 @@
   "repo": "https://github.com/pallets/click.git",
   "commit": "be13b152cf5949a362926322c835fa76019cc6fe",
   "prompt": "Add a public method `Option.get_help_spec(ctx)` that returns the left column of the option's help record: its spellings and metavar, like `-v, --verbose`, `--config TEXT` or `--color / --no-color`. Unlike `get_help_record()`, it must return the spec even when the option is hidden. `get_help_record()` must keep returning `None` for hidden options and use `get_help_spec()` for the first element of its tuple, so help output doesn't change. Add tests and a changelog entry.",
+  "setup": "python3 -m venv .bench-venv && .bench-venv/bin/python -m pip install -q --disable-pip-version-check -e . pytest==9.0.2 && mkdir -p .git/info && echo .bench-venv >> .git/info/exclude",
   "verify": "python3 -m venv .bench-venv && .bench-venv/bin/python -m pip install -q --disable-pip-version-check -e . pytest==9.0.2 > /dev/null 2>&1 && cp \"$THINWINDOW_BENCH_FIXTURES\"/click-help-spec/test_bench_help_spec.py tests/ && .bench-venv/bin/python -m pytest -q -p no:cacheprovider tests",
   "timeout": 1200
 }

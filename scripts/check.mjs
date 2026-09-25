@@ -32,7 +32,7 @@ const HOOK_EVENTS = new Set([
   'WorktreeRemove', 'PreCompact', 'PostCompact', 'PreModelSwitch', 'PostModelSwitch', 'SessionEnd',
   'Elicitation', 'ElicitationResult',
 ]);
-const TASK_FIELDS = new Set(['repo', 'commit', 'prompt', 'verify', 'timeout']);
+const TASK_FIELDS = new Set(['repo', 'commit', 'prompt', 'setup', 'verify', 'timeout']);
 
 function readJson(file, errors) {
   try {
@@ -126,6 +126,7 @@ export function validateTask(t) {
   if (typeof t.repo !== 'string' || !/^https:\/\/\S+$/.test(t.repo)) e.push('repo must be a public https git URL');
   if (typeof t.commit !== 'string' || !/^[0-9a-f]{40}$/.test(t.commit)) e.push('commit must be a full 40-char SHA');
   if (typeof t.prompt !== 'string' || t.prompt.trim() === '') e.push('prompt must be a non-empty string');
+  if (t.setup !== undefined && (typeof t.setup !== 'string' || t.setup.trim() === '')) e.push('setup, if present, must be a non-empty shell command');
   if (typeof t.verify !== 'string' || t.verify.trim() === '') e.push('verify must be a non-empty shell command');
   if (!Number.isInteger(t.timeout) || t.timeout <= 0) e.push('timeout must be a positive integer (seconds)');
   return e;

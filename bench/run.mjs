@@ -9,18 +9,18 @@
 // (plus `--plugin-dir <this repo>` for the thinwindow condition), then the
 // task's `verify` command. Each run is appended to
 // bench/results/<date>-<model>.jsonl. See bench/README.md.
-import { readFileSync, realpathSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { delimiter, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseResult } from './lib/claude.mjs';
+import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseResult, parseTrace } from './lib/claude.mjs';
 import { ROOT_DIR } from './lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from './lib/pricing.mjs';
 import { runProcess, runSync, tail, which } from './lib/proc.mjs';
 import { appendResult, readResults, resultsPath } from './lib/results.mjs';
 import { median } from './lib/stats.mjs';
 import { loadTasks, repoLabel } from './lib/tasks.mjs';
-import { cloneAt, makeWorkdir, removeWorkdir, runVerify } from './lib/workspace.mjs';
+import { cloneAt, makeWorkdir, removeWorkdir, runSetup, runVerify } from './lib/workspace.mjs';
 import { loadState, statePath } from '../hooks/lib/state.mjs';
 
 const USAGE = `usage: node bench/run.mjs --condition baseline|thinwindow --reps N --model <m> [options]
@@ -242,10 +242,19 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
   };
   try {
     cloneAt(task.repo, task.commit, dir);
+    if (task.setup) {
+      const setup = await runSetup(task, dir);
+      // An environment problem that would hit both conditions: stop the benchmark.
+      if (!setup.success) throw new StartupError(`setup failed for ${task.id}: ${setup.tail}`);
+    }
+    const agentEnv = claudeEnv(condition, env);
+    // A Python task's setup makes .bench-venv; put it first on the agent's PATH.
+    const venvBin = join(dir, '.bench-venv', 'bin');
+    if (existsSync(venvBin)) agentEnv.PATH = `${venvBin}${delimiter}${agentEnv.PATH || ''}`;
     const args = buildClaudeArgs({ prompt: task.prompt, model: options.model, condition, maxTurns: options.maxTurns, bare: options.bare });
     const res = await runProcess(options.claude.cmd, [...options.claude.prefixArgs, ...args], {
       cwd: dir,
-      env: claudeEnv(condition, env),
+      env: agentEnv,
       timeoutMs: task.timeout * 1000,
     });
     const parsed = parseResult(res.stdout);
@@ -268,6 +277,7 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
       modelsUsed: [],
       sessionId: null,
     });
+    record.trace = parseTrace(res.stdout);
     record.exitCode = res.code;
     record.timedOut = res.timedOut;
     record.wallMs = res.durationMs;

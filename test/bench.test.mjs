@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { buildClaudeArgs, claudeEnv, parseResult, ruleAbsolute } from '../bench/lib/claude.mjs';
+import { buildClaudeArgs, claudeEnv, parseResult, parseTrace, ruleAbsolute } from '../bench/lib/claude.mjs';
 import { BENCH_DIR, FIXTURES_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../bench/lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from '../bench/lib/pricing.mjs';
 import { readResultFile, resultsPath } from '../bench/lib/results.mjs';
@@ -80,7 +80,7 @@ test('planRuns interleaves conditions and alternates the order per rep', () => {
 test('buildClaudeArgs: same flags for both conditions, plugin only for thinwindow', () => {
   const base = buildClaudeArgs({ prompt: 'do it', model: 'sonnet', condition: 'baseline' });
   const skin = buildClaudeArgs({ prompt: 'do it', model: 'sonnet', condition: 'thinwindow' });
-  assert.deepEqual(base.slice(0, 8), ['-p', 'do it', '--output-format', 'json', '--model', 'sonnet', '--max-turns', '40']);
+  assert.deepEqual(base.slice(0, 9), ['-p', 'do it', '--output-format', 'stream-json', '--verbose', '--model', 'sonnet', '--max-turns', '40']);
   assert.ok(!base.includes('--plugin-dir'));
   assert.equal(skin[skin.indexOf('--plugin-dir') + 1], ROOT_DIR);
   assert.deepEqual(skin.slice(0, base.length), base);
@@ -234,7 +234,7 @@ test('runBench end to end with a fake claude and a local repo', { skip: process.
   writeFileSync(fake, FAKE_CLAUDE);
   const out = join(tempDir('thinwindow-results-'), 'results.jsonl');
   const tasks = [
-    { id: 'solve', repo: repo.dir, commit: repo.commit, prompt: 'solve it', verify: 'test -f done.txt && test -f README.md', timeout: 60 },
+    { id: 'solve', repo: repo.dir, commit: repo.commit, prompt: 'solve it', setup: 'touch setup-ran', verify: 'test -f done.txt && test -f README.md && test -f setup-ran', timeout: 60 },
     { id: 'broken', repo: repo.dir, commit: repo.commit, prompt: 'fail please', verify: 'test -f done.txt', timeout: 60 },
   ];
   const options = {
@@ -431,4 +431,15 @@ test('formatting helpers', () => {
 
 test('the bench directory keeps results and paths inside the repo', () => {
   assert.equal(BENCH_DIR, join(HERE, '..', 'bench'));
+});
+
+test('parseTrace lists tool calls from stream-json output', () => {
+  const msg = (content) => JSON.stringify({ type: 'assistant', message: { content } });
+  const out = [
+    JSON.stringify({ type: 'system', subtype: 'init' }),
+    msg([{ type: 'text', text: 'hi' }, { type: 'tool_use', name: 'Read', input: { file_path: '/r/src/a.py', limit: 120 } }]),
+    msg([{ type: 'tool_use', name: 'Bash', input: { command: 'pytest  -q\n tests' } }]),
+    JSON.stringify({ type: 'result', num_turns: 2 }),
+  ].join('\n');
+  assert.deepEqual(parseTrace(out), ['Read [1+120] /r/src/a.py', 'Bash pytest -q tests']);
 });

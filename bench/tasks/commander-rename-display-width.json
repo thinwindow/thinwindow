@@ -2,6 +2,7 @@
   "repo": "https://github.com/tj/commander.js.git",
   "commit": "ba6d13ddb4243e5913367734f8c159089ffe7834",
   "prompt": "Rename the `Help` method `displayWidth` to `visibleTextWidth` everywhere it appears: the implementation, its callers, the TypeScript typings and their type tests, the unit tests and the examples. Leave CHANGELOG.md alone and do not keep the old name as an alias. `npm test` must pass.",
+  "setup": "npm ci --no-audit --no-fund --loglevel=error",
   "verify": "npm ci --no-audit --no-fund --loglevel=error > /dev/null 2>&1 && node \"$THINWINDOW_BENCH_FIXTURES\"/commander-rename-display-width/check-rename.mjs && npm test",
   "timeout": 1200
 }

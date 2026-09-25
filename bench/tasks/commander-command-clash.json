@@ -2,6 +2,7 @@
   "repo": "https://github.com/tj/commander.js.git",
   "commit": "b96af407cd7980aa9cd6d0a08c793a8c09122cee",
   "prompt": "Adding two subcommands with the same name, or a subcommand whose name or alias matches the name or alias of another subcommand, is silently accepted today, and then only one of them can ever run. Make Commander throw an error when this happens, whether the command is added with `.command()` or `.addCommand()` or the clash comes from `.alias()`. The error message must contain `cannot add command` when adding the command causes the clash, and `cannot add alias` when adding the alias does. Add tests. The existing test suite must keep passing.",
+  "setup": "npm ci --no-audit --no-fund --loglevel=error",
   "verify": "cp \"$THINWINDOW_BENCH_FIXTURES\"/commander-command-clash/command-clash.hidden.js tests/zz-bench-command-clash.test.js && npm ci --no-audit --no-fund --loglevel=error > /dev/null 2>&1 && npx jest --silent",
   "timeout": 1200
 }

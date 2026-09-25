@@ -2,6 +2,7 @@
   "repo": "https://github.com/tj/commander.js.git",
   "commit": "ba6d13ddb4243e5913367734f8c159089ffe7834",
   "prompt": "Answer these from this repository's own configuration files, not from memory: (1) Which Node.js versions does the GitHub Actions test matrix run on? (2) Which operating systems does it run on? (3) What is the minimum Node.js version declared in package.json? (4) Which npm script runs the tests for the TypeScript definitions (typings)? Write the answer to answer.json in the repository root, in exactly this shape: {\"ciNodeVersions\": [\"...\"], \"ciOperatingSystems\": [\"...\"], \"minNodeVersion\": \"x.y.z\", \"typingsTestScript\": \"script-name\"}. Do not change any other file.",
+  "setup": "npm ci --no-audit --no-fund --loglevel=error",
   "verify": "node \"$THINWINDOW_BENCH_FIXTURES\"/commander-ci-config/check-answer.mjs answer.json",
   "timeout": 600
 }

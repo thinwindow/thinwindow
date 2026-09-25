@@ -23,9 +23,11 @@ Print less
 Write less
 - Before adding code, check that it needs to exist, that the codebase doesn't have it already, and that the standard library or platform doesn't do it. Then make the smallest change that works.
 - Never cut validation, error handling, security or tests to save lines.
+- Don't add comments or docstrings that restate the code.
 
 Say less
-- Lead with the result. No preamble, no restating the task, no recap of what you did unless asked.
+- Don't narrate between tool calls; just make the next call.
+- End with at most three lines: what changed and where. No preamble, no restating the task, no step-by-step recap unless asked.
 - Cite `file:line` instead of pasting code back.
 <!-- rules:end -->
 
