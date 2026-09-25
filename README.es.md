@@ -5,8 +5,8 @@
 <h1 align="center">ThinWindow</h1>
 
 <p align="center">
-  <strong>Que los agentes de código lean menos.</strong><br>
-  Menos tokens por tarea, los mismos resultados y un benchmark que podés volver a correr vos.
+  <strong>Menos en la ventana. Menos en la factura.</strong><br>
+  La mayoría de los tokens de tu agente son relecturas: entre el 87% y el 96% es contexto que se reenvía en cada turno. ThinWindow es a la vez un plugin de Claude Code y un Agent Skill, y reduce ese contexto: entre un 12% y un 23% menos de tokens, medido en Claude Code con tres modelos.
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@ Las mismas 8 tareas, 112 corridas, un agente por corrida, sin descartar
 ninguna: todas las que se registraron están en la tabla. El detalle por tarea y
 los datos crudos están en [Benchmark](#benchmark).
 
-## Por qué el contexto es la cuenta
+## Por qué lo que se paga es el contexto
 
 Un agente de código no paga sobre todo por lo que escribe. Paga por lo que
 arrastra. Cada archivo que abre, cada log de instalación que imprime y cada grep
@@ -36,7 +36,7 @@ tokens ≈ tamaño del contexto × turnos
 
 que al largo de la respuesta. En las corridas medidas acá, **entre el 87% y el
 96% de los tokens facturados fueron lecturas de caché** — contexto reenviado,
-turno tras turno — contra 0,6% a 1,9% de la salida del propio agente:
+turno tras turno — frente a entre el 0,6% y el 1,9% de la salida del propio agente:
 
 | Modelo | Lecturas de caché | Escrituras de caché | Salida |
 | --- | ---: | ---: | ---: |
@@ -49,7 +49,7 @@ Evitar que se traiga un archivo de 2.000 líneas al contexto en el turno 3 toca
 la del ~90%, en todos los turnos que siguen.
 
 ThinWindow ataca los dos factores: achica lo que entra al contexto y evita los
-turnos extra que se gastan lidiando con salida que el agente nunca necesitó.
+turnos extra que se gastan lidiando con una salida que el agente nunca necesitó.
 
 ## Instalación
 
@@ -76,26 +76,27 @@ Lo apagás cuando quieras con `THINWINDOW=off`, o con `"enabled": false` en
 ## Cómo funciona
 
 1. **Reglas** ([`rules/thinwindow.md`](rules/thinwindow.md), menos de 500 tokens)
-   cargadas al inicio de la sesión: ubicar antes de leer, leer por rangos, acotar
+   cargadas al inicio de la sesión: localizar antes de leer, leer por rangos, acotar
    la salida de los comandos, escribir el cambio más chico, cerrar con tres
    líneas como máximo.
-2. **Hooks** (solo Claude Code) que aplican la parte cara, sin gastarle un turno
-   al agente:
+2. **Hooks** (solo en Claude Code) que hacen cumplir la parte cara sin que el
+   agente gaste un turno:
    - Un `Read` completo de un archivo de más de 400 líneas devuelve las primeras
      120 líneas más un índice numerado, para que la lectura siguiente apunte a un
      rango.
-   - Releer un archivo sin cambios que ya está en contexto se rechaza.
+   - Se rechaza releer un archivo sin cambios que ya está en el contexto.
    - Instalaciones, builds, tests y linters pasan por `thinwindow-run`: el log
      completo va a un archivo temporal y el agente ve el código de salida, el
      final del log y las líneas de error.
    - `cat` de archivos enormes, lockfiles o archivos minificados, `git log` sin
-     `-n`, `ls -R`, `tree` sin `-L` y `find` sin límite reciben un reemplazo más
-     barato. El `Grep` por contenido recibe `head_limit: 100`.
-3. **Falla abierto.** Cualquier error de un hook deja pasar la llamada. Repetir
-   una llamada rechazada también pasa, así el agente nunca queda trabado.
+     `-n`, `ls -R`, `tree` sin `-L` y `find` sin límite reciben una alternativa más
+     barata. El `Grep` por contenido recibe `head_limit: 100`.
+3. **Falla en modo abierto.** Cualquier error de un hook deja pasar la llamada.
+   Repetir una llamada rechazada también la deja pasar, así que el agente nunca
+   se queda bloqueado.
 
-Las reglas las aplican los hooks en vez de confiar en el modelo, porque una
-regla que el agente puede olvidar bajo presión no es una regla. Los hooks corren
+Las reglas las hacen cumplir los hooks en lugar de dejarlas en manos del modelo,
+porque una regla que el agente puede olvidar bajo presión no es una regla. Los hooks corren
 sobre la llamada a la herramienta, antes de que el resultado llegue al contexto,
 así que aplicarlas no cuesta un turno.
 
@@ -134,10 +135,10 @@ Cada **corrida** es un agente resolviendo una tarea desde cero:
    [commander.js](https://github.com/tj/commander.js)) en un commit fijo, dentro
    de un directorio temporal nuevo.
 2. Instalar sus dependencias antes de que arranque el agente, para que los logs
-   de instalación no se le facturen a ningún lado.
+   de instalación no se le facturen a ninguna de las dos condiciones.
 3. Correr `claude -p "<tarea>"` con el modelo elegido, con un tope de 40 turnos.
-   La *baseline* usa Claude Code pelado; *ThinWindow* usa lo mismo más este
-   plugin. No cambia nada más: sin servidores MCP, sin configuración de usuario,
+   La condición *baseline* usa Claude Code sin modificaciones; *ThinWindow* usa
+   lo mismo más este plugin. No cambia nada más: sin servidores MCP, sin configuración de usuario,
    sin memoria entre corridas.
 4. Correr la verificación oculta de la tarea: un test o un script que el agente
    nunca ve. Código de salida 0 es éxito.
@@ -145,9 +146,9 @@ Cada **corrida** es un agente resolviendo una tarea desde cero:
    subagentes incluidos), costo, turnos y tiempo desde el JSON que devuelve
    Claude Code, más la traza completa de llamadas a herramientas.
 
-Las 8 tareas son la mezcla de todos los días: arreglos de bugs con un test que
-falla, una función chica, un rename entre archivos, un refactor, una búsqueda de
-configuración y "que el año del copyright del pie de página se actualice solo".
+Las 8 tareas son una mezcla de trabajo cotidiano: correcciones de bugs con un
+test que falla, una funcionalidad pequeña, un renombrado entre archivos, un
+refactor, una consulta de configuración y "que el año del copyright del pie de página se actualice solo".
 Las definiciones están en [`bench/tasks/`](bench/tasks).
 
 Las corridas son secuenciales, de a una, así nunca compiten por los límites de
@@ -160,18 +161,18 @@ suscripción se paga en límites de uso, pero la proporción es la misma.
   el modelo, la versión de Claude Code, el commit de ThinWindow, los conteos de
   tokens crudos y la traza de herramientas. Ningún número de este README está
   escrito a mano.
-- Las reglas se ajustaron sobre esas mismas 8 tareas, en dos librerías de
+- Las reglas se ajustaron sobre esas mismas 8 tareas, en dos bibliotecas de
   parseo de argumentos de línea de comandos, en JavaScript y Python. Es una
-  porción angosta del software que existe. Tu ahorro en otro trabajo va a ser
+  porción acotada del software que existe. Tu ahorro en otro trabajo va a ser
   distinto.
-- Las muestras son chicas. Los agentes son ruidosos: la misma tarea puede tomar
+- Las muestras son chicas. Los agentes varían mucho: la misma tarea puede tomar
   4 turnos una vez y 15 la siguiente, por eso las tablas muestran medianas y el
-  rango por tarea, y no un único promedio de portada.
-- Corrélo contra tu propia cuenta y tus propios límites:
+  rango por tarea, y no un único promedio de titular.
+- Correlo contra tu propia cuenta y tus propios límites:
 
   ```
-  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --dry-run
-  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --max-cost 10
+  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
+  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
   node bench/report.mjs
   ```
 
@@ -190,18 +191,18 @@ En los datos se ven dos cosas:
   —sin ahorrar un token más en ningún otro lado— Sonnet pasaría de −11,6% a
   cerca de −17,5%, y Opus de −15,8% a cerca de −17,7%. El margen de corto plazo
   está más en no empeorar las tareas cortas que en exprimir las largas.
-- **Los turnos son el factor sin explotar.** Como el costo es aproximadamente
+- **Los turnos son el factor todavía sin aprovechar.** Como el costo es aproximadamente
   contexto × turnos, un turno ahorrado vale tanto como una lectura grande
   evitada. Opus usó 12,9% menos turnos acá y muestra el mayor recorte de costo;
   Sonnet usó 1,6% más y muestra el menor. Un intento previo de reglas
-  explícitas de "usá menos turnos" empeoró a Sonnet de forma medible y se
-  revirtió, en vez de quedarse y excluirse en silencio: ese experimento
+  explícitas de "usá menos turnos" empeoró los resultados de Sonnet de forma
+  medible y se revirtió, en lugar de mantenerse y excluirse en silencio: ese experimento
   revertido sigue en el historial.
 
 ## Contribuir
 
-Este es justo el tipo de proyecto que mejora con la carga de trabajo de otra
-gente, porque los límites de arriba son los límites de la muestra de *una sola
+Este es justo el tipo de proyecto que mejora con las cargas de trabajo de otras
+personas, porque los límites de arriba son los límites de la muestra de *una sola
 persona*.
 
 Lo más útil, más o menos en orden:
@@ -214,8 +215,8 @@ Lo más útil, más o menos en orden:
    arriba son el camino más claro a mejores números.
 3. **Propuestas de reglas y hooks**, con la medición que las justifique. Las
    reglas se prueban contra el benchmark, no se aceptan por lo razonables que
-   suenen; además el archivo de reglas tiene un presupuesto de tokens que CI
-   hace cumplir.
+   suenen; además el archivo de reglas tiene un presupuesto de tokens que la
+   CI hace cumplir.
 
 El flujo está en [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -227,15 +228,15 @@ no porque sea un producto terminado con un contrato de soporte detrás.
 
 Leé los números con eso en mente:
 
-- **El benchmark es angosto y lo elegí yo.** Ocho tareas, dos repositorios, tres
+- **El benchmark es acotado y lo elegí yo.** Ocho tareas, dos repositorios, tres
   modelos, unas pocas repeticiones cada uno, todo elegido por mí, con reglas
   ajustadas contra esas mismas tareas. Alcanza para mostrar una dirección; no
   alcanza para prometerte un porcentaje. Está publicado completo, con los
-  archivos crudos, justamente para que juzgues vos qué tanto generaliza en vez
-  de creerle a un número de portada.
+  archivos crudos, justamente para que juzgues vos cuánto se generaliza en vez
+  de creerle a un número de titular.
 - **La contabilidad de tokens es volátil por naturaleza.** Lo que termina en una
-  ventana de contexto depende de la versión del modelo, del arnés del agente y
-  su prompt de sistema, de la tasa de aciertos de caché, de qué herramientas
+  ventana de contexto depende de la versión del modelo, del entorno de ejecución del
+  agente y su prompt de sistema, de la tasa de aciertos de caché, de qué herramientas
   están habilitadas, de los servidores MCP, del tamaño del repositorio y de cómo
   se desarrolle la tarea ese día. Cualquiera de esos factores puede mover el
   resultado más que el efecto medido acá. Dos corridas idénticas de la misma
@@ -243,25 +244,25 @@ Leé los números con eso en mente:
   para que eso se vea, no para taparlo.
 - **Los resultados envejecen.** Se midieron con una versión concreta de Claude
   Code y con snapshots concretos de los modelos, y las dos cosas cambian
-  seguido. Se van a volver a medir en vez de quedar ahí sin aviso.
+  seguido. Se van a volver a medir en lugar de quedar publicados sin revisión.
 - **Sin garantía.** Este software se entrega "tal cual" bajo la
   [licencia MIT](LICENSE), sin garantía de ningún tipo. Vos sos responsable de
   lo que corre en tu entorno y de lo que gastás. Los hooks están diseñados para
-  fallar abiertos y nunca bloquear una llamada, y los tests cubren ese
+  fallar en modo abierto y nunca bloquear una llamada, y los tests cubren ese
   comportamiento, pero ninguna cantidad de tests es una garantía: revisá el
   código, corré los tests y probalo en una rama antes de confiarle trabajo real.
-- **No reemplaza un buen prompt.** Saca desperdicio; no hace más inteligente al
+- **No reemplaza un buen prompt.** Elimina desperdicio; no hace más inteligente al
   agente.
 
 ## Preguntas frecuentes
 
-**¿Deja peor a mi agente en la tarea?** Para eso está la columna de éxito en
+**¿Hace que mi agente rinda peor?** Para eso está la columna de éxito en
 cada tabla. Un ahorro que hace fallar la tarea no es un ahorro. En los tres
 modelos el éxito fue idéntico a la baseline salvo por una sola corrida de Haiku,
-donde las dos condiciones ya estaban pegando contra el tope de 40 turnos.
+donde las dos condiciones ya estaban llegando al tope de 40 turnos.
 
-**¿Por qué no le digo al agente que sea breve y listo?** Porque la salida es
-cerca del 1% de la cuenta, como muestra la tabla del principio. Una respuesta
+**¿Por qué no pedirle al agente que sea breve?** Porque la salida es cerca del
+1% de la factura, como muestra la tabla del principio. Una respuesta
 larga se paga una vez; una lectura larga se vuelve a pagar en cada turno que
 sigue. ThinWindow también recorta la salida, pero esa es la mitad chica del
 problema.

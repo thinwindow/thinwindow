@@ -5,8 +5,8 @@
 <h1 align="center">ThinWindow</h1>
 
 <p align="center">
-  <strong>Faça os agentes de código lerem menos.</strong><br>
-  Menos tokens por tarefa, os mesmos resultados e um benchmark que você mesmo pode rodar de novo.
+  <strong>Menos na janela. Menos na conta.</strong><br>
+  A maior parte dos tokens do seu agente é releitura: de 87% a 96% são contexto reenviado a cada turno. O ThinWindow é ao mesmo tempo um plugin do Claude Code e um Agent Skill, e reduz esse contexto: de 12% a 23% menos tokens, medidos no Claude Code com três modelos.
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@ As mesmas 8 tarefas, 112 execuções, um agente por execução, sem descartar
 nenhuma: tudo o que foi registrado está na tabela. O detalhe por tarefa e os
 dados brutos estão em [Benchmark](#benchmark).
 
-## Por que o contexto é a conta
+## Por que o contexto pesa na conta
 
 Um agente de código não paga principalmente pelo que escreve. Paga pelo que
 carrega. Cada arquivo que abre, cada log de instalação que imprime e cada grep
@@ -44,12 +44,12 @@ após turno — contra 0,6% a 1,9% da saída do próprio agente:
 | Sonnet 5 | 87,1% | 11,0% | 1,9% |
 | Haiku 4.5 | 96,4% | 2,9% | 0,6% |
 
-É essa a tese inteira. Pedir brevidade ao agente mexe na coluna de ~1%. Impedir
+Essa é toda a tese. Pedir brevidade ao agente mexe na coluna de ~1%. Impedir
 que ele puxe um arquivo de 2.000 linhas para o contexto no turno 3 mexe na de
 ~90%, em todos os turnos seguintes.
 
 O ThinWindow ataca os dois fatores: encolhe o que entra no contexto e evita os
-turnos extras gastos lidando com saída que o agente nunca precisou.
+turnos extras gastos lidando com uma saída de que o agente nunca precisou.
 
 ## Instalação
 
@@ -79,22 +79,23 @@ Desligue quando quiser com `THINWINDOW=off`, ou com `"enabled": false` no
    carregadas no início da sessão: localizar antes de ler, ler por intervalos,
    limitar a saída dos comandos, escrever a menor mudança possível, encerrar com
    no máximo três linhas.
-2. **Hooks** (só no Claude Code) que aplicam a parte cara, sem gastar um turno do
-   agente:
+2. **Hooks** (só no Claude Code) que garantem a parte cara sem custar um turno
+   ao agente:
    - Um `Read` completo de um arquivo com mais de 400 linhas devolve as primeiras
      120 linhas mais um índice numerado, para que a próxima leitura mire um
      intervalo.
-   - Reler um arquivo sem alterações que já está no contexto é recusado.
+   - A releitura de um arquivo sem alterações que já está no contexto é recusada.
    - Instalações, builds, testes e linters passam pelo `thinwindow-run`: o log
      completo vai para um arquivo temporário e o agente vê o código de saída, o
      final do log e as linhas de erro.
    - `cat` de arquivos enormes, lockfiles ou arquivos minificados, `git log` sem
-     `-n`, `ls -R`, `tree` sem `-L` e `find` sem limite recebem uma substituição
+     `-n`, `ls -R`, `tree` sem `-L` e `find` sem limite recebem uma alternativa
      mais barata. O `Grep` por conteúdo recebe `head_limit: 100`.
-3. **Falha aberto.** Qualquer erro de hook deixa a chamada passar. Repetir uma
-   chamada recusada também passa, então o agente nunca trava.
+3. **Falha em modo aberto.** Qualquer erro de hook deixa a chamada passar.
+   Repetir uma chamada recusada também a deixa passar, então o agente nunca fica
+   travado.
 
-As regras são aplicadas pelos hooks em vez de confiadas ao modelo, porque uma
+As regras são garantidas pelos hooks em vez de ficarem a cargo do modelo, porque uma
 regra que o agente pode esquecer sob pressão não é uma regra. Os hooks rodam na
 chamada da ferramenta, antes de o resultado chegar ao contexto, então aplicá-las
 não custa um turno.
@@ -146,9 +147,9 @@ Cada **execução** é um agente resolvendo uma tarefa do zero:
    incluídos), custo, turnos e tempo a partir do JSON do próprio Claude Code,
    mais o rastro completo de chamadas de ferramentas.
 
-As 8 tarefas são a mistura do dia a dia: correções de bugs com um teste que
+As 8 tarefas são uma mistura de trabalho do dia a dia: correções de bugs com um teste que
 falha, uma funcionalidade pequena, uma renomeação entre arquivos, uma
-refatoração, uma busca de configuração e "fazer o ano do copyright do rodapé se
+refatoração, uma consulta de configuração e "fazer o ano do copyright do rodapé se
 atualizar sozinho". As definições estão em [`bench/tasks/`](bench/tasks).
 
 As execuções são sequenciais, uma de cada vez, então nunca disputam os limites
@@ -165,14 +166,14 @@ assinatura você paga em limites de uso, mas a proporção é a mesma.
   parsing de argumentos de linha de comando, em JavaScript e Python. É uma fatia
   estreita do software que existe. Sua economia em outros trabalhos será
   diferente.
-- As amostras são pequenas. Agentes são barulhentos: a mesma tarefa pode levar 4
+- As amostras são pequenas. Agentes variam muito: a mesma tarefa pode levar 4
   turnos numa vez e 15 na seguinte, por isso as tabelas mostram medianas e a
-  faixa por tarefa, e não uma única média de capa.
+  faixa por tarefa, e não uma única média de manchete.
 - Rode contra a sua própria conta e os seus próprios limites:
 
   ```
-  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --dry-run
-  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --max-cost 10
+  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
+  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
   node bench/report.mjs
   ```
 
@@ -215,14 +216,14 @@ O mais útil, mais ou menos em ordem:
    baseline, com o JSONL que comprove, é um presente: as regressões acima são o
    caminho mais claro para números melhores.
 3. **Propostas de regras e hooks**, com a medição que as justifique. As regras
-   são testadas contra o benchmark, não aceitas por soarem plausíveis; o arquivo
-   de regras ainda tem um orçamento de tokens que a CI faz cumprir.
+   são testadas contra o benchmark, não aceitas por soarem plausíveis; além disso,
+   o arquivo de regras tem um orçamento de tokens que a CI faz cumprir.
 
 O fluxo está em [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Escopo, limitações e isenção de responsabilidade
 
-Isto começou como uma ferramenta pessoal. Eu a construí para baratear o meu
+Isto começou como uma ferramenta pessoal. Eu a criei para reduzir o custo do meu
 próprio fluxo de trabalho, e publiquei porque as medições podem ser úteis para
 outra pessoa — não porque seja um produto acabado com um contrato de suporte por
 trás.
@@ -234,10 +235,10 @@ Leia os números com isso em mente:
   com regras ajustadas contra essas mesmas tarefas. Dá para mostrar uma direção;
   não dá para prometer uma porcentagem a você. Está publicado por inteiro, com
   os arquivos brutos, justamente para que você julgue o quanto generaliza em vez
-  de acreditar num número de capa.
+  de acreditar num número de manchete.
 - **A contabilidade de tokens é volátil por natureza.** O que entra numa janela
-  de contexto depende da versão do modelo, do arcabouço do agente e do seu
-  prompt de sistema, da taxa de acerto de cache, de quais ferramentas estão
+  de contexto depende da versão do modelo, do ambiente de execução do agente e do
+  seu prompt de sistema, da taxa de acerto de cache, de quais ferramentas estão
   habilitadas, dos servidores MCP, do tamanho do repositório e de como a tarefa
   se desenrola naquele dia. Qualquer um desses fatores pode mover o resultado
   mais que o efeito medido aqui. Duas execuções idênticas da mesma tarefa podem
@@ -245,11 +246,11 @@ Leia os números com isso em mente:
   visível, não para escondê-lo.
 - **Os resultados envelhecem.** Foram medidos com uma versão específica do
   Claude Code e snapshots específicos dos modelos, e ambos mudam com frequência.
-  Serão medidos de novo, em vez de ficarem de pé silenciosamente.
+  Serão medidos de novo, em vez de continuarem publicados sem revisão.
 - **Sem garantia.** Este software é fornecido "como está" sob a
   [licença MIT](LICENSE), sem garantia de nenhum tipo. Você é responsável pelo
   que roda no seu ambiente e pelo que gasta. Os hooks são projetados para falhar
-  abertos e nunca bloquear uma chamada, e os testes cobrem esse comportamento,
+  em modo aberto e nunca bloquear uma chamada, e os testes cobrem esse comportamento,
   mas nenhuma quantidade de testes é uma garantia: revise o código, rode os
   testes e experimente num branch antes de confiar trabalho real a ele.
 - **Não substitui um bom prompt.** Ele remove desperdício; não deixa o agente
@@ -277,7 +278,7 @@ provedor de modelos — e o objetivo desta ferramenta é que isso seja menor.
 
 **Funciona fora do Claude Code?** As regras sim, via Agent Skills ou
 `AGENTS.md`. Os hooks — que fazem o trabalho pesado — são exclusivos do Claude
-Code, porque dependem da API de hooks de chamadas de ferramenta dele.
+Code, porque dependem da API de hooks do Claude Code para chamadas de ferramentas.
 
 ## Licença
 

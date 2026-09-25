@@ -5,8 +5,8 @@
 <h1 align="center">ThinWindow</h1>
 
 <p align="center">
-  <strong>Make coding agents read less.</strong><br>
-  Fewer tokens per task, the same results, and a benchmark you can re-run yourself.
+  <strong>Less in the window. Less on the bill.</strong><br>
+  Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 12–23% fewer tokens, measured in Claude Code on three models.
 </p>
 
 <p align="center">
@@ -226,8 +226,8 @@ usage limits instead, but the ratio is the same.
 - Re-run it against your own account and your own limits:
 
   ```
-  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --dry-run
-  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --max-cost 10
+  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
+  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
   node bench/report.mjs
   ```
 
