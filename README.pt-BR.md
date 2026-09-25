@@ -1,24 +1,47 @@
-# thinwindow
+# ThinWindow
 
 [English](README.md) · [Español](README.es.md) · **Português**
 
 **Faça os agentes de código lerem menos.** Menos tokens por tarefa, os mesmos
 resultados e um benchmark que você mesmo pode rodar de novo.
 
-| Modelo | Tokens | Custo | Sucesso base → thinwindow | Execuções |
+| Modelo | Tokens | Custo | Sucesso base → ThinWindow | Execuções |
 | --- | ---: | ---: | :---: | ---: |
-| Haiku 4.5 | **−23,0%** | **−20,2%** | **14/16** → **13/16** | 32 |
-| Sonnet 5 | **−11,6%** | **−7,4%** | **24/24** → **24/24** | 48 |
 | Opus 5.5 | **−15,8%** | **−19,4%** | **16/16** → **16/16** | 32 |
+| Sonnet 5 | **−11,6%** | **−7,4%** | **24/24** → **24/24** | 48 |
+| Haiku 4.5 | **−23,0%** | **−20,2%** | **14/16** → **13/16** | 32 |
 
-As mesmas 8 tarefas, 112 execuções, um agente por execução. O detalhe por
-tarefa, a dispersão e os dados brutos estão em [Benchmark](#benchmark).
+As mesmas 8 tarefas, 112 execuções, um agente por execução, sem descartar
+nenhuma: tudo o que foi registrado está na tabela. O detalhe por tarefa e os
+dados brutos estão em [Benchmark](#benchmark).
 
-Quase tudo o que um agente de código paga é entrada, não saída: ler arquivos
-inteiros, logs de instalação e de testes, greps amplos. Tudo o que ele lê fica no
-contexto e é reenviado a cada turno seguinte, então uma leitura logo no começo de
-2.000 linhas é paga de novo em todos os turnos posteriores. O thinwindow corta
-isso na fonte e, de quebra, enxuga o que o agente escreve e comenta.
+## Por que o contexto é a conta
+
+Um agente de código não paga principalmente pelo que escreve. Paga pelo que
+carrega. Cada arquivo que abre, cada log de instalação que imprime e cada grep
+amplo que roda é anexado à conversa, e a conversa inteira é reenviada a cada
+turno seguinte. O custo de uma sessão se parece mais com
+
+```
+tokens ≈ tamanho do contexto × turnos
+```
+
+do que com o tamanho da resposta. Nas execuções medidas aqui, **de 87% a 96% de
+todos os tokens cobrados foram leituras de cache** — contexto reenviado, turno
+após turno — contra 0,6% a 1,9% da saída do próprio agente:
+
+| Modelo | Leituras de cache | Escritas de cache | Saída |
+| --- | ---: | ---: | ---: |
+| Opus 5.5 | 92,0% | 6,6% | 1,3% |
+| Sonnet 5 | 87,1% | 11,0% | 1,9% |
+| Haiku 4.5 | 96,4% | 2,9% | 0,6% |
+
+É essa a tese inteira. Pedir brevidade ao agente mexe na coluna de ~1%. Impedir
+que ele puxe um arquivo de 2.000 linhas para o contexto no turno 3 mexe na de
+~90%, em todos os turnos seguintes.
+
+O ThinWindow ataca os dois fatores: encolhe o que entra no contexto e evita os
+turnos extras gastos lidando com saída que o agente nunca precisou.
 
 ## Instalação
 
@@ -63,29 +86,37 @@ Desligue quando quiser com `THINWINDOW=off`, ou com `"enabled": false` no
 3. **Falha aberto.** Qualquer erro de hook deixa a chamada passar. Repetir uma
    chamada recusada também passa, então o agente nunca trava.
 
+As regras são aplicadas pelos hooks em vez de confiadas ao modelo, porque uma
+regra que o agente pode esquecer sob pressão não é uma regra. Os hooks rodam na
+chamada da ferramenta, antes de o resultado chegar ao contexto, então aplicá-las
+não custa um turno.
+
 Sem dependências, sem telemetria, Node 18+. Detalhes e todas as opções:
 [docs/configuration.md](docs/configuration.md).
 
 ## Benchmark
 
-Três modelos, 112 execuções. As tabelas por tarefa são geradas por
-[`bench/report.mjs`](bench/report.mjs) a partir dos arquivos brutos; nada é
-escrito à mão.
+Três modelos, 8 tarefas, 112 execuções. Os gráficos e as tabelas são gerados por
+[`bench/report.mjs`](bench/report.mjs) a partir dos arquivos brutos.
 
-- **Tabelas detalhadas por tarefa** (em inglês, geradas):
-  [`bench/results/report.md`](bench/results/report.md) ou a seção
-  [Benchmark do README em inglês](README.md#benchmark).
-- **Execuções brutas**, uma linha por execução:
-  [`haiku-528598a.jsonl`](bench/results/haiku-528598a.jsonl) ·
-  [`sonnet-528598a.jsonl`](bench/results/sonnet-528598a.jsonl) ·
-  [`opus-528598a.jsonl`](bench/results/opus-528598a.jsonl)
-- **Gráficos**: [Haiku](bench/results/chart-claude-haiku-4-5.svg) ·
-  [Sonnet](bench/results/chart-claude-sonnet-5.svg) ·
-  [Opus](bench/results/chart-claude-opus-5-5.svg)
+### Opus 5.5
 
-A economia depende muito da tarefa: as que exigem ler bastante são as que mais
-caem (por exemplo `click-help-spec` no Sonnet: −55,3%), e alguma tarefa curta sai
-levemente pior. A saída cai nos três modelos.
+![Mudança em tokens totais por tarefa, Opus 5.5: barras à esquerda do zero são tokens economizados](bench/results/chart-claude-opus-5-5.svg)
+
+### Sonnet 5
+
+![Mudança em tokens totais por tarefa, Sonnet 5: barras à esquerda do zero são tokens economizados](bench/results/chart-claude-sonnet-5.svg)
+
+### Haiku 4.5
+
+![Mudança em tokens totais por tarefa, Haiku 4.5: barras à esquerda do zero são tokens economizados](bench/results/chart-claude-haiku-4-5.svg)
+
+As tabelas por tarefa, com a dispersão e a taxa de sucesso, estão em
+[`bench/results/report.md`](bench/results/report.md) e na
+[seção Benchmark do README em inglês](README.md#benchmark) (são geradas em
+inglês, por isso não as duplico aqui e assim ficam sempre atualizadas). As
+execuções brutas, uma linha por execução, estão em
+[`bench/results/`](bench/results).
 
 ### Como é medido
 
@@ -96,57 +127,149 @@ Cada **execução** é um agente resolvendo uma tarefa do zero:
    [commander.js](https://github.com/tj/commander.js)) num commit fixo, dentro de
    um diretório temporário novo.
 2. Instalar as dependências antes de o agente começar, para que os logs de
-   instalação não contem para nenhum dos lados.
-3. Rodar `claude -p "<tarefa>"` com o modelo escolhido, até 40 turnos. A
-   *baseline* usa o Claude Code puro; o *thinwindow* usa o mesmo mais este
-   plugin. Nada mais muda: sem servidores MCP, sem configurações de usuário.
-4. Rodar a verificação oculta da tarefa (um teste ou script que o agente nunca
-   vê). Código de saída 0 é sucesso.
+   instalação não sejam cobrados de nenhum dos lados.
+3. Rodar `claude -p "<tarefa>"` com o modelo escolhido, com teto de 40 turnos. A
+   *baseline* usa o Claude Code puro; o *ThinWindow* usa o mesmo mais este
+   plugin. Nada mais muda: sem servidores MCP, sem configurações de usuário, sem
+   memória entre execuções.
+4. Rodar a verificação oculta da tarefa: um teste ou script que o agente nunca
+   vê. Código de saída 0 é sucesso.
 5. Registrar tokens (entrada, escritas e leituras de cache, saída, subagentes
-   incluídos), custo, turnos e tempo a partir do JSON que o próprio Claude Code
-   devolve.
+   incluídos), custo, turnos e tempo a partir do JSON do próprio Claude Code,
+   mais o rastro completo de chamadas de ferramentas.
 
 As 8 tarefas são a mistura do dia a dia: correções de bugs com um teste que
 falha, uma funcionalidade pequena, uma renomeação entre arquivos, uma
 refatoração, uma busca de configuração e "fazer o ano do copyright do rodapé se
-atualizar sozinho". Os arquivos das tarefas estão em
-[`bench/tasks/`](bench/tasks).
+atualizar sozinho". As definições estão em [`bench/tasks/`](bench/tasks).
 
-As execuções são sequenciais, uma de cada vez, então nunca disputam os limites de
-uso. O custo é o preço equivalente de API que o Claude Code informa; numa
+As execuções são sequenciais, uma de cada vez, então nunca disputam os limites
+de uso. O custo é o preço equivalente de API que o Claude Code informa; numa
 assinatura você paga em limites de uso, mas a proporção é a mesma.
 
-**Desconfie, e confira:**
+### Verifique em vez de acreditar
 
-- Cada execução é uma linha num arquivo JSONL em
-  [`bench/results/`](bench/results), com o modelo, a versão do Claude Code, o
-  commit do thinwindow e as contagens brutas de tokens.
-- As regras foram ajustadas nessas mesmas 8 tarefas. Sua economia em outros
-  trabalhos pode ser menor ou maior.
+- Cada execução é uma linha de JSONL em [`bench/results/`](bench/results), com o
+  modelo, a versão do Claude Code, o commit do ThinWindow, as contagens brutas
+  de tokens e o rastro de ferramentas. Nenhum número deste README é escrito à
+  mão.
+- As regras foram ajustadas nessas mesmas 8 tarefas, em duas bibliotecas de
+  parsing de argumentos de linha de comando, em JavaScript e Python. É uma fatia
+  estreita do software que existe. Sua economia em outros trabalhos será
+  diferente.
 - As amostras são pequenas. Agentes são barulhentos: a mesma tarefa pode levar 4
   turnos numa vez e 15 na seguinte, por isso as tabelas mostram medianas e a
-  faixa por tarefa.
-- Rode você mesmo (usa a sua própria sessão do Claude Code e os seus limites):
+  faixa por tarefa, e não uma única média de capa.
+- Rode contra a sua própria conta e os seus próprios limites:
 
   ```
-  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
-  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
+  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --dry-run
+  node bench/run.mjs --condition baseline,ThinWindow --reps 3 --model sonnet --max-cost 10
   node bench/report.mjs
   ```
 
   Todas as opções estão em [bench/README.md](bench/README.md).
 
+### Onde ainda há margem
+
+Estes números são uma medição atual, não um teto. Eles vão se mover conforme
+mudarem as regras, os modelos e o próprio Claude Code, e a intenção é continuar
+melhorando e republicar os arquivos brutos a cada vez.
+
+Duas coisas aparecem nos dados:
+
+- **Nem toda tarefa melhora.** No Sonnet 5, três das oito tarefas custam mais
+  com o ThinWindow do que sem ele. Só neutralizar essas regressões — sem
+  economizar um token a mais em nenhum outro lugar — levaria o Sonnet de −11,6%
+  para cerca de −17,5%, e o Opus de −15,8% para cerca de −17,7%. A margem de
+  curto prazo está mais em não piorar as tarefas curtas do que em espremer as
+  longas.
+- **Os turnos são o fator inexplorado.** Como o custo é aproximadamente contexto
+  × turnos, um turno economizado vale tanto quanto uma leitura grande evitada. O
+  Opus usou 12,9% menos turnos aqui e mostra o maior corte de custo; o Sonnet
+  usou 1,6% menos e mostra o menor. Uma tentativa anterior de regras explícitas
+  de "use menos turnos" piorou o Sonnet de forma mensurável e foi revertida, em
+  vez de mantida e silenciosamente excluída: esse experimento revertido continua
+  no histórico.
+
+## Contribuindo
+
+Este é exatamente o tipo de projeto que melhora com a carga de trabalho de
+outras pessoas, porque os limites acima são os limites da amostra de *uma
+pessoa só*.
+
+O mais útil, mais ou menos em ordem:
+
+1. **Resultados de benchmark com a sua stack.** Uma tarefa nova em
+   [`bench/tasks/`](bench/tasks) — outra linguagem, um monorepo, um framework
+   com muito código gerado — vale mais que uma opinião sobre as regras.
+2. **Uma regressão reproduzível.** Um caso em que o ThinWindow custe mais que a
+   baseline, com o JSONL que comprove, é um presente: as regressões acima são o
+   caminho mais claro para números melhores.
+3. **Propostas de regras e hooks**, com a medição que as justifique. As regras
+   são testadas contra o benchmark, não aceitas por soarem plausíveis; o arquivo
+   de regras ainda tem um orçamento de tokens que a CI faz cumprir.
+
+O fluxo está em [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Escopo, limitações e isenção de responsabilidade
+
+Isto começou como uma ferramenta pessoal. Eu a construí para baratear o meu
+próprio fluxo de trabalho, e publiquei porque as medições podem ser úteis para
+outra pessoa — não porque seja um produto acabado com um contrato de suporte por
+trás.
+
+Leia os números com isso em mente:
+
+- **O benchmark é estreito e escolhido por mim.** Oito tarefas, dois
+  repositórios, três modelos, algumas repetições cada, tudo escolhido por mim,
+  com regras ajustadas contra essas mesmas tarefas. Dá para mostrar uma direção;
+  não dá para prometer uma porcentagem a você. Está publicado por inteiro, com
+  os arquivos brutos, justamente para que você julgue o quanto generaliza em vez
+  de acreditar num número de capa.
+- **A contabilidade de tokens é volátil por natureza.** O que entra numa janela
+  de contexto depende da versão do modelo, do arcabouço do agente e do seu
+  prompt de sistema, da taxa de acerto de cache, de quais ferramentas estão
+  habilitadas, dos servidores MCP, do tamanho do repositório e de como a tarefa
+  se desenrola naquele dia. Qualquer um desses fatores pode mover o resultado
+  mais que o efeito medido aqui. Duas execuções idênticas da mesma tarefa podem
+  divergir bastante; as medianas e faixas das tabelas existem para tornar isso
+  visível, não para escondê-lo.
+- **Os resultados envelhecem.** Foram medidos com uma versão específica do
+  Claude Code e snapshots específicos dos modelos, e ambos mudam com frequência.
+  Serão medidos de novo, em vez de ficarem de pé silenciosamente.
+- **Sem garantia.** Este software é fornecido "como está" sob a
+  [licença MIT](LICENSE), sem garantia de nenhum tipo. Você é responsável pelo
+  que roda no seu ambiente e pelo que gasta. Os hooks são projetados para falhar
+  abertos e nunca bloquear uma chamada, e os testes cobrem esse comportamento,
+  mas nenhuma quantidade de testes é uma garantia: revise o código, rode os
+  testes e experimente num branch antes de confiar trabalho real a ele.
+- **Não substitui um bom prompt.** Ele remove desperdício; não deixa o agente
+  mais inteligente.
+
 ## Perguntas frequentes
 
-**Isso deixa meu agente mais burro?** A taxa de sucesso em cada tabela mede
-exatamente isso. Uma economia que faz a tarefa falhar não conta como economia.
+**Isso deixa meu agente pior na tarefa?** É o que a coluna de sucesso em cada
+tabela mede. Uma economia que faz a tarefa falhar não é economia. Nos três
+modelos o sucesso foi idêntico ao da baseline, exceto por uma única execução do
+Haiku, em que as duas condições já batiam no teto de 40 turnos.
 
-**Por que não simplesmente pedir ao agente para ser breve?** A saída é a parte
-barata. Uma resposta longa é paga uma vez; uma leitura longa é paga de novo a
-cada turno seguinte. O thinwindow também enxuga a saída, mas a maior parte da
-economia está do lado da entrada.
+**Por que não simplesmente pedir ao agente para ser breve?** Porque a saída é
+cerca de 1% da conta, como mostra a tabela do começo. Uma resposta longa é paga
+uma vez; uma leitura longa é paga de novo a cada turno seguinte. O ThinWindow
+também enxuga a saída, mas essa é a metade pequena do problema.
 
-**Ele envia dados para algum lugar?** Não. Nada sai da sua máquina.
+**Ele envia meu código ou telemetria para algum lugar?** Não. Não há código de
+rede neste projeto: sem analytics, sem relatórios de erro, sem "estatísticas
+anônimas de uso", sem checagem de licença ou de atualização. Os hooks são
+scripts locais de Node que leem a chamada da ferramenta e devolvem uma decisão;
+os logs truncados vão para um arquivo temporário no seu próprio disco. A única
+coisa que sai da sua máquina é o que o seu agente já estava mandando para o seu
+provedor de modelos — e o objetivo desta ferramenta é que isso seja menor.
+
+**Funciona fora do Claude Code?** As regras sim, via Agent Skills ou
+`AGENTS.md`. Os hooks — que fazem o trabalho pesado — são exclusivos do Claude
+Code, porque dependem da API de hooks de chamadas de ferramenta dele.
 
 ## Licença
 
