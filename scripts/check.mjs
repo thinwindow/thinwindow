@@ -5,13 +5,14 @@
 //   - SKILL.md frontmatter (Agent Skills fields)
 //   - the token budget of rules/thinwindow.md
 //   - the rules copies in SKILL.md and adapters/AGENTS.md are in sync
-//   - the benchmark numbers in the READMEs and report.json match bench/results/
+//   - the benchmark numbers in the READMEs, the website and report.json
+//     match bench/results/, and the ranges quoted in prose still hold
 //   - .github/labels.json is valid and defines every label the issue
 //     templates and the stale workflow use
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { outOfDate as benchDocsOutOfDate } from '../bench/docs.mjs';
+import { outOfDate as benchDocsOutOfDate, staleRanges } from '../bench/docs.mjs';
 import { outOfDate } from './sync-rules.mjs';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -266,6 +267,7 @@ export function runChecks(root = ROOT) {
   if (root === ROOT) {
     for (const t of outOfDate()) errors.push(`${rel(t)}: rules block out of date (run npm run sync-rules)`);
     for (const t of benchDocsOutOfDate()) errors.push(`${rel(t)}: benchmark numbers out of date (run npm run bench:docs)`);
+    for (const problem of staleRanges()) errors.push(`${problem} (the data moved; update the sentence)`);
   }
 
   for (const bin of ['bin/thinwindow-run', 'skills/thinwindow/scripts/thinwindow-run.mjs']) {
