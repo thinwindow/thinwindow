@@ -56,6 +56,13 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
 
 - [Conventional Commits](https://www.conventionalcommits.org) in English:
   `feat(hooks): …`, `fix(run): …`, `docs: …`, `test: …`, `ci: …`.
+- Titles say what is true once the change lands, in the present tense and as
+  concretely as the change allows. A PR title is a Conventional Commit:
+  `fix(hooks): short concatenations reach the agent whole`, not
+  `fix(hooks): update the bash guard`. An issue title states the symptom as
+  observed: `Eight task/model pairs still cost more with ThinWindow than
+  without it`, not `Benchmark regressions`. Any number in a title or a body
+  comes from `bench/`.
 - One topic per PR. Fill in the PR template checklist.
 - Labels live in `.github/labels.json`. The Labels workflow creates or
   updates them on GitHub when that file changes on `main`; add a label there
