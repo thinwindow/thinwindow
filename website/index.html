@@ -515,7 +515,7 @@ node bench/report.mjs</code></pre>
         <h2 id="faq-h"><span class="num">13</span>FAQ</h2>
         <details>
           <summary>Does it make my agent worse at the task?</summary>
-          <p>That is what the success column measures; a saving that fails the task is not a saving. Across the three models, success was identical to the baseline except for a single Haiku run, on a task where both conditions were already hitting the 40-turn cap.</p>
+          <p>That is what the success column measures; a saving that fails the task is not a saving. Across the three models, success was identical to the baseline except on one Haiku task, commander-rename-display-width: 1/2 without ThinWindow, 0/2 with it. Haiku struggles there either way: three of its four runs failed, and every run took 35 turns or more.</p>
         </details>
         <details>
           <summary>Why not just tell the agent to be brief?</summary>

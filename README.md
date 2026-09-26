@@ -222,9 +222,10 @@ usage limits instead, but the ratio is the same.
 - The rules were tuned on these same 8 tasks, on two CLI-argument-parsing
   libraries, in JavaScript and Python. That is a narrow slice of software. Your
   savings on other work will differ.
-- Samples are small. Agents are noisy: the same task can take 4 turns once and
-  15 the next, which is why the tables report medians and per-task spread rather
-  than a single headline average.
+- Samples are small. Agents are noisy: the same task took 4 turns in one run and
+  9 in the next (commander-extract-utils on Sonnet 5, without ThinWindow), which
+  is why the tables report medians and per-task spread rather than a single
+  headline average.
 - Re-run it against your own account and your own limits:
 
   ```
@@ -312,8 +313,10 @@ Please read the numbers with that in mind:
 
 **Does it make my agent worse at the task?** That is what the success column in
 every table measures. A saving that fails the task is not a saving. Across the
-three models, success was identical to the baseline except for a single Haiku
-run, where both conditions were already hitting the 40-turn cap.
+three models, success was identical to the baseline except on one Haiku task,
+commander-rename-display-width: 1/2 without ThinWindow, 0/2 with it. Haiku
+struggles there either way: three of its four runs failed, and every run took 35
+turns or more.
 
 **Why not just tell the agent to be brief?** Because output is roughly 1% of the
 bill, as the table at the top of this README shows. A long answer is paid once;
