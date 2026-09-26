@@ -102,7 +102,8 @@ Turn it off at any time with `THINWINDOW=off`, or `"enabled": false` in
    - Re-reading an unchanged file that is already in context is refused.
    - Installs, builds, tests and lints run through `thinwindow-run`: the full
      log goes to a temp file, the agent sees the exit code, the tail and the
-     error lines.
+     error lines. A command that succeeds with 10 lines of output or fewer
+     comes back whole, with nothing added.
    - `cat` of huge files, lockfiles or minified files, `git log` without `-n`,
      `ls -R`, `tree` without `-L` and unbounded `find` get a cheaper
      replacement. Content `Grep` gets `head_limit: 100`.

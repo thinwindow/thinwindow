@@ -341,6 +341,6 @@ test('scope issues are fixed in place by default', () => {
   const both = decide('git diff && npm test');
   assert.equal(both.command, 'git diff --stat && thinwindow-run npm test');
   assert.match(both.context, /git diff --stat/);
-  assert.match(both.context, /thinwindow-run/);
+  assert.match(both.command, /thinwindow-run/);
   assert.equal(decide('sudo grep -rn foo .').action, 'deny');
 });

@@ -403,15 +403,11 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
     ];
     let rewritten = command;
     for (const e of edits.sort((a, b) => b.at - a.at)) rewritten = `${rewritten.slice(0, e.at)}${e.insert}${rewritten.slice(e.end ?? e.at)}`;
+    // thinwindow-run's own output says what it cut and where the full log is,
+    // so a noisy command needs no note; a short one comes back whole.
     const notes = [...scopeIssues.map((s) => s.note), ...truncations.map((t) => t.note)];
-    if (noisy.length > 0) {
-      notes.push(
-        `thinwindow ran ${noisy.map((h) => `\`${h.cmd}\``).join(', ')} through thinwindow-run, so the output is a summary: ` +
-          'exit code, the last lines, the error lines, and the path of the full log.',
-      );
-    }
     const kind = scopeIssues.length > 0 ? 'scope' : noisy.length > 0 ? 'noisy' : 'uncap';
-    return { action: 'rewrite', kind, command: rewritten, context: notes.join(' ') };
+    return { action: 'rewrite', kind, command: rewritten, context: notes.join(' ') || undefined };
   }
 
   if (scopeIssues.length > 0) {
