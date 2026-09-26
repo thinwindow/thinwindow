@@ -13,6 +13,7 @@
   <a href="README.md">English</a> · <b>Español</b> · <a href="README.pt-BR.md">Português</a>
 </p>
 
+<!-- RESULTS:START -->
 | Modelo | Tokens | Costo | Éxito base → ThinWindow | Corridas |
 | --- | ---: | ---: | :---: | ---: |
 | Opus 5.5 | **−15,8%** | **−19,4%** | **16/16** → **16/16** | 32 |
@@ -22,6 +23,7 @@
 Las mismas 8 tareas, 112 corridas, un agente por corrida, sin descartar
 ninguna: todas las que se registraron están en la tabla. El detalle por tarea y
 los datos crudos están en [Benchmark](#benchmark).
+<!-- RESULTS:END -->
 
 ## Por qué lo que se paga es el contexto
 
@@ -34,15 +36,17 @@ reenvía en cada turno posterior. El costo de una sesión se parece más a
 tokens ≈ tamaño del contexto × turnos
 ```
 
-que al largo de la respuesta. En las corridas medidas acá, **entre el 87% y el
-96% de los tokens facturados fueron lecturas de caché** — contexto reenviado,
+que al largo de la respuesta. En las corridas base medidas acá, **entre el 87% y
+el 96% de los tokens facturados fueron lecturas de caché** — contexto reenviado,
 turno tras turno — frente a entre el 0,6% y el 1,9% de la salida del propio agente:
 
+<!-- CACHE:START -->
 | Modelo | Lecturas de caché | Escrituras de caché | Salida |
 | --- | ---: | ---: | ---: |
 | Opus 5.5 | 92,0% | 6,6% | 1,3% |
 | Sonnet 5 | 87,1% | 11,0% | 1,9% |
 | Haiku 4.5 | 96,4% | 2,9% | 0,6% |
+<!-- CACHE:END -->
 
 Esa es toda la tesis. Pedirle al agente que sea breve toca la columna del ~1%.
 Evitar que se traiga un archivo de 2.000 líneas al contexto en el turno 3 toca
@@ -105,6 +109,7 @@ Sin dependencias, sin telemetría, Node 18+. Detalles y todas las opciones:
 
 ## Benchmark
 
+<!-- BENCH:START -->
 Tres modelos, 8 tareas, 112 corridas. Los gráficos y las tablas los genera
 [`bench/report.mjs`](bench/report.mjs) a partir de los archivos crudos.
 
@@ -119,6 +124,7 @@ Tres modelos, 8 tareas, 112 corridas. Los gráficos y las tablas los genera
 ### Haiku 4.5
 
 ![Cambio en tokens totales por tarea, Haiku 4.5: las barras a la izquierda del cero son tokens ahorrados](bench/results/chart-claude-haiku-4-5.svg)
+<!-- BENCH:END -->
 
 Las tablas por tarea, con la dispersión y la tasa de éxito, están en
 [`bench/results/report.md`](bench/results/report.md) y en la

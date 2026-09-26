@@ -94,7 +94,7 @@ export function fmtTokens(n) {
   return String(Math.round(n));
 }
 
-function fmtUsd(n) {
+export function fmtUsd(n) {
   return Number.isFinite(n) ? `$${n.toFixed(2)}` : '–';
 }
 
@@ -104,15 +104,15 @@ export function fmtPct(p) {
   return p < 0 ? `−${s}` : p > 0 ? `+${s}` : '0.0%';
 }
 
-function fmtNum(n) {
+export function fmtNum(n) {
   return Number.isFinite(n) ? (Number.isInteger(n) ? String(n) : n.toFixed(1)) : '–';
 }
 
-function fmtSpread(s) {
+export function fmtSpread(s) {
   return s ? `${fmtTokens(s.min)}–${fmtTokens(s.max)}` : '–';
 }
 
-function successCell(s) {
+export function successCell(s) {
   return s.runs ? `${s.successes}/${s.runs}` : '–';
 }
 

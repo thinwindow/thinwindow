@@ -18,7 +18,8 @@
     "check": "node scripts/check.mjs",
     "sync-rules": "node scripts/sync-rules.mjs",
     "bench": "node bench/run.mjs",
-    "bench:report": "node bench/report.mjs",
+    "bench:report": "node bench/report.mjs && node bench/docs.mjs",
+    "bench:docs": "node bench/docs.mjs",
     "bench:validate": "node bench/validate-tasks.mjs"
   }
 }

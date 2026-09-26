@@ -13,6 +13,7 @@
   <a href="README.md">English</a> · <a href="README.es.md">Español</a> · <b>Português</b>
 </p>
 
+<!-- RESULTS:START -->
 | Modelo | Tokens | Custo | Sucesso base → ThinWindow | Execuções |
 | --- | ---: | ---: | :---: | ---: |
 | Opus 5.5 | **−15,8%** | **−19,4%** | **16/16** → **16/16** | 32 |
@@ -22,6 +23,7 @@
 As mesmas 8 tarefas, 112 execuções, um agente por execução, sem descartar
 nenhuma: tudo o que foi registrado está na tabela. O detalhe por tarefa e os
 dados brutos estão em [Benchmark](#benchmark).
+<!-- RESULTS:END -->
 
 ## Por que o contexto pesa na conta
 
@@ -34,15 +36,17 @@ turno seguinte. O custo de uma sessão se parece mais com
 tokens ≈ tamanho do contexto × turnos
 ```
 
-do que com o tamanho da resposta. Nas execuções medidas aqui, **de 87% a 96% de
-todos os tokens cobrados foram leituras de cache** — contexto reenviado, turno
+do que com o tamanho da resposta. Nas execuções base medidas aqui, **de 87% a 96%
+de todos os tokens cobrados foram leituras de cache** — contexto reenviado, turno
 após turno — contra 0,6% a 1,9% da saída do próprio agente:
 
+<!-- CACHE:START -->
 | Modelo | Leituras de cache | Escritas de cache | Saída |
 | --- | ---: | ---: | ---: |
 | Opus 5.5 | 92,0% | 6,6% | 1,3% |
 | Sonnet 5 | 87,1% | 11,0% | 1,9% |
 | Haiku 4.5 | 96,4% | 2,9% | 0,6% |
+<!-- CACHE:END -->
 
 Essa é toda a tese. Pedir brevidade ao agente mexe na coluna de ~1%. Impedir
 que ele puxe um arquivo de 2.000 linhas para o contexto no turno 3 mexe na de
@@ -105,6 +109,7 @@ Sem dependências, sem telemetria, Node 18+. Detalhes e todas as opções:
 
 ## Benchmark
 
+<!-- BENCH:START -->
 Três modelos, 8 tarefas, 112 execuções. Os gráficos e as tabelas são gerados por
 [`bench/report.mjs`](bench/report.mjs) a partir dos arquivos brutos.
 
@@ -119,6 +124,7 @@ Três modelos, 8 tarefas, 112 execuções. Os gráficos e as tabelas são gerado
 ### Haiku 4.5
 
 ![Mudança em tokens totais por tarefa, Haiku 4.5: barras à esquerda do zero são tokens economizados](bench/results/chart-claude-haiku-4-5.svg)
+<!-- BENCH:END -->
 
 As tabelas por tarefa, com a dispersão e a taxa de sucesso, estão em
 [`bench/results/report.md`](bench/results/report.md) e na

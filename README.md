@@ -36,15 +36,17 @@ every subsequent turn. The cost of a session is therefore closer to
 tokens ≈ context size × turns
 ```
 
-than to the length of the answer. In the runs measured here, **87% to 96% of all
-tokens billed were cache reads** — context being re-sent, turn after turn —
+than to the length of the answer. In the baseline runs measured here, **87% to 96%
+of all tokens billed were cache reads** — context being re-sent, turn after turn —
 against 0.6% to 1.9% for the agent's own output:
 
+<!-- CACHE:START -->
 | Model | Cache reads | Cache writes | Output |
 | --- | ---: | ---: | ---: |
 | Opus 5.5 | 92.0% | 6.6% | 1.3% |
 | Sonnet 5 | 87.1% | 11.0% | 1.9% |
 | Haiku 4.5 | 96.4% | 2.9% | 0.6% |
+<!-- CACHE:END -->
 
 That is the whole thesis. Telling an agent to be brief touches the ~1% column.
 Stopping it from pulling a 2,000-line file into context on turn 3 touches the
