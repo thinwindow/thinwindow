@@ -96,7 +96,9 @@ Turn it off at any time with `THINWINDOW=off`, or `"enabled": false` in
      `ls -R`, `tree` without `-L` and unbounded `find` get a cheaper
      replacement. Content `Grep` gets `head_limit: 100`.
 3. **Fails open.** Any hook error lets the tool call through. Repeating a
-   refused call goes through too, so the agent can never get stuck.
+   refused read or noisy command lets it through too, and the few commands
+   that are always refused come with a replacement that works, so the agent
+   can never get stuck.
 
 The rules are enforced by hooks rather than trusted to the model, because a rule
 the agent can forget under pressure is not a rule. The hooks run on the tool

@@ -100,8 +100,9 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
   `head_limit: 100`.
 - **`bin/thinwindow-run`**: runs the command, saves the full stdout and stderr to
   a log in the OS temp dir (never inside the user's repo), prints the exit code,
-  the duration, the last 40 lines, up to 40 deduplicated lines that match
-  error/fail/warn/panic/exception, and the log path. Preserves the exit code.
+  the duration, the last 10 lines on success (on failure, the last 40 lines and
+  up to 40 deduplicated earlier lines that match error/fail/warn/panic/exception),
+  and the log path. Preserves the exit code.
 - State: one JSON file per session in the OS temp dir, keyed by `session_id`.
 - Config: `.thinwindow.json` in the project root, or `~/.thinwindow.json`, for
   thresholds, noisy-command patterns, an allowlist, `rewrite` and `enabled`.
