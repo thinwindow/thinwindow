@@ -16,6 +16,8 @@ Model `claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.282 · thinwi
 | commander-rename-display-width | 2.31M (2.26M–2.37M) | 1.32M (724k–1.92M) | −42.9% | $0.39 | $0.27 | −31.2% | 38 | 41 | 1/2 | 0/2 |
 | **Total** | **11.10M** | **8.54M** | **−23.0%** | **$2.06** | **$1.65** | **−20.2%** | 230.5 | 220.5 | **14/16** | **13/16** |
 
+Total tokens −23.0% (95% CI −36.0% to −10.8%); cost −20.2% (95% CI −30.5% to −10.9%).
+
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.
 
 ## claude-opus-5-5
@@ -34,6 +36,8 @@ Model `claude-opus-5-5` (requested as `opus`) · Claude Code 2.1.282 · thinwind
 | commander-rename-display-width | 122k (122k–122k) | 107k (92k–123k) | −11.9% | $0.14 | $0.13 | −6.0% | 4 | 3.5 | 2/2 | 2/2 |
 | **Total** | **2.10M** | **1.77M** | **−15.8%** | **$2.06** | **$1.66** | **−19.4%** | 77.5 | 67.5 | **16/16** | **16/16** |
 
+Total tokens −15.8% (95% CI −28.3% to +0.4%); cost −19.4% (95% CI −26.2% to −10.2%).
+
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.
 
 ## claude-sonnet-5
@@ -51,5 +55,7 @@ Model `claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · thinwi
 | commander-negate-default-order | 258k (203k–327k) | 205k (151k–278k) | −20.3% | $0.17 | $0.15 | −8.5% | 13 | 12 | 3/3 | 3/3 |
 | commander-rename-display-width | 74k (55k–75k) | 74k (55k–76k) | −0.3% | $0.06 | $0.06 | −1.0% | 4 | 4 | 3/3 | 3/3 |
 | **Total** | **1.19M** | **1.03M** | **−13.2%** | **$0.91** | **$0.83** | **−7.9%** | 62 | 62 | **24/24** | **24/24** |
+
+Total tokens −13.2% (95% CI −30.4% to +7.0%); cost −7.9% (95% CI −18.4% to +2.5%).
 
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.

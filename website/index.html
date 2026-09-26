@@ -107,8 +107,8 @@
         <div class="formula" role="img" aria-label="tokens roughly equal context size times turns">
           <span>tokens</span><span class="op">≈</span><span class="term ctx">context size</span><span class="op">×</span><span class="term turns">turns</span>
         </div>
-        <p>than to the length of the answer. In the benchmark runs, <strong>roughly 87% to 96% of all tokens billed were cache reads</strong>: context being re-sent, turn after turn. The agent's own output was under 2%.</p>
-        <p>That is the whole idea. Telling an agent to be brief touches the ~1% column. Stopping it from pulling a 2,000-line file into context on turn 3 touches the ~90% one, on every turn that follows.</p>
+        <p>than to the length of the answer. In the benchmark runs, <strong>roughly 87% to 96% of all tokens billed were cache reads</strong>: context being re-sent, turn after turn. The agent's own output was under 2% of tokens.</p>
+        <p>Priced, the picture shifts: a cache read costs a tenth of an input token or less, a cache write twice one, and output five times one, so output is 16–27% of the cost. Telling an agent to be brief touches that part. Stopping it from pulling a 2,000-line file into context on turn 3 touches the cache writes and reads, on every turn that follows.</p>
 
         <figure class="illustration">
           <div class="figure-box">
@@ -519,7 +519,7 @@ node bench/report.mjs</code></pre>
         </details>
         <details>
           <summary>Why not just tell the agent to be brief?</summary>
-          <p>Because output is under 2% of the bill. A long answer is paid once; a long read is paid again on every turn that follows it. ThinWindow trims output too, but that's the small half of the problem.</p>
+          <p>It helps, and the rules ask for it: output is under 2% of tokens, but at five times the input price it is 16–27% of the cost. The rest is context: a long answer is paid once, while a long read is written to the cache once and read again on every turn that follows it.</p>
         </details>
         <details>
           <summary>Does it send my code or telemetry anywhere?</summary>
