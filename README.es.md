@@ -106,8 +106,9 @@ Lo apagás cuando quieras con `THINWINDOW=off`, o con `"enabled": false` en
    - Se rechaza releer un archivo sin cambios que ya está en el contexto.
    - Instalaciones, builds, tests y linters pasan por `thinwindow-run`: el log
      completo va a un archivo temporal y el agente ve el código de salida, el
-     final del log y las líneas de error. Un comando que termina bien con 10
-     líneas de salida o menos vuelve entero, sin nada agregado.
+     final del log y las líneas de error. Cuando no habría nada que cortar (10
+     líneas o menos si termina bien, 40 si falla), la salida vuelve tal cual,
+     con el código de salida si el comando falló.
    - `cat` de archivos enormes, lockfiles o archivos minificados, `git log` sin
      `-n`, `ls -R`, `tree` sin `-L` y `find` sin límite reciben una alternativa más
      barata. El `Grep` por contenido recibe `head_limit: 100`.
