@@ -114,6 +114,18 @@ medians. Commit the raw JSONL together with the report.
 
 ## Publishing numbers
 
+After a benchmark run, `npm run bench:report` regenerates everything derived
+from `bench/results/*.jsonl`:
+
+- `report.md` and one SVG chart per model (`bench/report.mjs`);
+- `report.json` and the `RESULTS`, `CACHE` and `BENCH` blocks of the three
+  READMEs (`bench/docs.mjs`).
+
+No benchmark number is written by hand, and `npm run check` fails if any of
+them drifts from the raw runs. `report.json` is a stable, public summary:
+[ivanluna.dev](https://ivanluna.dev) reads it straight from this repository,
+so change its shape deliberately and bump its `schema` field when you do.
+
 - Report medians and the spread, and keep failed runs in.
 - State the model, the Claude Code version and the dates (the report
   header does).

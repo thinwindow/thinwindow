@@ -14,6 +14,7 @@ import { median, pctDelta } from '../bench/lib/stats.mjs';
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
+import { modelLabel, outOfDate as benchDocsOutOfDate, tokenMix } from '../bench/docs.mjs';
 import { tempDir } from './helpers.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -442,4 +443,25 @@ test('parseTrace lists tool calls from stream-json output', () => {
     JSON.stringify({ type: 'result', num_turns: 2 }),
   ].join('\n');
   assert.deepEqual(parseTrace(out), ['Read [1+120] /r/src/a.py', 'Bash pytest -q tests']);
+});
+
+test('modelLabel reads the family and version out of a model id', () => {
+  assert.deepEqual(modelLabel('claude-opus-5-5'), { family: 'opus', label: 'Opus 5.5' });
+  assert.deepEqual(modelLabel('claude-haiku-4-5'), { family: 'haiku', label: 'Haiku 4.5' });
+  assert.equal(modelLabel('claude-sonnet-5').label, 'Sonnet 5');
+});
+
+test('tokenMix is the share of billed tokens by kind', () => {
+  const mix = tokenMix([
+    { inputTokens: 0, cacheCreationTokens: 10, cacheReadTokens: 80, outputTokens: 10 },
+    { inputTokens: 0, cacheCreationTokens: 10, cacheReadTokens: 80, outputTokens: 10 },
+  ]);
+  assert.equal(mix.cacheRead, 80);
+  assert.equal(mix.output, 10);
+  assert.equal(tokenMix([]), null);
+});
+
+test('the README blocks and report.json match the committed runs', () => {
+  // The same check CI runs: every published number comes from bench/results/.
+  assert.deepEqual(benchDocsOutOfDate(), []);
 });

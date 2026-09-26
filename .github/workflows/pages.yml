@@ -11,6 +11,7 @@ on:
       - website/**
       - assets/**
       - bench/results/*.svg
+      - bench/results/report.json
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -36,7 +37,7 @@ jobs:
           mkdir -p _site/bench/results
           cp -R website/. _site/
           cp -R assets _site/assets
-          cp bench/results/*.svg _site/bench/results/
+          cp bench/results/*.svg bench/results/report.json _site/bench/results/
           sed -i -e 's#\.\./assets/#assets/#g' -e 's#\.\./bench/#bench/#g' _site/index.html
           if grep -n '\.\./' _site/index.html; then echo "unrewritten ../ path"; exit 1; fi
       - uses: actions/configure-pages@v5
