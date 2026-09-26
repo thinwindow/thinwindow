@@ -4,12 +4,12 @@
     "name": "Iván Luna",
     "url": "https://github.com/imprvhub"
   },
-  "description": "thinwindow: make coding agents read less.",
+  "description": "Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.",
   "plugins": [
     {
       "name": "thinwindow",
       "source": "./",
-      "description": "Makes coding agents read less: reading rules at session start, plus hooks that trim wasteful Read, Bash and Grep calls.",
+      "description": "Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.",
       "category": "productivity",
       "keywords": ["tokens", "context", "cost", "hooks"]
     }
