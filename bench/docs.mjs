@@ -385,6 +385,8 @@ export function rangeClaims(report) {
     ['README.es.md', [`entre el ${c0}% y el ${c1}%`, `entre un ${t0}% y un ${t1}%`, `entre el ${es(o0)}% y el ${es(o1)}%`]],
     ['README.pt-BR.md', [`de ${c0}% a ${c1}%`, `de ${t0}% a ${t1}%`, `${es(o0)}% a ${es(o1)}%`]],
     ['package.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
+    ['.claude-plugin/plugin.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
+    ['.claude-plugin/marketplace.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
     [SITE, [`${c0}–${c1}%`, `${t0}–${t1}%`, `${c0}% to ${c1}%`, `under ${Math.ceil(r.output[1])}%`]],
   ];
 }
