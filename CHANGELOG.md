@@ -6,6 +6,11 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-26
+
+Fixes the one Sonnet 5 regression the traces explained, and brings the docs
+in line with what 0.2.0 does.
+
 ### Fixed
 
 - A `| head` cap on `cat` of several files is dropped when the files add up to
@@ -16,6 +21,13 @@ project uses [Semantic Versioning](https://semver.org).
 - README and site: the FAQ's Haiku failure and the noise example now quote what
   the raw runs show, and the turns comparison no longer calls Opus 5.5's cost
   cut the largest (Haiku 4.5's is).
+- Docs: the READMEs, the skill and the manual test describe what 0.2.0 does
+  on retries, rewrites and `thinwindow-run`'s output, and the plugin and
+  marketplace manifests carry the project slogan (#8).
+
+### Changed
+
+- `CONTRIBUTING.md` sets one voice for issue and PR titles (#9).
 
 ## [0.2.0] - 2026-09-25
 
@@ -111,6 +123,7 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/thinwindow/thinwindow/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/thinwindow/thinwindow/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thinwindow/thinwindow/releases/tag/v0.1.0
