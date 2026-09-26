@@ -171,9 +171,10 @@ suscripción se paga en límites de uso, pero la proporción es la misma.
   parseo de argumentos de línea de comandos, en JavaScript y Python. Es una
   porción acotada del software que existe. Tu ahorro en otro trabajo va a ser
   distinto.
-- Las muestras son chicas. Los agentes varían mucho: la misma tarea puede tomar
-  4 turnos una vez y 15 la siguiente, por eso las tablas muestran medianas y el
-  rango por tarea, y no un único promedio de titular.
+- Las muestras son chicas. Los agentes varían mucho: la misma tarea tomó 4
+  turnos en una corrida y 9 en la siguiente (commander-extract-utils en Sonnet 5,
+  sin ThinWindow), por eso las tablas muestran medianas y el rango por tarea, y
+  no un único promedio de titular.
 - Correlo contra tu propia cuenta y tus propios límites:
 
   ```
@@ -264,8 +265,10 @@ Leé los números con eso en mente:
 
 **¿Hace que mi agente rinda peor?** Para eso está la columna de éxito en
 cada tabla. Un ahorro que hace fallar la tarea no es un ahorro. En los tres
-modelos el éxito fue idéntico a la baseline salvo por una sola corrida de Haiku,
-donde las dos condiciones ya estaban llegando al tope de 40 turnos.
+modelos el éxito fue idéntico a la baseline salvo en una tarea de Haiku,
+commander-rename-display-width: 1/2 sin ThinWindow, 0/2 con él. A Haiku le
+cuesta esa tarea de cualquier forma: fallaron tres de sus cuatro corridas, y
+todas tomaron 35 turnos o más.
 
 **¿Por qué no pedirle al agente que sea breve?** Porque la salida es cerca del
 1% de la factura, como muestra la tabla del principio. Una respuesta

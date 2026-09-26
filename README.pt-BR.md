@@ -172,9 +172,10 @@ assinatura você paga em limites de uso, mas a proporção é a mesma.
   parsing de argumentos de linha de comando, em JavaScript e Python. É uma fatia
   estreita do software que existe. Sua economia em outros trabalhos será
   diferente.
-- As amostras são pequenas. Agentes variam muito: a mesma tarefa pode levar 4
-  turnos numa vez e 15 na seguinte, por isso as tabelas mostram medianas e a
-  faixa por tarefa, e não uma única média de manchete.
+- As amostras são pequenas. Agentes variam muito: a mesma tarefa levou 4 turnos
+  em uma execução e 9 na seguinte (commander-extract-utils no Sonnet 5, sem o
+  ThinWindow), por isso as tabelas mostram medianas e a faixa por tarefa, e não
+  uma única média de manchete.
 - Rode contra a sua própria conta e os seus próprios limites:
 
   ```
@@ -266,8 +267,10 @@ Leia os números com isso em mente:
 
 **Isso deixa meu agente pior na tarefa?** É o que a coluna de sucesso em cada
 tabela mede. Uma economia que faz a tarefa falhar não é economia. Nos três
-modelos o sucesso foi idêntico ao da baseline, exceto por uma única execução do
-Haiku, em que as duas condições já batiam no teto de 40 turnos.
+modelos o sucesso foi idêntico ao da baseline, exceto em uma tarefa do Haiku,
+commander-rename-display-width: 1/2 sem o ThinWindow, 0/2 com ele. O Haiku tem
+dificuldade nessa tarefa de qualquer jeito: três das quatro execuções falharam,
+e todas levaram 35 turnos ou mais.
 
 **Por que não simplesmente pedir ao agente para ser breve?** Porque a saída é
 cerca de 1% da conta, como mostra a tabela do começo. Uma resposta longa é paga
