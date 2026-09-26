@@ -275,6 +275,7 @@
           "runs": 16,
           "successes": 16,
           "errors": 0,
+          "capped": 0,
           "tokens": 2098748.5,
           "cost": 2.0550887,
           "turns": 77.5
@@ -283,6 +284,7 @@
           "runs": 16,
           "successes": 16,
           "errors": 0,
+          "capped": 0,
           "tokens": 1766554,
           "cost": 1.6557521000000002,
           "turns": 67.5
@@ -290,9 +292,21 @@
         "tokensDelta": -15.828218578834004,
         "costDelta": -19.431599229755875,
         "turnsDelta": -12.903225806451612,
+        "tokensCI": [
+          -28.34789208342992,
+          0.3619362474863193
+        ],
+        "costCI": [
+          -26.232560807199484,
+          -10.230558143516596
+        ],
         "successful": {
           "pairedTasks": 8,
-          "tokensDelta": -15.828218578834004
+          "tokensDelta": -15.828218578834004,
+          "tokensCI": [
+            -28.34789208342992,
+            0.3619362474863193
+          ]
         },
         "regressingTasks": 3,
         "tokensDeltaNoRegressions": -17.651686231103916
@@ -571,6 +585,7 @@
           "runs": 24,
           "successes": 24,
           "errors": 0,
+          "capped": 0,
           "tokens": 1190253,
           "cost": 0.9054104000000002,
           "turns": 62
@@ -579,6 +594,7 @@
           "runs": 24,
           "successes": 24,
           "errors": 0,
+          "capped": 0,
           "tokens": 1033678,
           "cost": 0.8334928,
           "turns": 62
@@ -586,9 +602,21 @@
         "tokensDelta": -13.154766255577597,
         "costDelta": -7.943094093021255,
         "turnsDelta": 0,
+        "tokensCI": [
+          -30.410207519818208,
+          7.0331540438415825
+        ],
+        "costCI": [
+          -18.370572752297136,
+          2.483577807466192
+        ],
         "successful": {
           "pairedTasks": 8,
-          "tokensDelta": -13.154766255577597
+          "tokensDelta": -13.154766255577597,
+          "tokensCI": [
+            -30.410207519818208,
+            7.0331540438415825
+          ]
         },
         "regressingTasks": 3,
         "tokensDeltaNoRegressions": -17.45318012220931
@@ -866,6 +894,7 @@
           "runs": 16,
           "successes": 14,
           "errors": 0,
+          "capped": 7,
           "tokens": 11097800,
           "cost": 2.06217335,
           "turns": 230.5
@@ -874,6 +903,7 @@
           "runs": 16,
           "successes": 13,
           "errors": 0,
+          "capped": 3,
           "tokens": 8541987.5,
           "cost": 1.6463294,
           "turns": 220.5
@@ -881,9 +911,21 @@
         "tokensDelta": -23.029902322982934,
         "costDelta": -20.165324607652416,
         "turnsDelta": -4.3383947939262475,
+        "tokensCI": [
+          -35.99808204974998,
+          -10.844777578920214
+        ],
+        "costCI": [
+          -30.5237718739356,
+          -10.856433987719308
+        ],
         "successful": {
           "pairedTasks": 7,
-          "tokensDelta": -18.757500897977895
+          "tokensDelta": -18.757500897977895,
+          "tokensCI": [
+            -31.763547559858388,
+            -10.691915352809549
+          ]
         },
         "regressingTasks": 1,
         "tokensDeltaNoRegressions": -23.149534141902

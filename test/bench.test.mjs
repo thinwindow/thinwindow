@@ -10,7 +10,8 @@ import { buildClaudeArgs, claudeEnv, parseResult, parseTrace, ruleAbsolute } fro
 import { BENCH_DIR, FIXTURES_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../bench/lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from '../bench/lib/pricing.mjs';
 import { readResultFile, resultsPath } from '../bench/lib/results.mjs';
-import { median, pctDelta } from '../bench/lib/stats.mjs';
+import { bootstrapDelta, median, pctDelta } from '../bench/lib/stats.mjs';
+import { inlineChars, mechanisms, notReplayable, readChars } from '../bench/input-size.mjs';
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
@@ -401,7 +402,8 @@ test('report: medians, spread, deltas, totals and failures', () => {
   assert.equal(s.total.thinwindow.successes, 2);
   assert.equal(s.total.thinwindow.runs, 4);
   // Passing runs only: the failed 500-token run no longer pulls task a down.
-  assert.deepEqual(s.total.successful, { pairedTasks: 2, tokensDelta: -25 });
+  assert.equal(s.total.successful.pairedTasks, 2);
+  assert.equal(s.total.successful.tokensDelta, -25);
   const md = markdownReport([s]);
   assert.match(md, /\| a \| 2\.0k \(1\.0k–3\.0k\) \| 750 \(500–1\.0k\) \| −62\.5% \|/);
   assert.match(md, /\| \*\*Total\*\* \| \*\*12k\*\* \| \*\*8\.8k\*\* \| \*\*−27\.1%\*\* \|/);
@@ -493,4 +495,41 @@ test('headroom clamps every regressing task to its baseline', () => {
 
 test('the website blocks and the prose ranges match the committed runs', () => {
   assert.deepEqual(staleRanges(), []);
+});
+
+test('bootstrapDelta is seeded and brackets the change of a sum', () => {
+  const [lo, hi] = bootstrapDelta([[100, 90], [200, 180], [300, 270]]);
+  assert.ok(Math.abs(lo + 10) < 1e-9 && Math.abs(hi + 10) < 1e-9);
+  const spread = bootstrapDelta([[100, 50], [100, 150]]);
+  assert.deepEqual(spread, [-50, 50]);
+  assert.deepEqual(bootstrapDelta([[100, 50], [100, 150]]), spread);
+  assert.equal(bootstrapDelta([[1, 2]]), null);
+});
+
+test('the chart says when the interval includes zero and draws whiskers', () => {
+  const [s] = summarize([
+    rec('a', 'baseline', 1000),
+    rec('a', 'baseline', 3000),
+    rec('a', 'thinwindow', 2500),
+    rec('b', 'baseline', 1000),
+    rec('b', 'thinwindow', 900),
+  ]);
+  const svg = svgChart(s);
+  assert.match(svg, /includes zero/);
+  assert.match(svg, /class="whisk"/);
+  assert.match(svg, /class="arrow"/); // task a's range runs past +100%
+});
+
+test('input-size replays only calls that leave the clone alone', () => {
+  assert.equal(notReplayable('grep -in foo src | head -20'), null);
+  assert.equal(notReplayable('python -m pytest tests -q 2>&1 | tail -3'), null);
+  assert.equal(notReplayable("sed -i '' s/a/b/ x.js"), 'writes a file');
+  assert.equal(notReplayable('echo hi > out.txt'), 'writes a file');
+  assert.equal(notReplayable('git stash -q'), 'changes the repository');
+  assert.equal(notReplayable('python3 - <<EOF'), 'heredoc or script');
+  assert.equal(notReplayable('node scripts/x.js'), 'runs code');
+  assert.equal(readChars('a\nbb\nccc\n', 2, 1), 5);
+  assert.equal(inlineChars(40000, 0), 2120);
+  assert.equal(inlineChars(40000, 1), 10000);
+  assert.deepEqual(mechanisms('thinwindow ran `npm test` through thinwindow-run, so the output is a summary'), ['command run through thinwindow-run']);
 });
