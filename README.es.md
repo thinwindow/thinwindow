@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>Menos en la ventana. Menos en la factura.</strong><br>
-  La mayoría de los tokens de tu agente son relecturas: entre el 87% y el 96% es contexto que se reenvía en cada turno. ThinWindow es a la vez un plugin de Claude Code y un Agent Skill, y reduce ese contexto: entre un 13% y un 23% menos de tokens, medido en Claude Code con tres modelos.
+  Tu agente paga su contexto dos veces: una para guardarlo en caché y otra en cada turno que lo vuelve a leer. Solo las relecturas son entre el 87% y el 96% de los tokens; los dos pagos juntos, entre el 73% y el 84% de la factura. ThinWindow es un plugin de Claude Code y un Agent Skill que reduce ese contexto: entre un 13% y un 19% menos de tokens, medido en Claude Code con tres modelos, en ocho tareas de dos repositorios de Python y JavaScript.
 </p>
 
 <p align="center">
@@ -27,6 +27,8 @@ ninguna: todas las que se registraron están en la tabla, salvo las que reemplaz
 una versión posterior del código en la misma tarea, que se guardan en
 [`bench/results/archive/`](bench/results/archive). El detalle por tarea y los
 datos crudos están en [Benchmark](#benchmark).
+
+La cifra de arriba, entre un 13% y un 19%, cuenta solo las corridas que pasaron su verificación oculta. En Haiku 4.5 eso da −18,8% sobre las 7 tareas en las que ambas condiciones tienen una corrida aprobada, frente a −23,0% sobre las 8. Opus 5.5 y Sonnet 5 pasaron todas las corridas.
 <!-- RESULTS:END -->
 
 ## Por qué lo que se paga es el contexto
