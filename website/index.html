@@ -21,7 +21,7 @@
   <aside class="sidebar">
     <a class="brand" href="#overview">
       <img src="../assets/icon.iconset/icon_32x32@2x.png" alt="" width="32" height="32">
-      <span>ThinWindow <small>docs · v0.2.0</small></span>
+      <span>ThinWindow <small>docs · v0.2.1</small></span>
     </a>
     <nav aria-label="Documentation">
       <div class="nav-group">
@@ -474,7 +474,7 @@ node bench/report.mjs</code></pre>
         <h2 id="status-h"><span class="num">11</span>Project status</h2>
         <div class="table-wrap"><table>
           <tbody>
-            <tr><td>Version</td><td><code>0.2.0</code>, the first measured release. <code>0.1.0</code> was the first complete build, without benchmark results. The benchmark runs record the plugin version as <code>0.1.0</code>, because the manifest was bumped only at release; each run's commit hash identifies the exact code.</td></tr>
+            <tr><td>Version</td><td><code>0.2.1</code>, which keeps short concatenations whole (<a href="https://github.com/thinwindow/thinwindow/issues/7">#7</a>). <code>0.2.0</code> was the first measured release, and <code>0.1.0</code> the first complete build, without benchmark results. Each run records the manifest version it ran with: 109 runs record <code>0.1.0</code>, because the manifest was bumped only at release, and the three re-measured runs record <code>0.2.0</code>. Each run's commit hash identifies the exact code.</td></tr>
             <tr><td>Built</td><td>Rules, Agent Skill, <code>AGENTS.md</code> snippet, Claude Code plugin with <code>SessionStart</code>, <code>Read</code>, <code>Bash</code> and <code>Grep</code> hooks, <code>thinwindow-run</code>, configuration, tests and CI on macOS, Linux and Windows (Node 18 and 22).</td></tr>
             <!-- MEASURED:START -->
             <tr><td>Measured</td><td>Three models, 112 runs, as above. The launch target (≥25% fewer tokens at equal success) is not met yet.</td></tr>
