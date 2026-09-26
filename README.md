@@ -109,6 +109,20 @@ call, before the result reaches the context, so enforcing them costs no turn.
 No dependencies, no telemetry, Node 18+. Details and every option:
 [docs/configuration.md](docs/configuration.md).
 
+### What it reads, writes and sends
+
+- **Reads:** the tool call Claude Code passes to the hooks (a file path, a
+  command or a search pattern); the line count and an outline of files the
+  agent is about to read or print; its settings from `.thinwindow.json` in the
+  project and in your home directory; and the environment variables
+  `THINWINDOW`, `THINWINDOW_DEBUG` and `CLAUDE_PROJECT_DIR`. It reads no
+  credentials.
+- **Writes:** only to your operating system's temp directory: one small JSON
+  file per session (which files and ranges were read, recent refusals, and
+  counts of what the hooks did) and the full log of each command run through
+  `thinwindow-run`. Both are deleted after 7 days.
+- **Sends:** nothing. There is no network code.
+
 ## Benchmark
 
 <!-- BENCH:START -->

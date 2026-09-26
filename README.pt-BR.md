@@ -112,6 +112,20 @@ não custa um turno.
 Sem dependências, sem telemetria, Node 18+. Detalhes e todas as opções:
 [docs/configuration.md](docs/configuration.md).
 
+### O que lê, o que escreve e o que envia
+
+- **Lê:** a chamada de ferramenta que o Claude Code passa aos hooks (um
+  caminho, um comando ou um padrão de busca); o número de linhas e um índice
+  dos arquivos que o agente vai ler ou imprimir; suas configurações em
+  `.thinwindow.json`, no projeto e na sua pasta de usuário; e as variáveis de
+  ambiente `THINWINDOW`, `THINWINDOW_DEBUG` e `CLAUDE_PROJECT_DIR`. Não lê
+  credenciais.
+- **Escreve:** só no diretório temporário do sistema operacional: um JSON
+  pequeno por sessão (quais arquivos e intervalos foram lidos, as recusas
+  recentes e a contagem do que os hooks fizeram) e o log completo de cada
+  comando executado pelo `thinwindow-run`. Os dois são apagados após 7 dias.
+- **Envia:** nada. Não há código de rede.
+
 ## Benchmark
 
 <!-- BENCH:START -->
