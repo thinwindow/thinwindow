@@ -98,8 +98,9 @@ Desligue quando quiser com `THINWINDOW=off`, ou com `"enabled": false` no
      `-n`, `ls -R`, `tree` sem `-L` e `find` sem limite recebem uma alternativa
      mais barata. O `Grep` por conteúdo recebe `head_limit: 100`.
 3. **Falha em modo aberto.** Qualquer erro de hook deixa a chamada passar.
-   Repetir uma chamada recusada também a deixa passar, então o agente nunca fica
-   travado.
+   Repetir uma leitura ou um comando ruidoso recusados também os deixa passar,
+   e os poucos comandos sempre recusados vêm com um substituto que funciona,
+   então o agente nunca fica travado.
 
 As regras são garantidas pelos hooks em vez de ficarem a cargo do modelo, porque uma
 regra que o agente pode esquecer sob pressão não é uma regra. Os hooks rodam na
