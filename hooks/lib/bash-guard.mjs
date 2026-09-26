@@ -1,9 +1,9 @@
 // PreToolUse guard for the Bash tool.
 // Bash input: { command, description?, timeout?, run_in_background? }
 // https://code.claude.com/docs/en/hooks#bash
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, parse as parsePath, resolve } from 'node:path';
+import { basename, dirname, join, parse as parsePath, resolve } from 'node:path';
 import { countLines, isBinary, isLockfile, isMinified } from './files.mjs';
 import { displayPath, isAllowlistedPath } from './read-guard.mjs';
 import { baseName, commandWords, parseShell } from './shell.mjs';
@@ -281,6 +281,79 @@ function findScopeIssues(parsed, ctx) {
   return hits;
 }
 
+// Lines a `head` stage keeps: head, head -60, head -n 60, head -n60, head --lines=60.
+function headLines(argv) {
+  if (baseName(argv[0] || '') !== 'head') return null;
+  const args = argv.slice(1).join(' ');
+  if (args === '') return 10;
+  const m = /^(?:-n ?|--lines[= ]|-)(\d+)$/.exec(args);
+  return m ? Number(m[1]) : null;
+}
+
+// The files a cat operand names: the path itself, or what a * or ? in its
+// last segment matches. null when the shell would do more than that
+// (variables, ~, braces, brackets, a glob in a directory): the hook can't be
+// sure what would be read.
+function expandOperand(w, cwd) {
+  const t = w.text;
+  if (w.quoted || !isDynamic(t)) return [resolve(cwd, t)];
+  const dir = dirname(t);
+  const base = basename(t);
+  if (/[[$`{~]/.test(t) || /[*?]/.test(dir)) return null;
+  const re = new RegExp(`^${base.replace(/[.+^$(){}|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.')}$`);
+  let names;
+  try {
+    names = readdirSync(resolve(cwd, dir));
+  } catch {
+    return null;
+  }
+  const hits = names.filter((n) => re.test(n) && (base.startsWith('.') || !n.startsWith('.')));
+  return hits.length ? hits.map((n) => resolve(cwd, dir, n)) : null;
+}
+
+// `cat a b | head -n N` over files that are short in total. The first N lines
+// of a concatenation are nobody's intent: the cap can only drop whole files,
+// which the agent then spends a turn fetching, and a turn re-sends the whole
+// context. (On Sonnet 5, every ThinWindow run of commander-ci-config did
+// `cat .github/workflows/*.yml | head -60`, which cut the one workflow the
+// task asked about, out of 89 lines in all.) Returns edits that drop the head
+// stage when the files add up to more than N lines but at most maxReadLines.
+function findShortTruncations(parsed, ctx) {
+  const hits = [];
+  for (const p of parsed.pipelines) {
+    if (p.background || p.stages.length !== 2 || p.stages[1].redirects.length > 0) continue;
+    const n = headLines(words(p.stages[1]));
+    const cw = commandWords(p.stages[0]).words;
+    if (n === null || cw.length === 0 || baseName(cw[0].text) !== 'cat') continue;
+    const operands = cw.slice(1).filter((w) => !w.text.startsWith('-')).map((w) => expandOperand(w, ctx.cwd));
+    if (operands.some((o) => o === null)) continue;
+    const files = operands.flat();
+    if (files.length < 2) continue;
+    let total = 0;
+    for (const f of files) {
+      let st;
+      try {
+        st = statSync(f);
+      } catch {
+        st = null;
+      }
+      if (!st?.isFile() || isLockfile(f) || isMinified(f) || isBinary(f)) {
+        total = Infinity;
+        break;
+      }
+      total += countLines(f);
+    }
+    if (total <= n || total > ctx.config.maxReadLines) continue;
+    const at = ctx.source.slice(0, p.stages[0].end).trimEnd().length;
+    const cut = ctx.source.slice(at, p.stages[1].end).trim();
+    hits.push({
+      edits: [{ at, end: p.stages[1].end, insert: '' }],
+      note: `thinwindow dropped \`${cut}\`: the ${files.length} files are only ${total} lines in all, and cutting them would drop whole files.`,
+    });
+  }
+  return hits;
+}
+
 // Decides one Bash call. Mutates `state` for soft blocks.
 // Returns { action: 'allow' | 'deny' | 'rewrite', kind, reason?, command? }.
 export function checkBash({ input, config, state, projectDir, now = Date.now(), home }) {
@@ -319,19 +392,26 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
   // rewritten.
   const scopeIssues = findScopeIssues(parsed, ctx);
   const noisy = findNoisy(parsed, ctx);
+  // Only rewrite mode lifts a cap: a soft block would cost the turn it saves.
+  const truncations = config.rewrite ? findShortTruncations(parsed, ctx) : [];
   const privileged = [...scopeIssues, ...noisy].some((h) => h.wrappers.includes('sudo') || h.wrappers.includes('doas'));
-  if (config.rewrite && scopeIssues.length + noisy.length > 0 && !privileged) {
-    const edits = [...scopeIssues.flatMap((s) => s.edits), ...noisy.map((h) => ({ at: h.cmdStart, insert: 'thinwindow-run ' }))];
+  if (config.rewrite && scopeIssues.length + noisy.length + truncations.length > 0 && !privileged) {
+    const edits = [
+      ...scopeIssues.flatMap((s) => s.edits),
+      ...truncations.flatMap((t) => t.edits),
+      ...noisy.map((h) => ({ at: h.cmdStart, insert: 'thinwindow-run ' })),
+    ];
     let rewritten = command;
-    for (const e of edits.sort((a, b) => b.at - a.at)) rewritten = `${rewritten.slice(0, e.at)}${e.insert}${rewritten.slice(e.at)}`;
-    const notes = scopeIssues.map((s) => s.note);
+    for (const e of edits.sort((a, b) => b.at - a.at)) rewritten = `${rewritten.slice(0, e.at)}${e.insert}${rewritten.slice(e.end ?? e.at)}`;
+    const notes = [...scopeIssues.map((s) => s.note), ...truncations.map((t) => t.note)];
     if (noisy.length > 0) {
       notes.push(
         `thinwindow ran ${noisy.map((h) => `\`${h.cmd}\``).join(', ')} through thinwindow-run, so the output is a summary: ` +
           'exit code, the last lines, the error lines, and the path of the full log.',
       );
     }
-    return { action: 'rewrite', kind: scopeIssues.length > 0 ? 'scope' : 'noisy', command: rewritten, context: notes.join(' ') };
+    const kind = scopeIssues.length > 0 ? 'scope' : noisy.length > 0 ? 'noisy' : 'uncap';
+    return { action: 'rewrite', kind, command: rewritten, context: notes.join(' ') };
   }
 
   if (scopeIssues.length > 0) {

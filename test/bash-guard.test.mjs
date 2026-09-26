@@ -308,6 +308,28 @@ test('scope issues get a soft block: an identical retry goes through once', () =
   assert.equal(decide('git diff', { state: state2, config }).action, 'deny');
 });
 
+test('a head cap on a short concatenation of files is dropped', () => {
+  mkdirSync(join(proj.root, 'wf'), { recursive: true });
+  writeFileSync(join(proj.root, 'wf', 'a.yml'), lines(58));
+  writeFileSync(join(proj.root, 'wf', 'b.yml'), lines(31));
+  const r = decide("cat wf/*.yml | head -60; grep -n engines package.json");
+  assert.equal(r.action, 'rewrite');
+  assert.equal(r.command, 'cat wf/*.yml; grep -n engines package.json');
+  assert.match(r.context, /2 files are only 89 lines/);
+  assert.equal(decide('cat wf/a.yml wf/b.yml | head -n 20').command, 'cat wf/a.yml wf/b.yml');
+  for (const cmd of [
+    'cat wf/a.yml | head -20', // one file: its top is a real intent
+    'cat wf/*.yml | head -100', // the cap cuts nothing
+    'cat wf/*.yml big.txt | head -60', // long in total: the cap stays
+    'cat wf/*.yml package-lock.json | head -60',
+    'cat "wf/*.yml" | head -60', // quoted: no glob
+    'cat $DIR/*.yml | head -60',
+    'cat wf/*.yml | head -c 100',
+    'cat wf/*.yml | head -n 20 > out.txt',
+  ]) assert.equal(decide(cmd).action, 'allow', cmd);
+  assert.equal(decide('cat wf/*.yml | head -60', { config: soft() }).action, 'allow');
+});
+
 test('scope issues are fixed in place by default', () => {
   const grep = decide('grep -rn foo .');
   assert.equal(grep.action, 'rewrite');
