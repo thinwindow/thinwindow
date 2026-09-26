@@ -29,6 +29,12 @@
         "cacheRead": 92.03406220421361,
         "output": 1.3174041577635434
       },
+      "costMix": {
+        "input": 0.023940572492077837,
+        "cacheWrite": 54.270358257529224,
+        "cacheRead": 18.79786016048845,
+        "output": 26.907841009490248
+      },
       "tasks": [
         {
           "task": "click-choice-brackets",
@@ -284,6 +290,10 @@
         "tokensDelta": -15.828218578834004,
         "costDelta": -19.431599229755875,
         "turnsDelta": -12.903225806451612,
+        "successful": {
+          "pairedTasks": 8,
+          "tokensDelta": -15.828218578834004
+        },
         "regressingTasks": 3,
         "tokensDeltaNoRegressions": -17.651686231103916
       }
@@ -314,6 +324,12 @@
         "cacheWrite": 10.964682959963891,
         "cacheRead": 87.0949019765566,
         "output": 1.9314215745420582
+      },
+      "costMix": {
+        "input": 0.022313604826612897,
+        "cacheWrite": 54.40860700877257,
+        "cacheRead": 21.608979992457723,
+        "output": 23.96009939394309
       },
       "tasks": [
         {
@@ -570,6 +586,10 @@
         "tokensDelta": -13.154766255577597,
         "costDelta": -7.943094093021255,
         "turnsDelta": 0,
+        "successful": {
+          "pairedTasks": 8,
+          "tokensDelta": -13.154766255577597
+        },
         "regressingTasks": 3,
         "tokensDeltaNoRegressions": -17.45318012220931
       }
@@ -599,6 +619,12 @@
         "cacheWrite": 2.9382760547135467,
         "cacheRead": 96.43621708807152,
         "output": 0.6090351240786462
+      },
+      "costMix": {
+        "input": 0.08864434214514506,
+        "cacheWrite": 31.62527534360775,
+        "cacheRead": 51.89815153027752,
+        "output": 16.387928783969592
       },
       "tasks": [
         {
@@ -855,6 +881,10 @@
         "tokensDelta": -23.029902322982934,
         "costDelta": -20.165324607652416,
         "turnsDelta": -4.3383947939262475,
+        "successful": {
+          "pairedTasks": 7,
+          "tokensDelta": -18.757500897977895
+        },
         "regressingTasks": 1,
         "tokensDeltaNoRegressions": -23.149534141902
       }

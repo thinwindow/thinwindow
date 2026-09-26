@@ -1,18 +1,20 @@
-// Prices used only for the dry-run cost estimate. Real runs record
-// Claude Code's own `total_cost_usd`. USD per million tokens, Anthropic API
-// list prices; cache writes are 5-minute writes (1.25x input).
+// USD per million tokens, Anthropic API list prices, used for the dry-run
+// cost estimate and for the cost shares in bench/docs.mjs. Real runs record
+// Claude Code's own `total_cost_usd`. Cache writes are 1-hour writes (2x
+// input): that is what Claude Code writes, and on every run in
+// bench/results/ `total_cost_usd` equals the recorded tokens priced this way.
 // Source: https://platform.claude.com/docs/en/about-claude/pricing (Sep 2026).
 export const PRICES = {
-  'claude-fable-5-1': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 0.25 },
-  'claude-fable-5': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 1 },
-  'claude-opus-5-5': { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 },
-  'claude-opus-5': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5 },
-  'claude-opus-4-8': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5 },
-  'claude-opus-4-7': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5 },
-  'claude-opus-4-6': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.5 },
-  'claude-sonnet-5': { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.2 },
-  'claude-sonnet-4-6': { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 },
-  'claude-haiku-4-5': { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 },
+  'claude-fable-5-1': { input: 10, output: 50, cacheWrite: 20, cacheRead: 0.25 },
+  'claude-fable-5': { input: 10, output: 50, cacheWrite: 20, cacheRead: 1 },
+  'claude-opus-5-5': { input: 4, output: 20, cacheWrite: 8, cacheRead: 0.2 },
+  'claude-opus-5': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
+  'claude-opus-4-8': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
+  'claude-opus-4-7': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
+  'claude-opus-4-6': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
+  'claude-sonnet-5': { input: 2, output: 10, cacheWrite: 4, cacheRead: 0.2 },
+  'claude-sonnet-4-6': { input: 3, output: 15, cacheWrite: 6, cacheRead: 0.3 },
+  'claude-haiku-4-5': { input: 1, output: 5, cacheWrite: 2, cacheRead: 0.1 },
 };
 
 // What Claude Code's aliases resolve to on the Anthropic API

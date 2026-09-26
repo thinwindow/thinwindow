@@ -4,12 +4,12 @@
     "name": "Iván Luna",
     "url": "https://github.com/imprvhub"
   },
-  "description": "Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.",
+  "description": "Less in the window. Less on the bill. Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.",
   "plugins": [
     {
       "name": "thinwindow",
       "source": "./",
-      "description": "Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.",
+      "description": "Less in the window. Less on the bill. Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.",
       "category": "productivity",
       "keywords": ["tokens", "context", "cost", "hooks"]
     }
