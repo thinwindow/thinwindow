@@ -299,12 +299,14 @@
         "2.1.282"
       ],
       "thinwindow": [
+        "0.2.0 (30e9c6b)",
         "0.1.0 (528598a)"
       ],
-      "date": "2026-09-25",
+      "date": "2026-09-25 to 2026-09-26",
       "runs": 48,
       "reps": 3,
       "resultFiles": [
+        "bench/results/sonnet-30e9c6b.jsonl",
         "bench/results/sonnet-528598a.jsonl"
       ],
       "tokenMix": {
@@ -419,16 +421,16 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 96507,
+            "medianTokens": 77562,
             "tokenSpread": {
-              "min": 76705,
-              "max": 96524
+              "min": 77370,
+              "max": 78090
             },
-            "medianCost": 0.07081420000000001,
-            "medianTurns": 5
+            "medianCost": 0.0659658,
+            "medianTurns": 4
           },
-          "tokensDelta": 29.296623794212216,
-          "costDelta": 12.151418399280349
+          "tokensDelta": 3.914790996784566,
+          "costDelta": 4.472803983427722
         },
         {
           "task": "commander-command-clash",
@@ -561,13 +563,13 @@
           "runs": 24,
           "successes": 24,
           "errors": 0,
-          "tokens": 1052623,
-          "cost": 0.8383412,
-          "turns": 63
+          "tokens": 1033678,
+          "cost": 0.8334928,
+          "turns": 62
         },
-        "tokensDelta": -11.563087847709689,
-        "costDelta": -7.407602121645626,
-        "turnsDelta": 1.6129032258064515,
+        "tokensDelta": -13.154766255577597,
+        "costDelta": -7.943094093021255,
+        "turnsDelta": 0,
         "regressingTasks": 3,
         "tokensDeltaNoRegressions": -17.45318012220931
       }

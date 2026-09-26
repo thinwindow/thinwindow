@@ -6,6 +6,17 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Fixed
+
+- A `| head` cap on `cat` of several files is dropped when the files add up to
+  more lines than the cap but at most `maxReadLines`: cutting a short
+  concatenation can only drop whole files, which cost a turn to fetch again
+  (#7). Sonnet 5's `commander-ci-config` went from +29.3% to +3.9% tokens, and
+  Sonnet 5 overall from −11.6% to −13.2%; the superseded runs are archived.
+- README and site: the FAQ's Haiku failure and the noise example now quote what
+  the raw runs show, and the turns comparison no longer calls Opus 5.5's cost
+  cut the largest (Haiku 4.5's is).
+
 ## [0.2.0] - 2026-09-25
 
 The first measured version: 112 benchmark runs on Opus 5.5, Sonnet 5 and

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Menos na janela. Menos na conta.</strong><br>
-  A maior parte dos tokens do seu agente é releitura: de 87% a 96% são contexto reenviado a cada turno. O ThinWindow é ao mesmo tempo um plugin do Claude Code e um Agent Skill, e reduz esse contexto: de 12% a 23% menos tokens, medidos no Claude Code com três modelos.
+  A maior parte dos tokens do seu agente é releitura: de 87% a 96% são contexto reenviado a cada turno. O ThinWindow é ao mesmo tempo um plugin do Claude Code e um Agent Skill, e reduz esse contexto: de 13% a 23% menos tokens, medidos no Claude Code com três modelos.
 </p>
 
 <p align="center">
@@ -17,11 +17,13 @@
 | Modelo | Tokens | Custo | Sucesso base → ThinWindow | Execuções |
 | --- | ---: | ---: | :---: | ---: |
 | Opus 5.5 | **−15,8%** | **−19,4%** | **16/16** → **16/16** | 32 |
-| Sonnet 5 | **−11,6%** | **−7,4%** | **24/24** → **24/24** | 48 |
+| Sonnet 5 | **−13,2%** | **−7,9%** | **24/24** → **24/24** | 48 |
 | Haiku 4.5 | **−23,0%** | **−20,2%** | **14/16** → **13/16** | 32 |
 
 As mesmas 8 tarefas, 112 execuções, um agente por execução, sem descartar
-nenhuma: tudo o que foi registrado está na tabela. O detalhe por tarefa e os
+nenhuma: tudo o que foi registrado está na tabela, exceto as execuções que uma
+versão posterior do código substituiu na mesma tarefa, guardadas em
+[`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os
 dados brutos estão em [Benchmark](#benchmark).
 <!-- RESULTS:END -->
 
@@ -168,6 +170,15 @@ assinatura você paga em limites de uso, mas a proporção é a mesma.
   modelo, a versão do Claude Code, o commit do ThinWindow, as contagens brutas
   de tokens e o rastro de ferramentas. Nenhum número deste README é escrito à
   mão.
+- Uma tarefa foi medida de novo depois de uma correção. No Sonnet 5, todas as
+  execuções com o ThinWindow de commander-ci-config cortaram
+  `cat .github/workflows/*.yml` em 60 linhas e perderam o arquivo que a tarefa
+  pede; agora o hook mantém inteiras as concatenações curtas
+  ([#7](https://github.com/thinwindow/thinwindow/issues/7)). As três execuções
+  com o ThinWindow dessa tarefa foram refeitas em 30e9c6b (+29,3% → +3,9%), e as
+  três que elas substituem estão em [`bench/results/archive/`](bench/results/archive).
+  Nenhuma outra execução registrada faz essa chamada, então nenhuma outra tarefa
+  foi refeita.
 - As regras foram ajustadas nessas mesmas 8 tarefas, em duas bibliotecas de
   parsing de argumentos de linha de comando, em JavaScript e Python. É uma fatia
   estreita do software que existe. Sua economia em outros trabalhos será
@@ -194,19 +205,20 @@ melhorando e republicar os arquivos brutos a cada vez.
 
 Duas coisas aparecem nos dados:
 
-- **Nem toda tarefa melhora.** No Sonnet 5, três das oito tarefas custam mais
-  com o ThinWindow do que sem ele. Só neutralizar essas regressões — sem
-  economizar um token a mais em nenhum outro lugar — levaria o Sonnet de −11,6%
+- **Nem toda tarefa melhora.** No Sonnet 5, três das oito tarefas ainda custam
+  mais com o ThinWindow do que sem ele. Só neutralizar essas regressões — sem
+  economizar um token a mais em nenhum outro lugar — levaria o Sonnet de −13,2%
   para cerca de −17,5%, e o Opus de −15,8% para cerca de −17,7%. A margem de
   curto prazo está mais em não piorar as tarefas curtas do que em espremer as
-  longas.
+  longas. O que os rastros mostram de cada uma está na
+  [#7](https://github.com/thinwindow/thinwindow/issues/7).
 - **Os turnos são o fator inexplorado.** Como o custo é aproximadamente contexto
   × turnos, um turno economizado vale tanto quanto uma leitura grande evitada. O
-  Opus usou 12,9% menos turnos aqui e mostra o maior corte de custo; o Sonnet
-  usou 1,6% mais e mostra o menor. Uma tentativa anterior de regras explícitas
-  de "use menos turnos" piorou o Sonnet de forma mensurável e foi revertida, em
-  vez de mantida e silenciosamente excluída: esse experimento revertido continua
-  no histórico.
+  Opus usou 12,9% menos turnos aqui e cortou o custo em 19,4%; o Sonnet usou os
+  mesmos turnos que sem o ThinWindow e cortou o custo em 7,9%. Uma tentativa
+  anterior de regras explícitas de "use menos turnos" piorou o Sonnet de forma
+  mensurável e foi revertida, em vez de mantida e silenciosamente excluída: esse
+  experimento revertido continua no histórico.
 
 ## Contribuindo
 

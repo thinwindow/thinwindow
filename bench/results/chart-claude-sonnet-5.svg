@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="780" height="448" viewBox="0 0 780 448" role="img" aria-labelledby="t d">
 <title id="t">thinwindow benchmark: change in total tokens per task, claude-sonnet-5</title>
-<desc id="d">One bar per task, showing the change in median total tokens against plain Claude Code. Bars left of the zero line are tokens saved, bars to the right are tokens lost. Overall 1.19M versus 1.05M (−11.6%); success 24/24 versus 24/24.</desc>
+<desc id="d">One bar per task, showing the change in median total tokens against plain Claude Code. Bars left of the zero line are tokens saved, bars to the right are tokens lost. Overall 1.19M versus 1.03M (−13.2%); success 24/24 versus 24/24.</desc>
 <style>
   /* Edit these six lines to restyle every chart. Light values first, dark
      below; both are validated categorical slots 1 and 2. */
@@ -20,8 +20,8 @@
 <rect width="780" height="448" fill="var(--surface)"/>
 <text class="ink h1" x="0" y="24">Change in total tokens per task</text>
 <text class="ink2 h2" x="0" y="44">claude-sonnet-5 · Claude Code 2.1.282 · medians of up to 3 runs per task and condition</text>
-<text class="ink" x="0" y="76" font-size="24" font-weight="680">−11.6%</text>
-<text class="ink2 h2" x="104" y="76">overall · 1.19M → 1.05M · success 24/24 → 24/24</text>
+<text class="ink" x="0" y="76" font-size="24" font-weight="680">−13.2%</text>
+<text class="ink2 h2" x="104" y="76">overall · 1.19M → 1.03M · success 24/24 → 24/24</text>
 <rect class="win" x="0" y="94" width="11" height="11" rx="2"/><text class="ink lbl" x="17" y="104">fewer tokens with ThinWindow</text>
 <rect class="lose" x="200" y="94" width="11" height="11" rx="2"/><text class="ink lbl" x="217" y="104">fewer tokens without it</text>
 <line class="grid" x1="276.0" y1="115" x2="276.0" y2="387"/>
@@ -61,9 +61,9 @@
 <path class="lose" d="M534.0,294.5H534.0A1.5993057277461276,1.5993057277461276 0 0 1 535.6,296.1V307.9A1.5993057277461276,1.5993057277461276 0 0 1 534.0,309.5H534.0Z"><title>click-footer-year: 73k → 73k tokens (+0.4%), success 3/3 → 3/3</title></path>
 <text class="ink delta" x="543.6" y="306" text-anchor="start">+0.4%</text>
 <text class="ink lbl" x="202" y="335" text-anchor="end">commander-ci-config</text>
-<text class="ink2 val" x="202" y="348" text-anchor="end">75k → 97k</text>
-<path class="lose" d="M534.0,328.5H656.0A4,4 0 0 1 660.0,332.5V339.5A4,4 0 0 1 656.0,343.5H534.0Z"><title>commander-ci-config: 75k → 97k tokens (+29.3%), success 3/3 → 3/3</title></path>
-<text class="ink delta" x="668.0" y="340" text-anchor="start">+29.3%</text>
+<text class="ink2 val" x="202" y="348" text-anchor="end">75k → 78k</text>
+<path class="lose" d="M534.0,328.5H546.8A4,4 0 0 1 550.8,332.5V339.5A4,4 0 0 1 546.8,343.5H534.0Z"><title>commander-ci-config: 75k → 78k tokens (+3.9%), success 3/3 → 3/3</title></path>
+<text class="ink delta" x="558.8" y="340" text-anchor="start">+3.9%</text>
 <text class="ink lbl" x="202" y="369" text-anchor="end">commander-extract-utils</text>
 <text class="ink2 val" x="202" y="382" text-anchor="end">141k → 189k</text>
 <path class="lose" d="M534.0,362.5H675.8A4,4 0 0 1 679.8,366.5V373.5A4,4 0 0 1 675.8,377.5H534.0Z"><title>commander-extract-utils: 141k → 189k tokens (+33.9%), success 3/3 → 3/3</title></path>

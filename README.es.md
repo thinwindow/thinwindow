@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Menos en la ventana. Menos en la factura.</strong><br>
-  La mayoría de los tokens de tu agente son relecturas: entre el 87% y el 96% es contexto que se reenvía en cada turno. ThinWindow es a la vez un plugin de Claude Code y un Agent Skill, y reduce ese contexto: entre un 12% y un 23% menos de tokens, medido en Claude Code con tres modelos.
+  La mayoría de los tokens de tu agente son relecturas: entre el 87% y el 96% es contexto que se reenvía en cada turno. ThinWindow es a la vez un plugin de Claude Code y un Agent Skill, y reduce ese contexto: entre un 13% y un 23% menos de tokens, medido en Claude Code con tres modelos.
 </p>
 
 <p align="center">
@@ -17,12 +17,14 @@
 | Modelo | Tokens | Costo | Éxito base → ThinWindow | Corridas |
 | --- | ---: | ---: | :---: | ---: |
 | Opus 5.5 | **−15,8%** | **−19,4%** | **16/16** → **16/16** | 32 |
-| Sonnet 5 | **−11,6%** | **−7,4%** | **24/24** → **24/24** | 48 |
+| Sonnet 5 | **−13,2%** | **−7,9%** | **24/24** → **24/24** | 48 |
 | Haiku 4.5 | **−23,0%** | **−20,2%** | **14/16** → **13/16** | 32 |
 
 Las mismas 8 tareas, 112 corridas, un agente por corrida, sin descartar
-ninguna: todas las que se registraron están en la tabla. El detalle por tarea y
-los datos crudos están en [Benchmark](#benchmark).
+ninguna: todas las que se registraron están en la tabla, salvo las que reemplazó
+una versión posterior del código en la misma tarea, que se guardan en
+[`bench/results/archive/`](bench/results/archive). El detalle por tarea y los
+datos crudos están en [Benchmark](#benchmark).
 <!-- RESULTS:END -->
 
 ## Por qué lo que se paga es el contexto
@@ -167,6 +169,15 @@ suscripción se paga en límites de uso, pero la proporción es la misma.
   el modelo, la versión de Claude Code, el commit de ThinWindow, los conteos de
   tokens crudos y la traza de herramientas. Ningún número de este README está
   escrito a mano.
+- Una tarea se volvió a medir después de un arreglo. En Sonnet 5, todas las
+  corridas con ThinWindow de commander-ci-config cortaron
+  `cat .github/workflows/*.yml` a 60 líneas y perdieron el archivo que pide la
+  tarea; ahora el hook deja enteras las concatenaciones cortas
+  ([#7](https://github.com/thinwindow/thinwindow/issues/7)). Las tres corridas
+  con ThinWindow de esa tarea se repitieron en 30e9c6b (+29,3% → +3,9%), y las
+  tres que reemplazan están en [`bench/results/archive/`](bench/results/archive).
+  Ninguna otra corrida registrada hace esa llamada, así que no se repitió ninguna
+  otra tarea.
 - Las reglas se ajustaron sobre esas mismas 8 tareas, en dos bibliotecas de
   parseo de argumentos de línea de comandos, en JavaScript y Python. Es una
   porción acotada del software que existe. Tu ahorro en otro trabajo va a ser
@@ -193,18 +204,20 @@ mejorándolos y volver a publicar los archivos crudos cada vez.
 
 En los datos se ven dos cosas:
 
-- **No todas las tareas mejoran.** En Sonnet 5, tres de las ocho tareas salen
-  más caras con ThinWindow que sin él. Solo con neutralizar esas regresiones
-  —sin ahorrar un token más en ningún otro lado— Sonnet pasaría de −11,6% a
-  cerca de −17,5%, y Opus de −15,8% a cerca de −17,7%. El margen de corto plazo
-  está más en no empeorar las tareas cortas que en exprimir las largas.
+- **No todas las tareas mejoran.** En Sonnet 5, tres de las ocho tareas todavía
+  salen más caras con ThinWindow que sin él. Solo con neutralizar esas
+  regresiones —sin ahorrar un token más en ningún otro lado— Sonnet pasaría de
+  −13,2% a cerca de −17,5%, y Opus de −15,8% a cerca de −17,7%. El margen de
+  corto plazo está más en no empeorar las tareas cortas que en exprimir las
+  largas. Lo que muestran las trazas de cada una está en
+  [#7](https://github.com/thinwindow/thinwindow/issues/7).
 - **Los turnos son el factor todavía sin aprovechar.** Como el costo es aproximadamente
   contexto × turnos, un turno ahorrado vale tanto como una lectura grande
-  evitada. Opus usó un 12,9% menos de turnos acá y muestra el mayor recorte de
-  costo; Sonnet usó un 1,6% más y muestra el menor. Un intento previo de reglas
-  explícitas de "usá menos turnos" empeoró los resultados de Sonnet de forma
-  medible y se revirtió, en lugar de mantenerse y excluirse en silencio: ese experimento
-  revertido sigue en el historial.
+  evitada. Opus usó un 12,9% menos de turnos acá y recortó el costo un 19,4%;
+  Sonnet usó los mismos turnos que sin ThinWindow y recortó el costo un 7,9%.
+  Un intento previo de reglas explícitas de "usá menos turnos" empeoró los
+  resultados de Sonnet de forma medible y se revirtió, en lugar de mantenerse y
+  excluirse en silencio: ese experimento revertido sigue en el historial.
 
 ## Contribuir
 

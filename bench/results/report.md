@@ -38,18 +38,18 @@ Tokens are input + cache-creation + cache-read + output, summed over every model
 
 ## claude-sonnet-5
 
-Model `claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · thinwindow 0.1.0 (528598a) · 48 runs, up to 3 per task and condition · 2026-09-25
+Model `claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · thinwindow 0.2.0 (30e9c6b), 0.1.0 (528598a) · 48 runs, up to 3 per task and condition · 2026-09-25 to 2026-09-26
 
 | Task | Tokens baseline (min–max) | Tokens thinwindow (min–max) | Δ tokens | Cost baseline | Cost thinwindow | Δ cost | Turns baseline | Turns thinwindow | Success baseline | Success thinwindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | click-choice-brackets | 203k (149k–265k) | 194k (142k–233k) | −4.7% | $0.15 | $0.13 | −13.0% | 10 | 12 | 3/3 | 3/3 |
 | click-footer-year | 73k (72k–73k) | 73k (72k–74k) | +0.4% | $0.06 | $0.06 | −1.6% | 4 | 4 | 3/3 | 3/3 |
 | click-help-spec | 186k (163k–232k) | 83k (80k–107k) | −55.3% | $0.14 | $0.09 | −35.5% | 8 | 5 | 3/3 | 3/3 |
-| commander-ci-config | 75k (75k–75k) | 97k (77k–97k) | +29.3% | $0.06 | $0.07 | +12.2% | 4 | 5 | 3/3 | 3/3 |
+| commander-ci-config | 75k (75k–75k) | 78k (77k–78k) | +3.9% | $0.06 | $0.07 | +4.5% | 4 | 4 | 3/3 | 3/3 |
 | commander-command-clash | 180k (159k–220k) | 137k (130k–204k) | −23.8% | $0.16 | $0.15 | −4.0% | 10 | 9 | 3/3 | 3/3 |
 | commander-extract-utils | 141k (80k–167k) | 189k (164k–266k) | +33.9% | $0.10 | $0.12 | +15.3% | 9 | 12 | 3/3 | 3/3 |
 | commander-negate-default-order | 258k (203k–327k) | 205k (151k–278k) | −20.3% | $0.17 | $0.15 | −8.5% | 13 | 12 | 3/3 | 3/3 |
 | commander-rename-display-width | 74k (55k–75k) | 74k (55k–76k) | −0.3% | $0.06 | $0.06 | −1.0% | 4 | 4 | 3/3 | 3/3 |
-| **Total** | **1.19M** | **1.05M** | **−11.6%** | **$0.91** | **$0.84** | **−7.4%** | 62 | 63 | **24/24** | **24/24** |
+| **Total** | **1.19M** | **1.03M** | **−13.2%** | **$0.91** | **$0.83** | **−7.9%** | 62 | 62 | **24/24** | **24/24** |
 
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.

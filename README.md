@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Less in the window. Less on the bill.</strong><br>
-  Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 12–23% fewer tokens, measured in Claude Code on three models.
+  Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.
 </p>
 
 <p align="center">
@@ -17,12 +17,14 @@
 | Model | Tokens | Cost | Success baseline → ThinWindow | Runs |
 | --- | ---: | ---: | :---: | ---: |
 | Opus 5.5 | **−15.8%** | **−19.4%** | **16/16** → **16/16** | 32 |
-| Sonnet 5 | **−11.6%** | **−7.4%** | **24/24** → **24/24** | 48 |
+| Sonnet 5 | **−13.2%** | **−7.9%** | **24/24** → **24/24** | 48 |
 | Haiku 4.5 | **−23.0%** | **−20.2%** | **14/16** → **13/16** | 32 |
 
 Same 8 tasks, 112 runs, one agent per run, no cherry-picking:
-every run recorded is in the table. Per-task figures, the spread and the raw
-data are in [Benchmark](#benchmark) below.
+every run recorded is in the table, except runs superseded by a later version
+of the code on the same task, which are kept in
+[`bench/results/archive/`](bench/results/archive). Per-task figures, the
+spread and the raw data are in [Benchmark](#benchmark) below.
 <!-- RESULTS:END -->
 
 ## Why context is the bill
@@ -135,7 +137,7 @@ Raw runs: [`bench/results/opus-528598a.jsonl`](bench/results/opus-528598a.jsonl)
 
 ### Sonnet 5
 
-`claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · ThinWindow 0.1.0 (528598a) · 48 runs, up to 3 per task and condition · 2026-09-25
+`claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · ThinWindow 0.2.0 (30e9c6b), 0.1.0 (528598a) · 48 runs, up to 3 per task and condition · 2026-09-25 to 2026-09-26
 
 ![Change in total tokens per task, Sonnet 5: bars left of zero are tokens saved with ThinWindow](bench/results/chart-claude-sonnet-5.svg)
 
@@ -146,16 +148,16 @@ Raw runs: [`bench/results/opus-528598a.jsonl`](bench/results/opus-528598a.jsonl)
 | click-choice-brackets | 203k (149k–265k) | 194k (142k–233k) | −4.7% | $0.15 | $0.13 | −13.0% | 10 | 12 | 3/3 | 3/3 |
 | click-footer-year | 73k (72k–73k) | 73k (72k–74k) | +0.4% | $0.06 | $0.06 | −1.6% | 4 | 4 | 3/3 | 3/3 |
 | click-help-spec | 186k (163k–232k) | 83k (80k–107k) | −55.3% | $0.14 | $0.09 | −35.5% | 8 | 5 | 3/3 | 3/3 |
-| commander-ci-config | 75k (75k–75k) | 97k (77k–97k) | +29.3% | $0.06 | $0.07 | +12.2% | 4 | 5 | 3/3 | 3/3 |
+| commander-ci-config | 75k (75k–75k) | 78k (77k–78k) | +3.9% | $0.06 | $0.07 | +4.5% | 4 | 4 | 3/3 | 3/3 |
 | commander-command-clash | 180k (159k–220k) | 137k (130k–204k) | −23.8% | $0.16 | $0.15 | −4.0% | 10 | 9 | 3/3 | 3/3 |
 | commander-extract-utils | 141k (80k–167k) | 189k (164k–266k) | +33.9% | $0.10 | $0.12 | +15.3% | 9 | 12 | 3/3 | 3/3 |
 | commander-negate-default-order | 258k (203k–327k) | 205k (151k–278k) | −20.3% | $0.17 | $0.15 | −8.5% | 13 | 12 | 3/3 | 3/3 |
 | commander-rename-display-width | 74k (55k–75k) | 74k (55k–76k) | −0.3% | $0.06 | $0.06 | −1.0% | 4 | 4 | 3/3 | 3/3 |
-| **Total** | **1.19M** | **1.05M** | **−11.6%** | **$0.91** | **$0.84** | **−7.4%** | 62 | 63 | **24/24** | **24/24** |
+| **Total** | **1.19M** | **1.03M** | **−13.2%** | **$0.91** | **$0.83** | **−7.9%** | 62 | 62 | **24/24** | **24/24** |
 
 </details>
 
-Raw runs: [`bench/results/sonnet-528598a.jsonl`](bench/results/sonnet-528598a.jsonl)
+Raw runs: [`bench/results/sonnet-30e9c6b.jsonl`](bench/results/sonnet-30e9c6b.jsonl), [`bench/results/sonnet-528598a.jsonl`](bench/results/sonnet-528598a.jsonl)
 
 ### Haiku 4.5
 
@@ -219,6 +221,13 @@ usage limits instead, but the ratio is the same.
   counts and the tool-call trace. The tables above are generated from those
   files by [`bench/report.mjs`](bench/report.mjs); no number in this README is
   typed by hand.
+- One task was re-measured after a fix. On Sonnet 5, every ThinWindow run of
+  commander-ci-config capped `cat .github/workflows/*.yml` at 60 lines and cut
+  the file the task asks about; the hook now keeps short concatenations whole
+  ([#7](https://github.com/thinwindow/thinwindow/issues/7)). That task's three
+  ThinWindow runs were re-run at 30e9c6b (+29.3% → +3.9%), and the three they
+  replace are in [`bench/results/archive/`](bench/results/archive). No other
+  recorded run makes that call, so no other task was re-run.
 - The rules were tuned on these same 8 tasks, on two CLI-argument-parsing
   libraries, in JavaScript and Python. That is a narrow slice of software. Your
   savings on other work will differ.
@@ -244,18 +253,19 @@ improving them and to re-publish the raw files each time.
 
 Two things are visible in the data above:
 
-- **Not every task improves.** On Sonnet 5, three of the eight tasks cost more
-  with ThinWindow than without. Neutralising just those regressions — without
-  saving a single extra token anywhere else — would take Sonnet from −11.6% to
-  about −17.5%, and Opus from −15.8% to about −17.7%. Most of the near-term
-  headroom is in not making short tasks worse, not in squeezing the long ones
-  further.
+- **Not every task improves.** On Sonnet 5, three of the eight tasks still cost
+  more with ThinWindow than without. Neutralising just those regressions —
+  without saving a single extra token anywhere else — would take Sonnet from
+  −13.2% to about −17.5%, and Opus from −15.8% to about −17.7%. Most of the
+  near-term headroom is in not making short tasks worse, not in squeezing the
+  long ones further. What the traces show for each of them is in
+  [#7](https://github.com/thinwindow/thinwindow/issues/7).
 - **Turns are the untapped factor.** Since cost is roughly context × turns, a
   turn saved is worth as much as a large read avoided. Opus took 12.9% fewer
-  turns here and shows the largest cost cut; Sonnet took 1.6% more and shows
-  the smallest. An earlier attempt at explicit "use fewer turns" rules made
-  Sonnet measurably worse and was reverted rather than kept and quietly
-  excluded — that reverted experiment is still in the history.
+  turns here and cut cost by 19.4%; Sonnet took as many turns as without
+  ThinWindow and cut cost by 7.9%. An earlier attempt at explicit "use fewer
+  turns" rules made Sonnet measurably worse and was reverted rather than kept
+  and quietly excluded — that reverted experiment is still in the history.
 
 ## Contributing
 
