@@ -199,8 +199,8 @@ En los datos se ven dos cosas:
   está más en no empeorar las tareas cortas que en exprimir las largas.
 - **Los turnos son el factor todavía sin aprovechar.** Como el costo es aproximadamente
   contexto × turnos, un turno ahorrado vale tanto como una lectura grande
-  evitada. Opus usó 12,9% menos turnos acá y muestra el mayor recorte de costo;
-  Sonnet usó 1,6% más y muestra el menor. Un intento previo de reglas
+  evitada. Opus usó un 12,9% menos de turnos acá y muestra el mayor recorte de
+  costo; Sonnet usó un 1,6% más y muestra el menor. Un intento previo de reglas
   explícitas de "usá menos turnos" empeoró los resultados de Sonnet de forma
   medible y se revirtió, en lugar de mantenerse y excluirse en silencio: ese experimento
   revertido sigue en el historial.
