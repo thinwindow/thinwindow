@@ -287,6 +287,9 @@ const SCOPE_ALLOWED = [
   'git diff --shortstat',
   'git diff --name-only',
   'git diff HEAD~1 -- src/foo.ts',
+  // a file or directory named without `--` is a path too
+  'git diff src/small.ts',
+  'git diff src',
 ];
 
 for (const cmd of SCOPE_ALLOWED) {
