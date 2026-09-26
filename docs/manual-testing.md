@@ -54,13 +54,15 @@ Expect an answer based on the first rule ("Locate before reading: grep or glob
 for the symbol..."). The debug log shows `SessionStart` running
 `hooks/session-start.mjs`.
 
-## 5. Large-file guard (soft block)
+## 5. Large-file guard
 
 Prompt: `Use the Read tool to read big.txt in full, with no offset or limit.`
 
-Expect the first Read to be denied with `thinwindow: big.txt has 1000 lines,
-over the 400-line limit...`. Claude then either reads a range or repeats the
-identical call, which goes through (debug: `Read allow (retry)`).
+Expect the Read to return lines 1-120, with a note (`thinwindow: big.txt has
+1000 lines, so this Read returned lines 1-120...`) and a line-numbered outline
+of the file. Repeating the identical whole-file Read returns the full file.
+With `"rewrite": false` (section 9) the first Read is denied instead, with the
+line count.
 
 ## 6. Re-read guard
 
@@ -82,24 +84,25 @@ replacement. `git log -n 3 --oneline` runs normally.
 
 Prompt: `Run exactly this command: npm test`
 
-Expect a denial suggesting `thinwindow-run npm test`. When Claude runs that,
-the output is a summary: an `exit 0 · <duration> · <n> lines of output`
-header, the last 40 lines, and `full log: <temp dir>/thinwindow/logs/...log`.
-The log file holds every line. `thinwindow-run` is found because the plugin puts its `bin/` on
-the Bash tool's `PATH`.
+Expect no denial: the command runs as `thinwindow-run npm test`. The output is
+a summary: an `exit 0 · <duration> · <n> lines of output` header, the last 10
+lines (the last 40 and the error-like lines when the command fails), and
+`full log: <temp dir>/thinwindow/logs/...log`. The log file holds every line.
+`thinwindow-run` is found because the plugin puts its `bin/` on the Bash
+tool's `PATH`. A normal permission prompt still appears if your settings would
+prompt for it.
 
-## 9. Rewrite mode
+## 9. Soft-block mode
 
 ```sh
-echo '{ "rewrite": true }' > /tmp/thinwindow-manual/.thinwindow.json
+echo '{ "rewrite": false }' > /tmp/thinwindow-manual/.thinwindow.json
 ```
 
 Start a new session and prompt: `Run exactly this command: npm test`
 
-Expect no denial: the command runs as `thinwindow-run npm test` (the tool
-call shows the rewritten command, and the output is the summary). A normal
-permission prompt still appears if your settings would prompt for it.
-Remove the file afterwards.
+Expect a denial suggesting `thinwindow-run npm test`; repeating the identical
+command runs it uncapped. Section 5 changes the same way: the whole-file Read
+is denied with the line count. Remove the file afterwards.
 
 ## 10. Compaction resets read tracking
 

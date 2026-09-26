@@ -9,7 +9,7 @@
     {
       "name": "thinwindow",
       "source": "./",
-      "description": "Makes coding agents read less: reading rules at session start, plus hooks that block wasteful Read and Bash calls.",
+      "description": "Makes coding agents read less: reading rules at session start, plus hooks that trim wasteful Read, Bash and Grep calls.",
       "category": "productivity",
       "keywords": ["tokens", "context", "cost", "hooks"]
     }

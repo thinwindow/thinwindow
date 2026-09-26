@@ -36,9 +36,10 @@ Say less
 `thinwindow-run <cmd> [args...]` runs a command, saves its full stdout and stderr
 to a log file in the OS temp dir, and prints only:
 
-- the exit code and the duration,
-- the last 40 lines,
-- up to 40 deduplicated lines matching error, fail, warn, panic or exception,
+- the exit code, the duration and the number of lines,
+- the last 10 lines, if the command succeeded,
+- if it failed, the last 40 lines plus up to 40 deduplicated earlier lines
+  matching error, fail, warn, panic or exception,
 - the path of the full log.
 
 It exits with the command's own exit code. Open the log only when the summary
