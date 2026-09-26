@@ -1,6 +1,8 @@
-<p align="center">
-  <img src="assets/icon.iconset/icon_128x128@2x.png" alt="Logo do ThinWindow" width="112" height="112">
-</p>
+<div align="center">
+
+![Logo do ThinWindow](assets/icon.iconset/icon_128x128.png)
+
+</div>
 
 <h1 align="center">ThinWindow</h1>
 
