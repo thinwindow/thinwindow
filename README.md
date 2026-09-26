@@ -319,23 +319,23 @@ bill splits.
 <!-- TIER1:START -->
 | Model | Calls in the baseline traces | Replayed | Changed by the hooks | Tool output of the replayed calls (characters) | Change |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 106 | 52 | 2 | 83,853 → 84,720 | +1.0% |
-| Sonnet 5 | 134 | 66 | 3 | 114,982 → 115,879 | +0.8% |
-| Haiku 4.5 | 366 | 250 | 41 | 861,988 → 524,951 | −39.1% |
+| Opus 5.5 | 106 | 52 | 2 | 83,908 → 84,337 | +0.5% |
+| Sonnet 5 | 134 | 66 | 3 | 115,060 → 115,431 | +0.3% |
+| Haiku 4.5 | 366 | 250 | 41 | 861,994 → 518,900 | −39.8% |
 
 | What the hook did | Calls | Before | After | Calls that grew |
 | --- | ---: | ---: | ---: | ---: |
 | Large Read: first lines and an outline | 10 | 374,240 | 55,614 | 0 |
-| Command run through thinwindow-run | 27 | 45,261 | 30,393 | 20 |
+| Command run through thinwindow-run | 27 | 45,316 | 23,426 | 12 |
 | Recursive search capped | 1 | 4,481 | 2,011 | 0 |
-| Git diff shown as --stat | 5 | 622 | 1,313 | 5 |
+| Git diff shown as --stat | 5 | 622 | 1,314 | 5 |
 
 Not replayed: 183 calls the trace cut short (it keeps 140 characters of each), 33 that write files, run a script or change the repository, and 22 whose file could not be matched.
 
 The change in the bill is a different quantity, measured in [Benchmark](#benchmark), and not the same size:
-- Opus 5.5: the hooks change 2 of 106 calls and add 1.0% to the replayed tool output; in the benchmark they acted in 1 of 16 ThinWindow runs, and the measured change in cost is −19.4% (95% CI −26.2% to −10.2%).
-- Sonnet 5: the hooks change 3 of 134 calls and add 0.8% to the replayed tool output; in the benchmark they acted in 3 of 24 ThinWindow runs, and the measured change in cost is −7.9% (95% CI −18.4% to +2.5%).
-- Haiku 4.5: the hooks change 41 of 366 calls and cut the replayed tool output by 39.1%; in the benchmark they acted in 9 of 16 ThinWindow runs, and the measured change in cost is −20.2% (95% CI −30.5% to −10.9%).
+- Opus 5.5: the hooks change 2 of 106 calls and add 0.5% to the replayed tool output; in the benchmark they acted in 1 of 16 ThinWindow runs, and the measured change in cost is −19.4% (95% CI −26.2% to −10.2%).
+- Sonnet 5: the hooks change 3 of 134 calls and add 0.3% to the replayed tool output; in the benchmark they acted in 3 of 24 ThinWindow runs, and the measured change in cost is −7.9% (95% CI −18.4% to +2.5%).
+- Haiku 4.5: the hooks change 41 of 366 calls and cut the replayed tool output by 39.8%; in the benchmark they acted in 9 of 16 ThinWindow runs, and the measured change in cost is −20.2% (95% CI −30.5% to −10.9%).
 
 Where the hooks barely act, the measured change comes from the rules, which change what the agent does, or from run-to-run noise, not from trimming tool output.
 <!-- TIER1:END -->
