@@ -14,7 +14,7 @@ import { median, pctDelta } from '../bench/lib/stats.mjs';
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
-import { modelLabel, outOfDate as benchDocsOutOfDate, tokenMix } from '../bench/docs.mjs';
+import { headroom, modelLabel, outOfDate as benchDocsOutOfDate, staleRanges, tokenMix } from '../bench/docs.mjs';
 import { tempDir } from './helpers.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -464,4 +464,22 @@ test('tokenMix is the share of billed tokens by kind', () => {
 test('the README blocks and report.json match the committed runs', () => {
   // The same check CI runs: every published number comes from bench/results/.
   assert.deepEqual(benchDocsOutOfDate(), []);
+});
+
+test('headroom clamps every regressing task to its baseline', () => {
+  const t = (task, base, tw) => ({
+    task,
+    baseline: { medianTokens: base },
+    thinwindow: { medianTokens: tw },
+    tokensDelta: (100 * (tw - base)) / base,
+  });
+  // One task saves 20%, one regresses by 20%: together they cancel out, and
+  // neutralising the regression alone leaves the 20% saving.
+  const h = headroom([t('saves', 100, 80), t('regresses', 100, 120)]);
+  assert.equal(h.regressingTasks, 1);
+  assert.equal(h.tokensDeltaNoRegressions, -10);
+});
+
+test('the website blocks and the prose ranges match the committed runs', () => {
+  assert.deepEqual(staleRanges(), []);
 });

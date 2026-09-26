@@ -283,7 +283,9 @@
         },
         "tokensDelta": -15.828218578834004,
         "costDelta": -19.431599229755875,
-        "turnsDelta": -12.903225806451612
+        "turnsDelta": -12.903225806451612,
+        "regressingTasks": 3,
+        "tokensDeltaNoRegressions": -17.651686231103916
       }
     },
     {
@@ -565,7 +567,9 @@
         },
         "tokensDelta": -11.563087847709689,
         "costDelta": -7.407602121645626,
-        "turnsDelta": 1.6129032258064515
+        "turnsDelta": 1.6129032258064515,
+        "regressingTasks": 3,
+        "tokensDeltaNoRegressions": -17.45318012220931
       }
     },
     {
@@ -848,7 +852,9 @@
         },
         "tokensDelta": -23.029902322982934,
         "costDelta": -20.165324607652416,
-        "turnsDelta": -4.3383947939262475
+        "turnsDelta": -4.3383947939262475,
+        "regressingTasks": 1,
+        "tokensDeltaNoRegressions": -23.149534141902
       }
     }
   ]

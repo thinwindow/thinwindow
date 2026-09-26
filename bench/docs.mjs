@@ -8,6 +8,13 @@
 //     repository. Treat its shape as a public contract.
 //   - the <!-- RESULTS -->, <!-- CACHE --> and <!-- BENCH --> blocks of
 //     README.md, README.es.md and README.pt-BR.md.
+//   - the <!-- ROWS -->, <!-- FOOTNOTE -->, <!-- HEADROOM --> and
+//     <!-- MEASURED --> blocks of website/index.html.
+//
+// The rounded ranges quoted in prose ("87-96% of tokens billed") are not
+// rewritten - a regex that edits a sentence is a regex that can corrupt one.
+// They are checked instead: RANGE_CLAIMS lists the phrase each file must
+// contain, and a mismatch names the file and the phrase it should now carry.
 //
 //   node bench/docs.mjs            write report.json and update the READMEs
 //   node bench/docs.mjs --check    exit 1 if either is out of date
@@ -57,6 +64,20 @@ export function tokenMix(runs) {
   return Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, (100 * v) / total]));
 }
 
+// What the totals would be if no task had regressed: every task that cost
+// more with ThinWindow clamped to its baseline, nothing else saved. It is the
+// ceiling of "stop making short tasks worse", quoted on the site and in the
+// READMEs, so it is derived here rather than recomputed by hand.
+export function headroom(tasks) {
+  const paired = tasks.filter((t) => t.baseline.medianTokens !== null && t.thinwindow.medianTokens !== null);
+  const base = paired.reduce((a, t) => a + t.baseline.medianTokens, 0);
+  const clamped = paired.reduce((a, t) => a + Math.min(t.thinwindow.medianTokens, t.baseline.medianTokens), 0);
+  return {
+    regressingTasks: paired.filter((t) => t.tokensDelta > 0).length,
+    tokensDeltaNoRegressions: base ? (100 * (clamped - base)) / base : null,
+  };
+}
+
 // The public summary. One entry per model, richest first.
 export function buildReport(files = listResultFiles()) {
   const sources = new Map(); // model -> result files it came from
@@ -87,7 +108,7 @@ export function buildReport(files = listResultFiles()) {
         // Baseline only: the mix is the problem statement, not the result.
         tokenMix: tokenMix(runs.filter((r) => r.condition === 'baseline')),
         tasks: s.tasks,
-        total: s.total,
+        total: { ...s.total, ...headroom(s.tasks) },
       };
     })
     .sort(byModel);
@@ -261,14 +282,125 @@ export function benchBlock(report, lang) {
   return parts.join('\n\n');
 }
 
+// --- website/index.html ---------------------------------------------------
+
+const SITE = 'website/index.html';
+
+// Highest capability first, as the table reads.
+const winClass = (d) => (d < 0 ? 'n win' : 'n');
+
+export function siteRows(report) {
+  return report.models
+    .map((m) => {
+      const T = m.total;
+      return (
+        `            <tr><td>${m.label}</td>` +
+        `<td class="${winClass(T.tokensDelta)}">${fmtPct(T.tokensDelta)}</td>` +
+        `<td class="${winClass(T.costDelta)}">${fmtPct(T.costDelta)}</td>` +
+        `<td class="n">${fmtNum(T.baseline.turns)} → ${fmtNum(T.thinwindow.turns)}</td>` +
+        `<td class="n">${successCell(T.baseline)} → ${successCell(T.thinwindow)}</td>` +
+        `<td class="n">${m.runs}</td></tr>`
+      );
+    })
+    .join('\n');
+}
+
+export function siteFootnote(report) {
+  const versions = report.models.map((m) => `${m.thinwindow.join(', ') || 'unknown'} on ${m.label}`).join('; ');
+  const claude = [...new Set(report.models.flatMap((m) => m.claudeVersions))].join(', ') || 'unknown';
+  const dates = [...new Set(report.models.map((m) => m.date))].join(', ');
+  return (
+    `        <p class="small muted">Same ${report.tasks} tasks, ${report.runs} runs, one agent per run. ` +
+    `Claude Code ${claude}, ${dates}. ThinWindow ${versions}. ` +
+    'Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; ' +
+    'success counts every run.</p>'
+  );
+}
+
+export function siteHeadroom(report) {
+  // The two models with the most to gain from removing their own regressions.
+  const gap = (m) => m.total.tokensDelta - m.total.tokensDeltaNoRegressions;
+  const [a, b] = [...report.models].sort((x, y) => gap(y) - gap(x));
+  const worst = [...report.models].sort((x, y) => y.total.turnsDelta - x.total.turnsDelta)[0];
+  const best = [...report.models].sort((x, y) => x.total.turnsDelta - y.total.turnsDelta)[0];
+  const abs = (p) => `${Math.abs(p).toFixed(1)}%`;
+  return [
+    `          <li><strong>Not every task improves.</strong> On ${a.label}, ${word(a.total.regressingTasks)} of the ` +
+      `${word(a.total.pairedTasks)} tasks cost more with ThinWindow. Just neutralising those regressions, without saving ` +
+      `a token anywhere else, would take ${a.label} from ${fmtPct(a.total.tokensDelta)} to about ` +
+      `${fmtPct(a.total.tokensDeltaNoRegressions)}, and ${b.label} from ${fmtPct(b.total.tokensDelta)} to about ` +
+      `${fmtPct(b.total.tokensDeltaNoRegressions)}. Most of the near-term headroom is in not making short tasks worse.</li>`,
+    `          <li><strong>Turns are the untapped factor.</strong> ${best.label} took ${abs(best.total.turnsDelta)} fewer ` +
+      `turns and shows the largest cost cut; ${worst.label} took ${abs(worst.total.turnsDelta)} more and shows the ` +
+      'smallest. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was ' +
+      'reverted rather than kept and quietly excluded. That experiment is still in the history.</li>',
+  ].join('\n');
+}
+
+// The launch target from bench/README.md, and whether the data meets it yet.
+export const TARGET_TOKENS_PCT = 25;
+
+export function siteMeasured(report) {
+  const met = report.models.every(
+    (m) =>
+      m.total.tokensDelta <= -TARGET_TOKENS_PCT &&
+      m.total.thinwindow.successes >= m.total.baseline.successes,
+  );
+  return (
+    `            <tr><td>Measured</td><td>${word(report.models.length)[0].toUpperCase()}${word(report.models.length).slice(1)} ` +
+    `models, ${report.runs} runs, as above. The launch target (≥${TARGET_TOKENS_PCT}% fewer tokens at equal success) ` +
+    `is ${met ? 'met' : 'not met yet'}.</td></tr>`
+  );
+}
+
+export function renderedSite(text, report) {
+  let out = replaceBlock(text, 'ROWS', siteRows(report), SITE);
+  out = replaceBlock(out, 'FOOTNOTE', siteFootnote(report), SITE);
+  out = replaceBlock(out, 'HEADROOM', siteHeadroom(report), SITE);
+  return replaceBlock(out, 'MEASURED', siteMeasured(report), SITE);
+}
+
+// --- prose ranges ---------------------------------------------------------
+
+// Phrases that quote a rounded range. Checked, never rewritten: whitespace is
+// collapsed first, so re-wrapping a paragraph can't produce a false alarm.
+export function rangeClaims(report) {
+  const r = ranges(report);
+  const [t0, t1] = r.tokens;
+  const [c0, c1] = r.cacheRead;
+  const o0 = r.output[0].toFixed(1);
+  const o1 = r.output[1].toFixed(1);
+  const es = (x) => x.replace('.', ',');
+  return [
+    ['README.md', [`${c0}–${c1}%`, `${t0}–${t1}%`, `${c0}% to ${c1}%`, `${o0}% to ${o1}%`]],
+    ['README.es.md', [`entre el ${c0}% y el ${c1}%`, `entre un ${t0}% y un ${t1}%`, `entre el ${es(o0)}% y el ${es(o1)}%`]],
+    ['README.pt-BR.md', [`de ${c0}% a ${c1}%`, `de ${t0}% a ${t1}%`, `${es(o0)}% a ${es(o1)}%`]],
+    ['package.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
+    [SITE, [`${c0}–${c1}%`, `${t0}–${t1}%`, `${c0}% to ${c1}%`, `under ${Math.ceil(r.output[1])}%`]],
+  ];
+}
+
+// Files whose prose quotes a range the data no longer supports.
+export function staleRanges(root = ROOT_DIR) {
+  const report = buildReport();
+  const out = [];
+  for (const [name, phrases] of rangeClaims(report)) {
+    const flat = readFileSync(join(root, name), 'utf8').replace(/\s+/g, ' ');
+    for (const phrase of phrases) if (!flat.includes(phrase)) out.push(`${name}: should say "${phrase}"`);
+  }
+  return out;
+}
+
 // --- marker replacement --------------------------------------------------
 
 const README = { en: 'README.md', es: 'README.es.md', 'pt-BR': 'README.pt-BR.md' };
 
 function replaceBlock(text, name, body, file) {
-  const re = new RegExp(`(<!-- ${name}:START -->\\n)[\\s\\S]*?(<!-- ${name}:END -->)`);
+  // The END marker keeps the indentation the START marker was written with,
+  // so a generated block does not reflow the HTML around it.
+  const re = new RegExp(`([ \\t]*)(<!-- ${name}:START -->\\n)[\\s\\S]*?(<!-- ${name}:END -->)`);
   if (!re.test(text)) throw new Error(`${file}: missing <!-- ${name}:START --> ... <!-- ${name}:END --> markers`);
-  return text.replace(re, (_, open, close) => `${open}${body}\n${close}`);
+  return text.replace(re, (_, indent, open, close) => `${indent}${open}${body}\n${indent}${close}`);
 }
 
 export function renderedReadme(text, report, lang, file) {
@@ -292,6 +424,9 @@ export function outOfDate(root = ROOT_DIR) {
     const text = readFileSync(file, 'utf8');
     if (renderedReadme(text, report, lang, name) !== text) stale.push(file);
   }
+  const site = join(root, SITE);
+  const siteText = readFileSync(site, 'utf8');
+  if (renderedSite(siteText, report) !== siteText) stale.push(site);
   return stale;
 }
 
@@ -317,6 +452,12 @@ function main() {
   for (const [lang, name] of Object.entries(README)) {
     const file = join(ROOT_DIR, name);
     write(file, renderedReadme(readFileSync(file, 'utf8'), report, lang, name));
+  }
+  const site = join(ROOT_DIR, SITE);
+  write(site, renderedSite(readFileSync(site, 'utf8'), report));
+  for (const problem of staleRanges()) {
+    stale++;
+    console.error(`range out of date: ${problem}`);
   }
   if (check && stale) process.exitCode = 1;
   if (!check && !stale) console.log('benchmark docs already up to date');
