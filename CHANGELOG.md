@@ -6,6 +6,31 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+
+- `bench/input-size.mjs` replays every Read and Bash call of the baseline
+  runs without a model, in fresh clones, and measures the characters of tool
+  output with and without the hooks; `bench/results/input-size.json` keeps the
+  result. The README reports it in its own section, apart from the cost
+  figures, and says why a smaller tool output is not a smaller bill.
+- `docs/WHERE-THE-TOKENS-GO.md`: each kind of token's share of tokens and of
+  cost per model, the prices and their reconciliation with `total_cost_usd`,
+  the pay-twice cost model, the tool calls per model, what the hooks did in
+  each run, and how the totals move when stopped or failed runs are left out.
+  Every table is generated from the raw runs.
+
+### Changed
+
+- Results show their uncertainty. Each total carries a 95% bootstrap interval
+  over the tasks, and each task in the charts a whisker over every pairing of
+  a ThinWindow run with a baseline run. Where the interval includes zero, the
+  chart says the change can't be told apart from none.
+- Haiku 4.5 is reported over all runs and over passing runs only, with the
+  runs the turn cap stopped in each condition, and the README states that its
+  ThinWindow runs failed the hidden check more often than its baseline runs.
+- The cache table shows each kind of token's share of the cost next to its
+  share of tokens.
+
 ### Fixed
 
 - The tagline names the quantity behind each percentage. Re-reads are 87–96%
@@ -19,6 +44,8 @@ project uses [Semantic Versioning](https://semver.org).
 - Cost shares price cache writes at the 1-hour rate, which is what Claude
   Code writes: every recorded run's `total_cost_usd` matches it to the cent.
   The dry-run estimate used the 5-minute rate.
+- The FAQ and the site said output is about 1% of the bill. That is its share
+  of tokens; priced, it is 16–27% of the cost of the baseline runs.
 
 ## [0.2.1] - 2026-09-26
 
