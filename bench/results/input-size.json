@@ -15,20 +15,20 @@
    "all": {
     "calls": 366,
     "measured": 250,
-    "before": 861988,
-    "after": 524951
+    "before": 861994,
+    "after": 518900
    },
    "changed": {
     "calls": 41,
     "measured": 38,
     "before": 419428,
-    "after": 82391
+    "after": 76334
    },
    "rewritten": {
     "calls": 41,
     "measured": 38,
     "before": 419428,
-    "after": 82391
+    "after": 76334
    },
    "refused": {
     "calls": 0,
@@ -60,20 +60,20 @@
    "all": {
     "calls": 106,
     "measured": 52,
-    "before": 83853,
-    "after": 84720
+    "before": 83908,
+    "after": 84337
    },
    "changed": {
     "calls": 2,
     "measured": 2,
-    "before": 4311,
-    "after": 5178
+    "before": 4366,
+    "after": 4795
    },
    "rewritten": {
     "calls": 2,
     "measured": 2,
-    "before": 4311,
-    "after": 5178
+    "before": 4366,
+    "after": 4795
    },
    "refused": {
     "calls": 0,
@@ -105,20 +105,20 @@
    "all": {
     "calls": 134,
     "measured": 66,
-    "before": 114982,
-    "after": 115879
+    "before": 115060,
+    "after": 115431
    },
    "changed": {
     "calls": 3,
     "measured": 3,
     "before": 865,
-    "after": 1762
+    "after": 1236
    },
    "rewritten": {
     "calls": 3,
     "measured": 3,
     "before": 865,
-    "after": 1762
+    "after": 1236
    },
    "refused": {
     "calls": 0,
@@ -393,7 +393,7 @@
    ],
    "hook": "rewrite",
    "before": 793,
-   "after": 1288,
+   "after": 1067,
    "exit": 4
   },
   {
@@ -419,7 +419,7 @@
    ],
    "hook": "rewrite",
    "before": 793,
-   "after": 1288,
+   "after": 1067,
    "exit": 4
   },
   {
@@ -447,7 +447,7 @@
    ],
    "hook": "rewrite",
    "before": 793,
-   "after": 1288,
+   "after": 1067,
    "exit": 4
   },
   {
@@ -463,7 +463,7 @@
    ],
    "hook": "rewrite",
    "before": 9552,
-   "after": 1602,
+   "after": 1414,
    "exit": 0
   },
   {
@@ -479,7 +479,7 @@
    ],
    "hook": "rewrite",
    "before": 3546,
-   "after": 1204,
+   "after": 1024,
    "exit": 0
   },
   {
@@ -535,7 +535,7 @@
    ],
    "hook": "rewrite",
    "before": 548,
-   "after": 973,
+   "after": 548,
    "exit": 0
   },
   {
@@ -551,7 +551,7 @@
    ],
    "hook": "rewrite",
    "before": 613,
-   "after": 1088,
+   "after": 613,
    "exit": 0
   },
   {
@@ -567,7 +567,7 @@
    ],
    "hook": "rewrite",
    "before": 548,
-   "after": 973,
+   "after": 548,
    "exit": 0
   },
   {
@@ -593,7 +593,7 @@
    ],
    "hook": "rewrite",
    "before": 3546,
-   "after": 1204,
+   "after": 1024,
    "exit": 0
   },
   {
@@ -893,7 +893,7 @@
    ],
    "hook": "rewrite",
    "before": 770,
-   "after": 1259,
+   "after": 1041,
    "exit": 4
   },
   {
@@ -909,7 +909,7 @@
    ],
    "hook": "rewrite",
    "before": 758,
-   "after": 1223,
+   "after": 1017,
    "exit": 4
   },
   {
@@ -925,7 +925,7 @@
    ],
    "hook": "rewrite",
    "before": 579,
-   "after": 1047,
+   "after": 839,
    "exit": 5
   },
   {
@@ -1431,8 +1431,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | head -100",
    "hook": "none",
-   "before": 3788,
-   "after": 3788,
+   "before": 3778,
+   "after": 3778,
    "exit": 0
   },
   {
@@ -1482,8 +1482,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | tail -30",
    "hook": "none",
-   "before": 2238,
-   "after": 2238,
+   "before": 2229,
+   "after": 2229,
    "exit": 0
   },
   {
@@ -1604,8 +1604,8 @@
    "tool": "Bash",
    "call": "Bash node --test 2>&1 | head -100",
    "hook": "none",
-   "before": 7383,
-   "after": 7383,
+   "before": 7377,
+   "after": 7377,
    "exit": 0
   },
   {
@@ -1617,8 +1617,8 @@
    "tool": "Bash",
    "call": "Bash node --test 2>&1 | tail -20",
    "hook": "none",
-   "before": 815,
-   "after": 815,
+   "before": 813,
+   "after": 813,
    "exit": 0
   },
   {
@@ -1634,7 +1634,7 @@
    ],
    "hook": "rewrite",
    "before": 61,
-   "after": 421,
+   "after": 61,
    "exit": 0
   },
   {
@@ -1683,7 +1683,7 @@
    ],
    "hook": "rewrite",
    "before": 135,
-   "after": 495,
+   "after": 135,
    "exit": 0
   },
   {
@@ -1761,8 +1761,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | tail -15",
    "hook": "none",
-   "before": 350,
-   "after": 350,
+   "before": 349,
+   "after": 349,
    "exit": 0
   },
   {
@@ -1878,8 +1878,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | head -100",
    "hook": "none",
-   "before": 3745,
-   "after": 3745,
+   "before": 3748,
+   "after": 3748,
    "exit": 0
   },
   {
@@ -2065,8 +2065,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | tail -30",
    "hook": "none",
-   "before": 2313,
-   "after": 2313,
+   "before": 2317,
+   "after": 2317,
    "exit": 0
   },
   {
@@ -2148,8 +2148,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | grep -E \"Test Suites:|Tests:|PASS|FAIL\"",
    "hook": "none",
-   "before": 4316,
-   "after": 4316,
+   "before": 4336,
+   "after": 4336,
    "exit": 0
   },
   {
@@ -2366,7 +2366,7 @@
    ],
    "hook": "rewrite",
    "before": 2120,
-   "after": 555,
+   "after": 401,
    "exit": 0
   },
   {
@@ -2378,8 +2378,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | tail -50",
    "hook": "none",
-   "before": 2647,
-   "after": 2647,
+   "before": 2648,
+   "after": 2648,
    "exit": 0
   },
   {
@@ -2427,8 +2427,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | grep -E \"(pass|fail|cancelled|duration_ms|check:type)\"",
    "hook": "none",
-   "before": 4617,
-   "after": 4617,
+   "before": 4609,
+   "after": 4609,
    "exit": 0
   },
   {
@@ -2730,7 +2730,7 @@
    ],
    "hook": "rewrite",
    "before": 810,
-   "after": 1339,
+   "after": 1100,
    "exit": 4
   },
   {
@@ -2746,7 +2746,7 @@
    ],
    "hook": "rewrite",
    "before": 9552,
-   "after": 1602,
+   "after": 1413,
    "exit": 0
   },
   {
@@ -2762,7 +2762,7 @@
    ],
    "hook": "rewrite",
    "before": 613,
-   "after": 1088,
+   "after": 613,
    "exit": 0
   },
   {
@@ -3152,7 +3152,7 @@
    ],
    "hook": "rewrite",
    "before": 770,
-   "after": 1259,
+   "after": 1040,
    "exit": 4
   },
   {
@@ -3284,7 +3284,7 @@
    ],
    "hook": "rewrite",
    "before": 1183,
-   "after": 1171,
+   "after": 975,
    "exit": 0
   },
   {
@@ -3668,8 +3668,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | head -100",
    "hook": "none",
-   "before": 3777,
-   "after": 3777,
+   "before": 3792,
+   "after": 3792,
    "exit": 0
   },
   {
@@ -3681,8 +3681,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | tail -20",
    "hook": "none",
-   "before": 1488,
-   "after": 1488,
+   "before": 1473,
+   "after": 1473,
    "exit": 0
   },
   {
@@ -3723,7 +3723,7 @@
    ],
    "hook": "rewrite",
    "before": 443,
-   "after": 867,
+   "after": 681,
    "exit": 1
   },
   {
@@ -3735,8 +3735,8 @@
    "tool": "Bash",
    "call": "Bash npx jest 2>&1 | tail -50",
    "hook": "none",
-   "before": 3061,
-   "after": 3061,
+   "before": 3090,
+   "after": 3090,
    "exit": 0
   },
   {
@@ -3833,8 +3833,8 @@
    "tool": "Bash",
    "call": "Bash node --test 2>&1 | head -100",
    "hook": "none",
-   "before": 7374,
-   "after": 7374,
+   "before": 7379,
+   "after": 7379,
    "exit": 0
   },
   {
@@ -3846,8 +3846,8 @@
    "tool": "Bash",
    "call": "Bash node --test 2>&1 | tail -50",
    "hook": "none",
-   "before": 2850,
-   "after": 2850,
+   "before": 2849,
+   "after": 2849,
    "exit": 0
   },
   {
@@ -3863,7 +3863,7 @@
    ],
    "hook": "rewrite",
    "before": 61,
-   "after": 421,
+   "after": 61,
    "exit": 0
   },
   {
@@ -4137,8 +4137,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | head -200",
    "hook": "none",
-   "before": 6397,
-   "after": 6397,
+   "before": 6381,
+   "after": 6381,
    "exit": 0
   },
   {
@@ -4445,7 +4445,7 @@
    ],
    "hook": "rewrite",
    "before": 2120,
-   "after": 554,
+   "after": 403,
    "exit": 0
   },
   {
@@ -4457,8 +4457,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | tail -50",
    "hook": "none",
-   "before": 2649,
-   "after": 2649,
+   "before": 2651,
+   "after": 2651,
    "exit": 0
   },
   {
@@ -4490,8 +4490,8 @@
    "tool": "Bash",
    "call": "Bash npm test 2>&1 | grep -E \"tests|pass|fail|duration\"",
    "hook": "none",
-   "before": 4853,
-   "after": 4853,
+   "before": 4848,
+   "after": 4848,
    "exit": 0
   },
   {
@@ -4997,7 +4997,7 @@
    ],
    "hook": "rewrite",
    "before": 1458,
-   "after": 1895,
+   "after": 1702,
    "exit": 2
   },
   {
@@ -5565,8 +5565,8 @@
     "command run through thinwindow-run"
    ],
    "hook": "rewrite",
-   "before": 2853,
-   "after": 3283,
+   "before": 2908,
+   "after": 3093,
    "exit": 2
   },
   {
@@ -6075,8 +6075,8 @@
    "tool": "Bash",
    "call": "Bash npx jest 2>&1 | tail -40; npx eslint lib tests 2>&1 | tail",
    "hook": "none",
-   "before": 2671,
-   "after": 2671,
+   "before": 2730,
+   "after": 2730,
    "exit": 0
   },
   {
@@ -6092,7 +6092,7 @@
    ],
    "hook": "rewrite",
    "before": 0,
-   "after": 342,
+   "after": 0,
    "exit": 1
   },
   {
@@ -6493,8 +6493,8 @@
    "tool": "Bash",
    "call": "Bash python -m pytest tests -q 2>&1 | tail -8",
    "hook": "none",
-   "before": 622,
-   "after": 622,
+   "before": 623,
+   "after": 623,
    "exit": 0
   },
   {
@@ -6602,7 +6602,7 @@
    ],
    "hook": "rewrite",
    "before": 243,
-   "after": 664,
+   "after": 479,
    "exit": 2
   },
   {
@@ -7012,7 +7012,7 @@
    ],
    "hook": "rewrite",
    "before": 622,
-   "after": 756,
+   "after": 757,
    "exit": 0
   },
   {
@@ -7138,8 +7138,8 @@
    "tool": "Bash",
    "call": "Bash npx jest 2>&1 | tail -40; npx eslint lib tests 2>&1 | tail",
    "hook": "none",
-   "before": 2668,
-   "after": 2668,
+   "before": 2686,
+   "after": 2686,
    "exit": 0
   },
   {

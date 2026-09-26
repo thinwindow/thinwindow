@@ -274,16 +274,16 @@ como a conta se divide.
 <!-- TIER1:START -->
 | Modelo | Chamadas nos rastros base | Repetidas | Alteradas pelos hooks | Saída das chamadas repetidas (caracteres) | Mudança |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 106 | 52 | 2 | 83.853 → 84.720 | +1,0% |
-| Sonnet 5 | 134 | 66 | 3 | 114.982 → 115.879 | +0,8% |
-| Haiku 4.5 | 366 | 250 | 41 | 861.988 → 524.951 | −39,1% |
+| Opus 5.5 | 106 | 52 | 2 | 83.908 → 84.337 | +0,5% |
+| Sonnet 5 | 134 | 66 | 3 | 115.060 → 115.431 | +0,3% |
+| Haiku 4.5 | 366 | 250 | 41 | 861.994 → 518.900 | −39,8% |
 
 Não repetidas: 183 chamadas que o rastro cortou (ele guarda 140 caracteres de cada), 33 que escrevem arquivos, rodam um script ou mudam o repositório, e 22 cujo arquivo não pôde ser identificado.
 
 A mudança na conta é outra grandeza, medida em [Benchmark](#benchmark), e não do mesmo tamanho:
-- Opus 5.5: os hooks alteram 2 de 106 chamadas e aumentam a saída repetida em 1,0%; no benchmark agiram em 1 de 16 execuções com ThinWindow, e a mudança medida no custo é −19,4% (IC 95% −26,2% a −10,2%).
-- Sonnet 5: os hooks alteram 3 de 134 chamadas e aumentam a saída repetida em 0,8%; no benchmark agiram em 3 de 24 execuções com ThinWindow, e a mudança medida no custo é −7,9% (IC 95% −18,4% a +2,5%).
-- Haiku 4.5: os hooks alteram 41 de 366 chamadas e reduzem a saída repetida em 39,1%; no benchmark agiram em 9 de 16 execuções com ThinWindow, e a mudança medida no custo é −20,2% (IC 95% −30,5% a −10,9%).
+- Opus 5.5: os hooks alteram 2 de 106 chamadas e aumentam a saída repetida em 0,5%; no benchmark agiram em 1 de 16 execuções com ThinWindow, e a mudança medida no custo é −19,4% (IC 95% −26,2% a −10,2%).
+- Sonnet 5: os hooks alteram 3 de 134 chamadas e aumentam a saída repetida em 0,3%; no benchmark agiram em 3 de 24 execuções com ThinWindow, e a mudança medida no custo é −7,9% (IC 95% −18,4% a +2,5%).
+- Haiku 4.5: os hooks alteram 41 de 366 chamadas e reduzem a saída repetida em 39,8%; no benchmark agiram em 9 de 16 execuções com ThinWindow, e a mudança medida no custo é −20,2% (IC 95% −30,5% a −10,9%).
 
 Onde os hooks quase não agem, a mudança medida vem das regras, que mudam o que o agente faz, ou do ruído entre execuções, não de cortar a saída das ferramentas.
 <!-- TIER1:END -->
