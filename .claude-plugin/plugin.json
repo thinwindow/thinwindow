@@ -1,6 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "thinwindow",
+  "displayName": "ThinWindow",
   "version": "0.2.1",
   "description": "Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.",
   "author": {
