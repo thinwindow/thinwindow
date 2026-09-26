@@ -42,7 +42,8 @@ to a log file in the OS temp dir, and prints only:
   matching error, fail, warn, panic or exception,
 - the path of the full log.
 
-It exits with the command's own exit code. Open the log only when the summary
+A command that succeeds with 10 lines of output or fewer prints them as they
+are and nothing else. It exits with the command's own exit code. Open the log only when the summary
 is not enough, and then grep it or read a range.
 
 ```sh

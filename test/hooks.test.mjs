@@ -111,7 +111,8 @@ test('rewrite mode returns updatedInput without a permission decision', () => {
   const out = r.json.hookSpecificOutput;
   assert.deepEqual(out.updatedInput, { command: 'thinwindow-run npm test', description: 'Run tests' });
   assert.equal(out.permissionDecision, undefined);
-  assert.match(out.additionalContext, /thinwindow-run/);
+  // thinwindow-run's own output explains itself; no note is added.
+  assert.equal(out.additionalContext, undefined);
 });
 
 test('PreToolUse counts what thinwindow did per session', () => {

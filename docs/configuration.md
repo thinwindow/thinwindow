@@ -92,7 +92,9 @@ context.
 
 **`thinwindow-run`** keeps the full log in the temp dir and prints the exit
 code and duration, then the last 10 lines when the command succeeded, or the
-last 40 lines plus earlier error-like lines when it failed.
+last 40 lines plus earlier error-like lines when it failed. A command that
+succeeds with 10 lines of output or fewer prints them as they are and nothing
+else.
 
 thinwindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any

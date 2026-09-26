@@ -265,7 +265,7 @@ Say less
           <li>on failure, the last 40 lines plus earlier error-like lines (error, fail, warn, panic, exception), deduplicated;</li>
           <li>and the path of the full log, so the agent can read exactly the part it needs.</li>
         </ul>
-        <p>The command's exit code is preserved.</p>
+        <p>A command that succeeds with 10 lines of output or fewer prints them as they are and nothing else. The command's exit code is preserved.</p>
 
         <h3>State and logs</h3>
         <p>Read tracking lives in one JSON file per session in <code>&lt;os temp dir&gt;/thinwindow/state/</code>; <code>thinwindow-run</code> logs go to <code>&lt;os temp dir&gt;/thinwindow/logs/</code>. Both are cleaned up after a week. Nothing is written inside your repository, and nothing is sent anywhere.</p>

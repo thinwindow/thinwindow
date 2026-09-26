@@ -35,7 +35,15 @@ test('preserves the exit code and reports it', async () => {
   assert.match(r.out, /^exit 7 · /m);
   const ok = await runCapture([NODE, '-e', '']);
   assert.equal(ok.code, 0);
-  assert.match(ok.out, /^exit 0 · \S+ · 0 lines of output$/m);
+  assert.equal(ok.out, '');
+});
+
+test('a short successful output comes back whole and as is', async () => {
+  const r = await runCapture([NODE, '-e', script(10)]);
+  assert.equal(r.code, 0);
+  assert.equal(r.out, `${Array.from({ length: 10 }, (_, i) => (i === 9 ? 'line 10 Error: bad thing 10' : `line ${i + 1}`)).join('\n')}\n`);
+  const eleven = await runCapture([NODE, '-e', script(11)]);
+  assert.match(eleven.out, /--- last 10 lines ---/);
 });
 
 test('prints only the last 40 lines plus earlier deduplicated matches', async () => {
