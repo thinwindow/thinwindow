@@ -82,7 +82,8 @@ context.
   with no `-m`/`--max-count`, no exclude flag (`--exclude-dir` for grep;
   `-g`/`--type` for `rg`) and no output-bounding flag (`-c`/`-l`/`-L`,
   `--count`, `--files-with-matches`); or `git diff` with no summary flag
-  (`--stat` and friends) and no path after `--`. Scoping to a subdirectory,
+  (`--stat` and friends) and no path, either after `--` or naming a file or
+  directory that exists. Scoping to a subdirectory,
   a single file, or a pipe/redirect (same as above) avoids it.
 
 **PreToolUse `Grep`**

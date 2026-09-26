@@ -159,9 +159,10 @@ const DIFF_SUMMARY_FLAGS = new Set([
   '--stat', '--shortstat', '--numstat', '--name-only', '--name-status', '--compact-summary', '--summary',
 ]);
 
-// git diff with no summary flag and no explicit path can print an unbounded
-// amount of changed code.
-function checkGitDiff(argv) {
+// git diff with no summary flag and no path can print an unbounded amount of
+// changed code. A path comes after `--`, or on its own when it names a file or
+// directory that exists (`git diff src/a.js`): that diff is what was asked for.
+function checkGitDiff(argv, ctx) {
   if (baseName(argv[0]) !== 'git') return null;
   let k = 1;
   while (k < argv.length && argv[k].startsWith('-')) {
@@ -173,6 +174,7 @@ function checkGitDiff(argv) {
   if (rest.some((a) => DIFF_SUMMARY_FLAGS.has(a) || a.startsWith('--stat='))) return null;
   const dashIdx = rest.indexOf('--');
   if (dashIdx !== -1 && rest.length > dashIdx + 1) return null;
+  if (rest.some((a) => !a.startsWith('-') && existsSync(resolve(ctx.cwd, a)))) return null;
   return (
     'thinwindow: git diff with no --stat and no path can print an unbounded amount of changed code. ' +
     'Run git diff --stat first to see what changed, then git diff -- <path> for just the file you need.'
@@ -270,7 +272,7 @@ function findScopeIssues(parsed, ctx) {
       hits.push({ text, reason, wrappers, edits, note });
       continue;
     }
-    reason = checkGitDiff(argv);
+    reason = checkGitDiff(argv, ctx);
     if (reason) {
       let k = 1;
       while (k < cw.length && cw[k].text.startsWith('-')) k += cw[k].text === '-C' || cw[k].text === '-c' ? 2 : 1;
