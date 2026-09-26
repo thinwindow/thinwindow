@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ThinWindow documentation</title>
-  <meta name="description" content="Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 12–23% fewer tokens, measured in Claude Code on three models.">
+  <meta name="description" content="Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.">
   <meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121317" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="../assets/favicon/favicon.ico" sizes="16x16 32x32">
@@ -76,7 +76,7 @@
         <img src="../assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="96" height="96">
         <div>
           <h1>ThinWindow</h1>
-          <p class="lede"><strong>Less in the window. Less on the bill.</strong> Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 12–23% fewer tokens, measured in Claude Code on three models.</p>
+          <p class="lede"><strong>Less in the window. Less on the bill.</strong> Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.</p>
         </div>
       </header>
 
@@ -377,13 +377,13 @@ Say less
           <tbody>
             <!-- ROWS:START -->
             <tr><td>Opus 5.5</td><td class="n win">−15.8%</td><td class="n win">−19.4%</td><td class="n">77.5 → 67.5</td><td class="n">16/16 → 16/16</td><td class="n">32</td></tr>
-            <tr><td>Sonnet 5</td><td class="n win">−11.6%</td><td class="n win">−7.4%</td><td class="n">62 → 63</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
+            <tr><td>Sonnet 5</td><td class="n win">−13.2%</td><td class="n win">−7.9%</td><td class="n">62 → 62</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
             <tr><td>Haiku 4.5</td><td class="n win">−23.0%</td><td class="n win">−20.2%</td><td class="n">230.5 → 220.5</td><td class="n">14/16 → 13/16</td><td class="n">32</td></tr>
             <!-- ROWS:END -->
           </tbody>
         </table></div>
         <!-- FOOTNOTE:START -->
-        <p class="small muted">Same 8 tasks, 112 runs, one agent per run. Claude Code 2.1.282, 2026-09-25. ThinWindow 0.1.0 (a6ebe93) on Opus 5.5; 0.1.0 (528598a) on Sonnet 5; 0.1.0 (05cc89d), 0.1.0 (a6ebe93) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run.</p>
+        <p class="small muted">Same 8 tasks, 112 runs, one agent per run. Claude Code 2.1.282, 2026-09-25 to 2026-09-26. ThinWindow 0.1.0 (a6ebe93) on Opus 5.5; 0.2.0 (30e9c6b), 0.1.0 (528598a) on Sonnet 5; 0.1.0 (05cc89d), 0.1.0 (a6ebe93) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run.</p>
         <!-- FOOTNOTE:END -->
 
         <div class="callout warn">
@@ -439,13 +439,14 @@ Say less
           <li><strong>Cost</strong> is Claude Code's own estimate (<code>total_cost_usd</code>), not a bill. On a subscription you pay in usage limits instead, but the ratio is the same.</li>
           <li><strong>Turns</strong> count the top-level agent loop only. Work delegated to a subagent is included in tokens and cost but not in turns, so tokens and cost are the fair comparison.</li>
           <li><strong>The rules and thresholds were tuned on these same tasks.</strong> Savings on other work will differ.</li>
+          <li><strong>One task was re-measured after a fix.</strong> On Sonnet 5, every ThinWindow run of <code>commander-ci-config</code> capped <code>cat .github/workflows/*.yml</code> at 60 lines and cut the file the task asks about; the hook now keeps short concatenations whole (<a href="https://github.com/thinwindow/thinwindow/issues/7">#7</a>). That task's three ThinWindow runs were re-run at 30e9c6b (+29.3% → +3.9%), and the three they replace are in <code>bench/results/archive/</code>. No other recorded run makes that call, so no other task was re-run.</li>
         </ul>
 
         <h3>Where the remaining headroom is</h3>
         <ul>
           <!-- HEADROOM:START -->
-          <li><strong>Not every task improves.</strong> On Sonnet 5, three of the eight tasks cost more with ThinWindow. Just neutralising those regressions, without saving a token anywhere else, would take Sonnet 5 from −11.6% to about −17.5%, and Opus 5.5 from −15.8% to about −17.7%. Most of the near-term headroom is in not making short tasks worse.</li>
-          <li><strong>Turns are the untapped factor.</strong> Opus 5.5 took 12.9% fewer turns and shows the largest cost cut; Sonnet 5 took 1.6% more and shows the smallest. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was reverted rather than kept and quietly excluded. That experiment is still in the history.</li>
+          <li><strong>Not every task improves.</strong> On Sonnet 5, three of the eight tasks cost more with ThinWindow. Just neutralising those regressions, without saving a token anywhere else, would take Sonnet 5 from −13.2% to about −17.5%, and Opus 5.5 from −15.8% to about −17.7%. Most of the near-term headroom is in not making short tasks worse.</li>
+          <li><strong>Turns are the untapped factor.</strong> Opus 5.5 took 12.9% fewer turns and cut cost by 19.4%; Sonnet 5 took as many turns as without it and cut cost by 7.9%. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was reverted rather than kept and quietly excluded. That experiment is still in the history.</li>
           <!-- HEADROOM:END -->
         </ul>
 
