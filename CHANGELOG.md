@@ -6,6 +6,11 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-27
+
+States each result with its uncertainty and names the quantity behind each
+percentage. The plugin behaves as in 0.2.1.
+
 ### Added
 
 - `bench/input-size.mjs` replays every Read and Bash call of the baseline
@@ -164,7 +169,8 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/thinwindow/thinwindow/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/thinwindow/thinwindow/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/thinwindow/thinwindow/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thinwindow/thinwindow/releases/tag/v0.1.0
