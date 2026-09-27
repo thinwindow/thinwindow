@@ -14,7 +14,7 @@ import { median, pctDelta } from '../bench/lib/stats.mjs';
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
-import { headroom, modelLabel, outOfDate as benchDocsOutOfDate, staleRanges, tokenMix } from '../bench/docs.mjs';
+import { costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, staleRanges, tokenMix } from '../bench/docs.mjs';
 import { tempDir } from './helpers.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -400,6 +400,8 @@ test('report: medians, spread, deltas, totals and failures', () => {
   assert.equal(s.total.thinwindow.tokens, 8750);
   assert.equal(s.total.thinwindow.successes, 2);
   assert.equal(s.total.thinwindow.runs, 4);
+  // Passing runs only: the failed 500-token run no longer pulls task a down.
+  assert.deepEqual(s.total.successful, { pairedTasks: 2, tokensDelta: -25 });
   const md = markdownReport([s]);
   assert.match(md, /\| a \| 2\.0k \(1\.0k–3\.0k\) \| 750 \(500–1\.0k\) \| −62\.5% \|/);
   assert.match(md, /\| \*\*Total\*\* \| \*\*12k\*\* \| \*\*8\.8k\*\* \| \*\*−27\.1%\*\* \|/);
@@ -459,6 +461,15 @@ test('tokenMix is the share of billed tokens by kind', () => {
   assert.equal(mix.cacheRead, 80);
   assert.equal(mix.output, 10);
   assert.equal(tokenMix([]), null);
+});
+
+test('costMix weights each kind of token by its list price', () => {
+  const run = { modelResolved: 'claude-sonnet-5', inputTokens: 0, cacheCreationTokens: 10, cacheReadTokens: 80, outputTokens: 10 };
+  // Sonnet 5: 10 x $4 + 80 x $0.20 + 10 x $10 = $156 per million.
+  const mix = costMix([run]);
+  assert.equal(Math.round(mix.output), 64);
+  assert.equal(Math.round(mix.cacheRead), 10);
+  assert.equal(costMix([{ ...run, modelResolved: 'mystery' }]), null);
 });
 
 test('the README blocks and report.json match the committed runs', () => {

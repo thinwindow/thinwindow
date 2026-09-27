@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ThinWindow documentation</title>
-  <meta name="description" content="Less in the window. Less on the bill. Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.">
+  <meta name="description" content="Less in the window. Less on the bill. Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.">
   <meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121317" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32.png">
@@ -75,7 +75,7 @@
         <img src="../assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="96" height="96">
         <div>
           <h1>ThinWindow</h1>
-          <p class="lede"><strong>Less in the window. Less on the bill.</strong> Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.</p>
+          <p class="lede"><strong>Less in the window. Less on the bill.</strong> Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.</p>
         </div>
       </header>
 
@@ -382,7 +382,7 @@ Say less
           </tbody>
         </table></div>
         <!-- FOOTNOTE:START -->
-        <p class="small muted">Same 8 tasks, 112 runs, one agent per run. Claude Code 2.1.282, 2026-09-25 to 2026-09-26. ThinWindow 0.1.0 (a6ebe93) on Opus 5.5; 0.2.0 (30e9c6b), 0.1.0 (528598a) on Sonnet 5; 0.1.0 (05cc89d), 0.1.0 (a6ebe93) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run.</p>
+        <p class="small muted">Same 8 tasks, 112 runs, one agent per run. Claude Code 2.1.282, 2026-09-25 to 2026-09-26. ThinWindow 0.1.0 (a6ebe93) on Opus 5.5; 0.2.0 (30e9c6b), 0.1.0 (528598a) on Sonnet 5; 0.1.0 (05cc89d), 0.1.0 (a6ebe93) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run. The 13–19% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −18.8% over the 7 tasks where both conditions have a passing run, against −23.0% over all 8. Opus 5.5 and Sonnet 5 passed every run.</p>
         <!-- FOOTNOTE:END -->
 
         <div class="callout warn">

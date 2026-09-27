@@ -25,6 +25,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT_DIR, RESULTS_DIR } from './lib/paths.mjs';
+import { priceOf } from './lib/pricing.mjs';
 import { listResultFiles, readResultFile } from './lib/results.mjs';
 import { fmtNum, fmtPct, fmtSpread, fmtTokens, fmtUsd, successCell, summarize } from './report.mjs';
 
@@ -49,19 +50,25 @@ function byModel(a, b) {
   return fa - fb || b.label.localeCompare(a.label, 'en', { numeric: true });
 }
 
+const KINDS = { input: 'inputTokens', cacheWrite: 'cacheCreationTokens', cacheRead: 'cacheReadTokens', output: 'outputTokens' };
+
+function shares(runs, weight) {
+  const parts = Object.fromEntries(Object.entries(KINDS).map(([k, f]) => [k, runs.reduce((a, r) => a + (r[f] || 0) * weight(r, k), 0)]));
+  const total = Object.values(parts).reduce((a, b) => a + b, 0);
+  return total ? Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, (100 * v) / total])) : null;
+}
+
 // Share of every billed token that was a cache read, a cache write or output,
 // over the runs of one condition. Input is the remaining fraction of a percent.
 export function tokenMix(runs) {
-  const sum = (k) => runs.reduce((a, r) => a + (r[k] || 0), 0);
-  const parts = {
-    input: sum('inputTokens'),
-    cacheWrite: sum('cacheCreationTokens'),
-    cacheRead: sum('cacheReadTokens'),
-    output: sum('outputTokens'),
-  };
-  const total = parts.input + parts.cacheWrite + parts.cacheRead + parts.output;
-  if (!total) return null;
-  return Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, (100 * v) / total]));
+  return shares(runs, () => 1);
+}
+
+// The same split as a share of the cost: each kind of token at its list price
+// (bench/lib/pricing.mjs). A cache read costs a tenth of an input token or
+// less and output five times one, so this mix is nothing like tokenMix.
+export function costMix(runs) {
+  return shares(runs, (r, k) => priceOf(r.modelResolved || r.model)?.[k] ?? NaN);
 }
 
 // What the totals would be if no task had regressed: every task that cost
@@ -107,6 +114,7 @@ export function buildReport(files = listResultFiles()) {
         resultFiles: [...(sources.get(s.model) || [])].sort(),
         // Baseline only: the mix is the problem statement, not the result.
         tokenMix: tokenMix(runs.filter((r) => r.condition === 'baseline')),
+        costMix: costMix(runs.filter((r) => r.condition === 'baseline')),
         tasks: s.tasks,
         total: { ...s.total, ...headroom(s.tasks) },
       };
@@ -126,16 +134,38 @@ export function buildReport(files = listResultFiles()) {
 const pct1 = (n, dec) => (dec === ',' ? fmtPct(n).replace('.', ',') : fmtPct(n));
 const mix1 = (n, dec) => `${n.toFixed(1).replace('.', dec)}%`;
 const word = (n) => WORDS[n] || String(n);
+const names = (ms, and) => ms.map((m) => m.label).join(', ').replace(/, ([^,]*)$/, ` ${and} $1`);
+const allPassed = (m) => ['baseline', 'thinwindow'].every((c) => m.total[c].successes === m.total[c].runs);
+
+// Where the tagline's token range comes from, for every model whose
+// passing-runs figure differs from the all-runs one in the table above it.
+function passedNote(report, L) {
+  const [t0, t1] = ranges(report).tokens;
+  const moved = report.models.filter((m) => fmtPct(m.total.successful.tokensDelta) !== fmtPct(m.total.tokensDelta));
+  const clean = report.models.filter(allPassed);
+  return [
+    L.passedIntro(t0, t1),
+    ...moved.map((m) => L.passedModel(m, pct1(m.total.successful.tokensDelta, L.dec), pct1(m.total.tokensDelta, L.dec))),
+    clean.length ? L.passedAll(names(clean, L.and)) : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
 
 // Rounded headline ranges, so the prose can never disagree with the table.
+// The token range counts runs that passed their hidden check only, so a model
+// can't look thrifty by failing (see summarize in report.mjs). The bill range
+// is what context costs: cache writes plus cache reads, as a share of cost.
 export function ranges(report) {
-  const saved = report.models.map((m) => -m.total.tokensDelta);
+  const saved = report.models.map((m) => -m.total.successful.tokensDelta);
   const read = report.models.map((m) => m.tokenMix.cacheRead);
+  const context = report.models.map((m) => m.costMix.cacheWrite + m.costMix.cacheRead);
   const out = report.models.map((m) => m.tokenMix.output);
   const r = (xs, f) => [f(Math.min(...xs)), f(Math.max(...xs))];
   return {
     tokens: r(saved, (x) => Math.round(x)),
     cacheRead: r(read, (x) => Math.round(x)),
+    contextCost: r(context, (x) => Math.round(x)),
     output: r(out, (x) => x),
   };
 }
@@ -151,6 +181,11 @@ const LOCALES = {
       'of the code on the same task, which are kept in\n' +
       '[`bench/results/archive/`](bench/results/archive). Per-task figures, the\n' +
       'spread and the raw data are in [Benchmark](#benchmark) below.',
+    and: 'and',
+    passedIntro: (t0, t1) => `The ${t0}–${t1}% at the top counts only runs that passed their hidden check.`,
+    passedModel: (m, passed, all) =>
+      `On ${m.label} that is ${passed} over the ${m.total.successful.pairedTasks} tasks where both conditions have a passing run, against ${all} over all ${m.total.pairedTasks}.`,
+    passedAll: (list) => `${list} passed every run.`,
     benchIntro: (r) =>
       `${word(r.models.length)[0].toUpperCase()}${word(r.models.length).slice(1)} models, ${r.tasks} tasks, ${r.runs} runs. Charts and tables are generated by\n` +
       '[`bench/report.mjs`](bench/report.mjs) from the raw run files.',
@@ -182,6 +217,11 @@ const LOCALES = {
       'una versión posterior del código en la misma tarea, que se guardan en\n' +
       '[`bench/results/archive/`](bench/results/archive). El detalle por tarea y los\n' +
       'datos crudos están en [Benchmark](#benchmark).',
+    and: 'y',
+    passedIntro: (t0, t1) => `La cifra de arriba, entre un ${t0}% y un ${t1}%, cuenta solo las corridas que pasaron su verificación oculta.`,
+    passedModel: (m, passed, all) =>
+      `En ${m.label} eso da ${passed} sobre las ${m.total.successful.pairedTasks} tareas en las que ambas condiciones tienen una corrida aprobada, frente a ${all} sobre las ${m.total.pairedTasks}.`,
+    passedAll: (list) => `${list} pasaron todas las corridas.`,
     benchIntro: (r) =>
       `${word(r.models.length)[0].toUpperCase()}${word(r.models.length).slice(1)}`,
     alt: (m) => `Cambio en tokens totales por tarea, ${m.label}: las barras a la izquierda del cero son tokens ahorrados`,
@@ -196,6 +236,11 @@ const LOCALES = {
       'versão posterior do código substituiu na mesma tarefa, guardadas em\n' +
       '[`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os\n' +
       'dados brutos estão em [Benchmark](#benchmark).',
+    and: 'e',
+    passedIntro: (t0, t1) => `A faixa de ${t0}% a ${t1}% no topo conta só as execuções que passaram na verificação oculta.`,
+    passedModel: (m, passed, all) =>
+      `No ${m.label}, isso dá ${passed} nas ${m.total.successful.pairedTasks} tarefas em que as duas condições têm uma execução aprovada, contra ${all} nas ${m.total.pairedTasks}.`,
+    passedAll: (list) => `${list} passaram em todas as execuções.`,
     alt: (m) => `Mudança em tokens totais por tarefa, ${m.label}: barras à esquerda do zero são tokens economizados`,
   },
 };
@@ -224,7 +269,7 @@ export function resultsBlock(report, lang) {
     `**${successCell(m.total.baseline)}** → **${successCell(m.total.thinwindow)}**`,
     String(m.runs),
   ]);
-  return `${table(L.results, ['---', '---:', '---:', ':---:', '---:'], rows)}\n\n${L.resultsNote(report)}`;
+  return `${table(L.results, ['---', '---:', '---:', ':---:', '---:'], rows)}\n\n${L.resultsNote(report)}\n\n${passedNote(report, L)}`;
 }
 
 export function cacheBlock(report, lang) {
@@ -320,7 +365,7 @@ export function siteFootnote(report) {
     `        <p class="small muted">Same ${report.tasks} tasks, ${report.runs} runs, one agent per run. ` +
     `Claude Code ${claude}, ${dates}. ThinWindow ${versions}. ` +
     'Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; ' +
-    'success counts every run.</p>'
+    `success counts every run. ${passedNote(report, LOCALES.en)}</p>`
   );
 }
 
@@ -373,21 +418,36 @@ export function renderedSite(text, report) {
 
 // Phrases that quote a rounded range. Checked, never rewritten: whitespace is
 // collapsed first, so re-wrapping a paragraph can't produce a false alarm.
+// Each phrase carries its quantity (of tokens, of the bill), so a sentence
+// can't drift into quoting a token share as a share of cost.
 export function rangeClaims(report) {
   const r = ranges(report);
   const [t0, t1] = r.tokens;
   const [c0, c1] = r.cacheRead;
+  const [x0, x1] = r.contextCost;
   const o0 = r.output[0].toFixed(1);
   const o1 = r.output[1].toFixed(1);
   const es = (x) => x.replace('.', ',');
+  const tagline = [`${c0}–${c1}% of tokens`, `${x0}–${x1}% of the bill`, `${t0}–${t1}% fewer tokens`];
   return [
-    ['README.md', [`${c0}–${c1}%`, `${t0}–${t1}%`, `${c0}% to ${c1}%`, `${o0}% to ${o1}%`]],
-    ['README.es.md', [`entre el ${c0}% y el ${c1}%`, `entre un ${t0}% y un ${t1}%`, `entre el ${es(o0)}% y el ${es(o1)}%`]],
-    ['README.pt-BR.md', [`de ${c0}% a ${c1}%`, `de ${t0}% a ${t1}%`, `${es(o0)}% a ${es(o1)}%`]],
-    ['package.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
-    ['.claude-plugin/plugin.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
-    ['.claude-plugin/marketplace.json', [`${c0}–${c1}%`, `${t0}–${t1}%`]],
-    [SITE, [`${c0}–${c1}%`, `${t0}–${t1}%`, `${c0}% to ${c1}%`, `under ${Math.ceil(r.output[1])}%`]],
+    ['README.md', [...tagline, `${c0}% to ${c1}%`, `${o0}% to ${o1}%`]],
+    [
+      'README.es.md',
+      [
+        `entre el ${c0}% y el ${c1}% de los tokens`,
+        `entre el ${x0}% y el ${x1}% de la factura`,
+        `entre un ${t0}% y un ${t1}% menos de tokens`,
+        `entre el ${es(o0)}% y el ${es(o1)}%`,
+      ],
+    ],
+    [
+      'README.pt-BR.md',
+      [`de ${c0}% a ${c1}% dos tokens`, `de ${x0}% a ${x1}% da conta`, `de ${t0}% a ${t1}% menos tokens`, `${es(o0)}% a ${es(o1)}%`],
+    ],
+    ['package.json', tagline],
+    ['.claude-plugin/plugin.json', tagline],
+    ['.claude-plugin/marketplace.json', tagline],
+    [SITE, [...tagline, `${c0}% to ${c1}%`, `under ${Math.ceil(r.output[1])}%`]],
   ];
 }
 

@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>Less in the window. Less on the bill.</strong><br>
-  Most of your agent's tokens are re-reads: 87–96% is context re-sent every turn. ThinWindow is both a Claude Code plugin and an Agent Skill, and it shrinks that context: 13–23% fewer tokens, measured in Claude Code on three models.
+  Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.
 </p>
 
 <p align="center">
@@ -27,6 +27,8 @@ every run recorded is in the table, except runs superseded by a later version
 of the code on the same task, which are kept in
 [`bench/results/archive/`](bench/results/archive). Per-task figures, the
 spread and the raw data are in [Benchmark](#benchmark) below.
+
+The 13–19% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −18.8% over the 7 tasks where both conditions have a passing run, against −23.0% over all 8. Opus 5.5 and Sonnet 5 passed every run.
 <!-- RESULTS:END -->
 
 ## Why context is the bill

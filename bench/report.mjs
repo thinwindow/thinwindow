@@ -67,6 +67,17 @@ export function summarize(records) {
     total.tokensDelta = pctDelta(total.baseline.tokens, total.thinwindow.tokens);
     total.costDelta = pctDelta(total.baseline.cost, total.thinwindow.cost);
     total.turnsDelta = pctDelta(total.baseline.turns, total.thinwindow.turns);
+    // The same total over runs that passed their hidden check only. A run that
+    // fails or hits the turn cap can stop early and look cheap, so this is the
+    // figure that doesn't reward failing; a task drops out when either
+    // condition has no passing run.
+    const passed = taskIds
+      .map((task) => CONDS.map((c) => median(runs.filter((r) => r.task === task && r.condition === c && r.success === true).map((r) => r.totalTokens))))
+      .filter(([b, k]) => b !== null && k !== null);
+    total.successful = {
+      pairedTasks: passed.length,
+      tokensDelta: pctDelta(passed.reduce((a, [b]) => a + b, 0), passed.reduce((a, [, k]) => a + k, 0)),
+    };
     const dates = runs.map((r) => r.startedAt).filter(Boolean).sort();
     out.push({
       model,

@@ -6,6 +6,20 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Fixed
+
+- The tagline names the quantity behind each percentage. Re-reads are 87–96%
+  of tokens; together with the first cache write, context is 73–84% of the
+  bill (Claude Code's cost estimate, baseline runs), which the old wording
+  left to be read off the token share. The reduction is 13–19% fewer tokens,
+  counted on runs that passed their hidden check: Haiku 4.5's −23.0% over all
+  runs includes a task where no ThinWindow run passed. The READMEs, the
+  manifests and the site carry it, with the scope (eight tasks, two
+  repositories), and CI checks every figure against the raw runs.
+- Cost shares price cache writes at the 1-hour rate, which is what Claude
+  Code writes: every recorded run's `total_cost_usd` matches it to the cent.
+  The dry-run estimate used the 5-minute rate.
+
 ## [0.2.1] - 2026-09-26
 
 Fixes the one Sonnet 5 regression the traces explained, and brings the docs
