@@ -14,7 +14,7 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { RESULTS_DIR } from './lib/paths.mjs';
 import { listResultFiles, readResults } from './lib/results.mjs';
-import { median, pctDelta, spread } from './lib/stats.mjs';
+import { bootstrapDelta, median, pctDelta, spread } from './lib/stats.mjs';
 
 const CONDS = ['baseline', 'thinwindow'];
 
@@ -59,6 +59,9 @@ export function summarize(records) {
         runs: condRuns.length,
         successes: condRuns.filter((r) => r.success === true).length,
         errors: condRuns.filter((r) => !Number.isFinite(r.totalTokens)).length,
+        // Stopped by Claude Code at --max-turns: the run did not finish, so its
+        // tokens are not comparable with a run that did.
+        capped: condRuns.filter((r) => r.subtype === 'error_max_turns').length,
         tokens: sum(c, 'medianTokens'),
         cost: sum(c, 'medianCost'),
         turns: sum(c, 'medianTurns'),
@@ -67,6 +70,10 @@ export function summarize(records) {
     total.tokensDelta = pctDelta(total.baseline.tokens, total.thinwindow.tokens);
     total.costDelta = pctDelta(total.baseline.cost, total.thinwindow.cost);
     total.turnsDelta = pctDelta(total.baseline.turns, total.thinwindow.turns);
+    // 95% bootstrap intervals over the tasks: with 8 tasks, a total whose
+    // interval includes zero can't be told apart from no change.
+    total.tokensCI = bootstrapDelta(paired.map((t) => [t.baseline.medianTokens, t.thinwindow.medianTokens]));
+    total.costCI = bootstrapDelta(paired.filter((t) => t.costDelta !== null).map((t) => [t.baseline.medianCost, t.thinwindow.medianCost]));
     // The same total over runs that passed their hidden check only. A run that
     // fails or hits the turn cap can stop early and look cheap, so this is the
     // figure that doesn't reward failing; a task drops out when either
@@ -77,6 +84,7 @@ export function summarize(records) {
     total.successful = {
       pairedTasks: passed.length,
       tokensDelta: pctDelta(passed.reduce((a, [b]) => a + b, 0), passed.reduce((a, [, k]) => a + k, 0)),
+      tokensCI: bootstrapDelta(passed),
     };
     const dates = runs.map((r) => r.startedAt).filter(Boolean).sort();
     out.push({
@@ -155,6 +163,7 @@ export function markdownReport(summaries) {
         `**${successCell(T.baseline)}** | **${successCell(T.thinwindow)}** |`,
     );
     lines.push('');
+    if (T.tokensCI) lines.push(`Total tokens ${fmtPct(T.tokensDelta)} (95% CI ${fmtPct(T.tokensCI[0])} to ${fmtPct(T.tokensCI[1])}); cost ${fmtPct(T.costDelta)} (95% CI ${fmtPct(T.costCI[0])} to ${fmtPct(T.costCI[1])}).`, '');
     const errors = T.baseline.errors + T.thinwindow.errors;
     lines.push(
       'Tokens are input + cache-creation + cache-read + output, summed over every model the run used. ' +
@@ -183,22 +192,25 @@ function niceStep(max) {
   return 10 * pow;
 }
 
-// Per-task change, as diverging bars from a zero line: bars to the left are
-// tokens saved, bars to the right are tokens lost. Plotting the *change* rather
-// than two absolute totals is what makes the effect visible — on an absolute
-// axis the saving is a short segment between two nearly identical bars. The
-// absolute medians ride along as muted text so magnitude is not lost.
-// Everything tunable lives in LAYOUT and in the CSS variables below.
+// Per-task change, as diverging bars from a zero line: left of zero, the task
+// took fewer tokens with ThinWindow; right of zero, more. Plotting the
+// *change* rather than two absolute totals is what makes the effect visible;
+// the absolute medians ride along as muted text so magnitude is not lost.
+// Each bar carries a whisker over every pairing of a ThinWindow run with a
+// baseline run of the same task: where it crosses zero, the two conditions'
+// ranges overlap. The header gives the total's 95% interval and says so when
+// it includes zero. Everything tunable lives in LAYOUT and in the CSS below.
 const LAYOUT = {
   width: 780,
   labelW: 214, // left gutter for task names
-  padL: 62, // room for the % label at the end of a leftward bar
-  padR: 74, // room for the % label at the end of a rightward bar
+  padL: 16,
+  padR: 76, // the Δ column at the right edge
   rowH: 34,
-  top: 132,
   bottom: 44,
   barH: 15,
   radius: 4, // rounded data-end only, per the mark spec
+  cap: 8, // height of a whisker's end cap
+  maxPct: 100, // a whisker past +100% runs to the edge and ends in an arrow
 };
 
 const THEME = `
@@ -213,6 +225,7 @@ const THEME = `
   .grid{stroke:var(--grid);stroke-width:1}
   .zero{stroke:var(--ink-2);stroke-width:1.5}
   .win{fill:var(--tw)}.lose{fill:var(--base)}
+  .whisk{stroke:var(--ink);stroke-width:1.25;fill:none}.arrow{fill:var(--ink)}
   .h1{font-size:16px;font-weight:650;letter-spacing:-.01em}
   .h2{font-size:12px}.lbl{font-size:12px}.val{font-size:11px}
   .delta{font-size:12px;font-weight:650}
@@ -223,79 +236,135 @@ function niceStepPct(max) {
   return 100;
 }
 
+// The change between a ThinWindow run and a baseline run of the same task,
+// over every pairing: [fewest ThinWindow / most baseline, most / fewest] - 1.
+export function taskRange(t) {
+  const b = t.baseline.tokenSpread;
+  const k = t.thinwindow.tokenSpread;
+  if (!b || !k || !(b.min > 0)) return null;
+  return [100 * (k.min / b.max - 1), 100 * (k.max / b.min - 1)];
+}
+
+export const includesZero = (ci) => Array.isArray(ci) && ci[0] <= 0 && ci[1] >= 0;
+
+// The header's second paragraph: the interval, and for a model whose runs
+// failed or hit the turn cap, the figure over passing runs and both rates.
+export function headerLines(s) {
+  const T = s.total;
+  const out = [];
+  if (T.tokensCI) {
+    out.push(
+      `95% interval over the ${T.pairedTasks} tasks: ${fmtPct(T.tokensCI[0])} to ${fmtPct(T.tokensCI[1])}.` +
+        (includesZero(T.tokensCI) ? ' It includes zero: on these tasks the change can’t be told apart from none.' : ''),
+    );
+  }
+  const S = T.successful;
+  const b = T.baseline;
+  const k = T.thinwindow;
+  const messy = b.capped + k.capped > 0 || b.successes < b.runs || k.successes < k.runs;
+  if (S && messy) {
+    out.push(
+      `Passing runs only: ${fmtPct(S.tokensDelta)} over ${S.pairedTasks} tasks` +
+        (S.tokensCI ? ` (95% interval ${fmtPct(S.tokensCI[0])} to ${fmtPct(S.tokensCI[1])}).` : '.'),
+    );
+    out.push(`Stopped by the turn cap: ${b.capped}/${b.runs} → ${k.capped}/${k.runs} · failed the hidden check: ${b.runs - b.successes}/${b.runs} → ${k.runs - k.successes}/${k.runs}.`);
+  }
+  return out;
+}
+
 export function svgChart(s) {
   const L = LAYOUT;
-  // Deepest saving first, so the rows read as a ranking and the tasks that got
+  // Deepest drop first, so the rows read as a ranking and the tasks that got
   // worse collect at the bottom instead of hiding mid-list.
   const tasks = s.tasks
     .filter((t) => Number.isFinite(t.tokensDelta))
     .slice()
     .sort((a, b) => a.tokensDelta - b.tokensDelta);
+  const T = s.total;
+  const lines = headerLines(s);
+  const legendY = 96 + lines.length * 18;
+  const top = legendY + 40;
   const plotX = L.labelW + L.padL;
   const plotW = L.width - L.labelW - L.padL - L.padR;
-  const height = L.top + tasks.length * L.rowH + L.bottom;
+  const height = top + tasks.length * L.rowH + L.bottom;
 
-  const lo = Math.min(0, ...tasks.map((t) => t.tokensDelta));
-  const hi = Math.max(0, ...tasks.map((t) => t.tokensDelta));
+  const ranges = tasks.map(taskRange);
+  const lo = Math.min(0, ...tasks.map((t) => t.tokensDelta), ...ranges.filter(Boolean).map((r) => r[0]));
+  const hi = Math.max(0, ...tasks.map((t) => t.tokensDelta), ...ranges.filter(Boolean).map((r) => Math.min(r[1], L.maxPct)));
   const step = niceStepPct(Math.max(-lo, hi));
   const axisLo = Math.floor(lo / step) * step;
   const axisHi = Math.ceil(hi / step) * step;
-  const x = (v) => plotX + ((v - axisLo) / (axisHi - axisLo)) * plotW;
+  const x = (v) => plotX + ((Math.min(Math.max(v, axisLo), axisHi) - axisLo) / (axisHi - axisLo)) * plotW;
   const zero = x(0);
-  const T = s.total;
   const axisY = height - L.bottom + 22;
+  const f = (n) => n.toFixed(1);
   const o = [];
 
   o.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${L.width}" height="${height}" viewBox="0 0 ${L.width} ${height}" role="img" aria-labelledby="t d">`);
-  o.push(`<title id="t">thinwindow benchmark: change in total tokens per task, ${esc(s.model)}</title>`);
-  o.push(`<desc id="d">One bar per task, showing the change in median total tokens against plain Claude Code. Bars left of the zero line are tokens saved, bars to the right are tokens lost. Overall ${esc(fmtTokens(T.baseline.tokens))} versus ${esc(fmtTokens(T.thinwindow.tokens))} (${esc(fmtPct(T.tokensDelta))}); success ${T.baseline.successes}/${T.baseline.runs} versus ${T.thinwindow.successes}/${T.thinwindow.runs}.</desc>`);
+  o.push(`<title id="t">ThinWindow benchmark: change in total tokens per task, ${esc(s.model)}</title>`);
+  o.push(
+    `<desc id="d">One bar per task: the change in median total tokens with ThinWindow against plain Claude Code; left of zero is fewer tokens, right of zero more. ` +
+      `Each whisker spans every pairing of a ThinWindow run with a baseline run of that task. Total ${esc(fmtTokens(T.baseline.tokens))} versus ${esc(fmtTokens(T.thinwindow.tokens))} (${esc(fmtPct(T.tokensDelta))}). ` +
+      `${esc(lines.join(' '))} Success ${T.baseline.successes}/${T.baseline.runs} versus ${T.thinwindow.successes}/${T.thinwindow.runs}.</desc>`,
+  );
   o.push(`<style>${THEME}</style>`);
   o.push(`<rect width="${L.width}" height="${height}" fill="var(--surface)"/>`);
 
   o.push(`<text class="ink h1" x="0" y="24">Change in total tokens per task</text>`);
   o.push(`<text class="ink2 h2" x="0" y="44">${esc(s.model)} · Claude Code ${esc(s.claudeVersions.join(', ') || '?')} · medians of up to ${s.reps} runs per task and condition</text>`);
   o.push(`<text class="ink" x="0" y="76" font-size="24" font-weight="680">${esc(fmtPct(T.tokensDelta))}</text>`);
-  o.push(`<text class="ink2 h2" x="104" y="76">overall · ${esc(fmtTokens(T.baseline.tokens))} → ${esc(fmtTokens(T.thinwindow.tokens))} · success ${T.baseline.successes}/${T.baseline.runs} → ${T.thinwindow.successes}/${T.thinwindow.runs}</text>`);
+  o.push(`<text class="ink2 h2" x="104" y="76">total tokens · ${esc(fmtTokens(T.baseline.tokens))} → ${esc(fmtTokens(T.thinwindow.tokens))} · success ${T.baseline.successes}/${T.baseline.runs} → ${T.thinwindow.successes}/${T.thinwindow.runs}</text>`);
+  lines.forEach((line, i) => o.push(`<text class="ink h2" x="0" y="${98 + i * 18}">${esc(line)}</text>`));
 
   const legend = (cx, cls, label) =>
-    `<rect class="${cls}" x="${cx}" y="94" width="11" height="11" rx="2"/><text class="ink lbl" x="${cx + 17}" y="104">${esc(label)}</text>`;
+    `<rect class="${cls}" x="${cx}" y="${legendY}" width="11" height="11" rx="2"/><text class="ink lbl" x="${cx + 17}" y="${legendY + 10}">${esc(label)}</text>`;
   o.push(legend(0, 'win', 'fewer tokens with ThinWindow'));
-  o.push(legend(200, 'lose', 'fewer tokens without it'));
+  o.push(legend(206, 'lose', 'more tokens with ThinWindow'));
+  const wy = legendY + 5.5;
+  o.push(`<path class="whisk" d="M412,${wy - L.cap / 2}V${wy + L.cap / 2}M412,${wy}H440M440,${wy - L.cap / 2}V${wy + L.cap / 2}"/>`);
+  o.push(`<text class="ink lbl" x="448" y="${legendY + 10}">range over every pair of runs</text>`);
 
-  const rowsTop = L.top - L.rowH / 2;
-  const rowsBottom = L.top + tasks.length * L.rowH - L.rowH / 2;
+  const rowsTop = top - L.rowH / 2;
+  const rowsBottom = top + tasks.length * L.rowH - L.rowH / 2;
   for (let v = axisLo; v <= axisHi + 1e-9; v += step) {
     if (v === 0) continue;
-    const gx = x(v).toFixed(1);
+    const gx = f(x(v));
     o.push(`<line class="grid" x1="${gx}" y1="${rowsTop}" x2="${gx}" y2="${rowsBottom}"/>`);
     o.push(`<text class="ink2 val" x="${gx}" y="${axisY}" text-anchor="middle">${v > 0 ? '+' : '−'}${Math.abs(v)}%</text>`);
   }
-  o.push(`<line class="zero" x1="${zero.toFixed(1)}" y1="${rowsTop}" x2="${zero.toFixed(1)}" y2="${rowsBottom}"/>`);
-  o.push(`<text class="ink2 val" x="${zero.toFixed(1)}" y="${axisY}" text-anchor="middle">0</text>`);
+  o.push(`<line class="zero" x1="${f(zero)}" y1="${rowsTop}" x2="${f(zero)}" y2="${rowsBottom}"/>`);
+  o.push(`<text class="ink2 val" x="${f(zero)}" y="${axisY}" text-anchor="middle">0</text>`);
 
   tasks.forEach((t, i) => {
-    const y = L.top + i * L.rowH;
+    const y = top + i * L.rowH;
     const d = t.tokensDelta;
-    const saving = d < 0;
-    const xEnd = x(d);
-    const w = Math.max(1.5, Math.abs(xEnd - zero));
-    const x0 = saving ? zero - w : zero;
+    const fewer = d < 0;
+    const w = Math.max(1.5, Math.abs(x(d) - zero));
+    const x0 = fewer ? zero - w : zero;
     const r = Math.min(L.radius, w);
-    const top = y - L.barH / 2;
-    const bot = y + L.barH / 2;
+    const barTop = y - L.barH / 2;
+    const barBot = y + L.barH / 2;
     // Rounded on the data end only; the end that sits on zero stays square.
-    const path = saving
-      ? `M${(x0 + r).toFixed(1)},${top}H${zero.toFixed(1)}V${bot}H${(x0 + r).toFixed(1)}A${r},${r} 0 0 1 ${x0.toFixed(1)},${(bot - r).toFixed(1)}V${(top + r).toFixed(1)}A${r},${r} 0 0 1 ${(x0 + r).toFixed(1)},${top}Z`
-      : `M${zero.toFixed(1)},${top}H${(x0 + w - r).toFixed(1)}A${r},${r} 0 0 1 ${(x0 + w).toFixed(1)},${(top + r).toFixed(1)}V${(bot - r).toFixed(1)}A${r},${r} 0 0 1 ${(x0 + w - r).toFixed(1)},${bot}H${zero.toFixed(1)}Z`;
+    const path = fewer
+      ? `M${f(x0 + r)},${barTop}H${f(zero)}V${barBot}H${f(x0 + r)}A${r},${r} 0 0 1 ${f(x0)},${f(barBot - r)}V${f(barTop + r)}A${r},${r} 0 0 1 ${f(x0 + r)},${barTop}Z`
+      : `M${f(zero)},${barTop}H${f(x0 + w - r)}A${r},${r} 0 0 1 ${f(x0 + w)},${f(barTop + r)}V${f(barBot - r)}A${r},${r} 0 0 1 ${f(x0 + w - r)},${barBot}H${f(zero)}Z`;
+    const range = ranges[i];
+    const tip = range ? `; over every pair of runs ${fmtPct(range[0])} to ${fmtPct(range[1])}` : '';
     o.push(`<text class="ink lbl" x="${L.labelW - 12}" y="${y - 1}" text-anchor="end">${esc(t.task)}</text>`);
     o.push(`<text class="ink2 val" x="${L.labelW - 12}" y="${y + 12}" text-anchor="end">${esc(fmtTokens(t.baseline.medianTokens))} → ${esc(fmtTokens(t.thinwindow.medianTokens))}</text>`);
     o.push(
-      `<path class="${saving ? 'win' : 'lose'}" d="${path}"><title>${esc(
-        `${t.task}: ${fmtTokens(t.baseline.medianTokens)} → ${fmtTokens(t.thinwindow.medianTokens)} tokens (${fmtPct(t.tokensDelta)}), success ${t.baseline.successes}/${t.baseline.runs} → ${t.thinwindow.successes}/${t.thinwindow.runs}`,
+      `<path class="${fewer ? 'win' : 'lose'}" d="${path}"><title>${esc(
+        `${t.task}: ${fmtTokens(t.baseline.medianTokens)} → ${fmtTokens(t.thinwindow.medianTokens)} tokens (${fmtPct(d)})${tip}, success ${t.baseline.successes}/${t.baseline.runs} → ${t.thinwindow.successes}/${t.thinwindow.runs}`,
       )}</title></path>`,
     );
-    const lx = saving ? x0 - 8 : x0 + w + 8;
-    o.push(`<text class="ink delta" x="${lx.toFixed(1)}" y="${y + 4}" text-anchor="${saving ? 'end' : 'start'}">${esc(fmtPct(d))}</text>`);
+    if (range) {
+      const [a, b] = [x(range[0]), x(range[1])];
+      const c = L.cap / 2;
+      const clipped = range[1] > axisHi;
+      o.push(`<path class="whisk" d="M${f(a)},${y - c}V${y + c}M${f(a)},${y}H${f(b)}${clipped ? '' : `M${f(b)},${y - c}V${y + c}`}"/>`);
+      if (clipped) o.push(`<path class="arrow" d="M${f(b)},${y}l-7,-4v8z"/>`);
+    }
+    o.push(`<text class="ink delta" x="${plotX + plotW + 18}" y="${y + 4}">${esc(fmtPct(d))}</text>`);
   });
 
   o.push('</svg>');
