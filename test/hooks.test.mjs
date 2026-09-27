@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { RUN } from '../hooks/lib/bash-guard.mjs';
 import { makeProject, tempDir } from './helpers.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -109,9 +110,23 @@ test('rewrite mode returns updatedInput without a permission decision', () => {
     { CLAUDE_PROJECT_DIR: dir },
   );
   const out = r.json.hookSpecificOutput;
-  assert.deepEqual(out.updatedInput, { command: 'thinwindow-run npm test', description: 'Run tests' });
+  assert.deepEqual(out.updatedInput, { command: `${RUN} npm test`, description: 'Run tests' });
   assert.equal(out.permissionDecision, undefined);
   assert.match(out.additionalContext, /thinwindow-run/);
+});
+
+test('a direct thinwindow-run call is pointed at the runner, even in soft-block mode', () => {
+  const dir = tempDir('thinwindow-soft-');
+  writeFileSync(join(dir, '.thinwindow.json'), JSON.stringify({ rewrite: false }));
+  const r = runHook(
+    PRE,
+    { session_id: 'direct', cwd: dir, tool_name: 'Bash', tool_input: { command: 'thinwindow-run npm test' } },
+    { CLAUDE_PROJECT_DIR: dir },
+  );
+  const out = r.json.hookSpecificOutput;
+  assert.deepEqual(out.updatedInput, { command: `${RUN} npm test` });
+  assert.equal(out.permissionDecision, undefined);
+  assert.equal(out.additionalContext, undefined);
 });
 
 test('PreToolUse counts what thinwindow did per session', () => {
@@ -125,6 +140,7 @@ test('PreToolUse counts what thinwindow did per session', () => {
   call('npm test');
   call('git log');
   call('ls');
+  call('thinwindow-run npm test');
   const state = JSON.parse(readFileSync(join(tmp, 'thinwindow', 'state', 'stats.json'), 'utf8'));
   assert.deepEqual(state.stats, { 'Bash.rewrite': 1, 'Bash.deny': 1 });
 });

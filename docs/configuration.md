@@ -92,7 +92,13 @@ context.
 
 **`thinwindow-run`** keeps the full log in the temp dir and prints the exit
 code and duration, then the last 10 lines when the command succeeded, or the
-last 40 lines plus earlier error-like lines when it failed.
+last 40 lines plus earlier error-like lines when it failed. The hook runs it as
+`node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs' <cmd>` and
+points a direct `thinwindow-run <cmd>` at the same path. To run those calls
+without a permission prompt, allow
+`Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)`; it replaces
+`Bash(thinwindow-run *)`, which no longer matches. Either rule approves every
+command it wraps.
 
 thinwindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any
