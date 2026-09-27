@@ -275,16 +275,16 @@ reparte la factura.
 <!-- TIER1:START -->
 | Modelo | Llamadas en las trazas base | Repetidas | Cambiadas por los hooks | Salida de las llamadas repetidas (caracteres) | Cambio |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 106 | 52 | 2 | 83.908 → 84.337 | +0,5% |
-| Sonnet 5 | 134 | 66 | 3 | 115.060 → 115.431 | +0,3% |
-| Haiku 4.5 | 366 | 250 | 41 | 861.994 → 518.900 | −39,8% |
+| Opus 5.5 | 106 | 52 | 2 | 83.849 → 83.856 | +0,0% |
+| Sonnet 5 | 134 | 66 | 2 | 115.021 → 115.028 | +0,0% |
+| Haiku 4.5 | 366 | 250 | 37 | 861.927 → 515.933 | −40,1% |
 
 Sin repetir: 183 llamadas que la traza cortó (guarda 140 caracteres de cada una), 33 que escriben archivos, corren un script o cambian el repositorio, y 22 cuyo archivo no se pudo identificar.
 
 El cambio en la factura es otra magnitud, medida en [Benchmark](#benchmark), y no del mismo tamaño:
-- Opus 5.5: los hooks cambian 2 de 106 llamadas y agrandan la salida repetida un 0,5%; en el benchmark actuaron en 1 de 16 corridas con ThinWindow, y el cambio medido en el costo es −19,4% (IC 95% −26,2% a −10,2%).
-- Sonnet 5: los hooks cambian 3 de 134 llamadas y agrandan la salida repetida un 0,3%; en el benchmark actuaron en 3 de 24 corridas con ThinWindow, y el cambio medido en el costo es −7,9% (IC 95% −18,4% a +2,5%).
-- Haiku 4.5: los hooks cambian 41 de 366 llamadas y recortan la salida repetida un 39,8%; en el benchmark actuaron en 9 de 16 corridas con ThinWindow, y el cambio medido en el costo es −20,2% (IC 95% −30,5% a −10,9%).
+- Opus 5.5: los hooks cambian 2 de 106 llamadas y agrandan la salida repetida un 0,0%; en el benchmark actuaron en 1 de 16 corridas con ThinWindow, y el cambio medido en el costo es −19,4% (IC 95% −26,2% a −10,2%).
+- Sonnet 5: los hooks cambian 2 de 134 llamadas y agrandan la salida repetida un 0,0%; en el benchmark actuaron en 3 de 24 corridas con ThinWindow, y el cambio medido en el costo es −7,9% (IC 95% −18,4% a +2,5%).
+- Haiku 4.5: los hooks cambian 37 de 366 llamadas y recortan la salida repetida un 40,1%; en el benchmark actuaron en 9 de 16 corridas con ThinWindow, y el cambio medido en el costo es −20,2% (IC 95% −30,5% a −10,9%).
 
 Donde los hooks casi no actúan, el cambio medido viene de las reglas, que cambian lo que hace el agente, o del ruido entre corridas, no de recortar la salida de las herramientas.
 <!-- TIER1:END -->
