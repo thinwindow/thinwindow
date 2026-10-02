@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
 import { debug } from './hook-io.mjs';
-import { checkBash } from './bash-guard.mjs';
+import { checkBash, resolveRunner } from './bash-guard.mjs';
 import { checkGrepTool } from './grep-guard.mjs';
 import { checkRead } from './read-guard.mjs';
 import { pruneStates, resetState, updateState } from './state.mjs';
@@ -47,7 +47,7 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
   const config = loadConfig({ projectDir, env, home });
   if (!config.enabled) return null;
 
-  const result = updateState(
+  let result = updateState(
     input.session_id,
     (state) => {
       const r =
@@ -65,6 +65,11 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
     },
     { base: stateBase, now },
   );
+  if (tool === 'Bash' && result.action !== 'deny') {
+    const command = result.action === 'rewrite' ? result.command : input.tool_input?.command;
+    const resolved = typeof command === 'string' ? resolveRunner(command) : command;
+    if (resolved !== command) result = { ...result, action: 'rewrite', command: resolved };
+  }
   const subject = input.tool_input?.file_path ?? input.tool_input?.command ?? input.tool_input?.pattern;
   debug(`${tool} ${result.action} (${result.kind}): ${subject}`, env);
 

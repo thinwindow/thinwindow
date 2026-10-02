@@ -6,6 +6,17 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Changed
+
+- The plugin ships no `bin/`. Cowork and the Claude apps refuse a plugin with
+  a top-level `bin/`, and the directory holds its versions for a reviewer
+  (#13). The Bash hook now runs `thinwindow-run` as
+  `node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs'` and points
+  a direct `thinwindow-run` call at the same path, so the rules and the output
+  the agent sees are unchanged.
+- Permission rules: `Bash(thinwindow-run *)` no longer matches. Allow
+  `Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)` instead.
+
 ## [0.2.2] - 2026-09-27
 
 States each result with its uncertainty and names the quantity behind each

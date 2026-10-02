@@ -20,11 +20,10 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
 | Path | What |
 | --- | --- |
 | `rules/thinwindow.md` | The rules. Single source of truth, injected at session start. |
-| `skills/thinwindow/` | The Agent Skill: the rules plus `thinwindow-run` (`scripts/thinwindow-run.mjs`). |
+| `skills/thinwindow/` | The Agent Skill: the rules plus `thinwindow-run` (`scripts/thinwindow-run.mjs`), which the plugin's Bash hook also runs. |
 | `adapters/AGENTS.md` | The rules as a snippet for agents that read AGENTS.md. |
 | `.claude-plugin/` | Plugin manifest and marketplace catalog. |
 | `hooks/` | `hooks.json` and the Node hook scripts; logic in `hooks/lib/`. |
-| `bin/thinwindow-run` | Put on the Bash tool's `PATH` by the plugin. |
 | `scripts/` | Repository checks and the rules sync. |
 | `bench/` | The benchmark: tasks, runner, report and raw results. |
 | `test/` | `node --test` suites. |
