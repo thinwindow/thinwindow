@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>Menos na janela. Menos na conta.</strong><br>
-  O ThinWindow faz o Claude Code usar menos contexto, sem mudar o resultado. Um plugin do Claude Code e um Agent Skill, medido com Opus 5.5, Sonnet 5.5 e Haiku 4.5: de 7% a 11% menos custo, de 3% a 6% menos tokens, com a mesma taxa de sucesso.<br>
+  O ThinWindow faz o Claude usar menos contexto, sem mudar o resultado. Um plugin e Agent Skill para Claude Code, Cowork e os apps do Claude, medido no Claude Code com Opus 5.5, Sonnet 5.5 e Haiku 4.5: de 7% a 11% menos custo e de 3% a 6% menos tokens.<br>
   Listado no diretório oficial de plugins do Claude Code.
 </p>
 
@@ -18,6 +18,10 @@
 
 <p align="center">
   <a href="README.md">English</a> · <a href="README.es.md">Español</a> · <b>Português</b>
+</p>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=ks1_B5Uq5Gc"><img src="https://img.youtube.com/vi/ks1_B5Uq5Gc/maxresdefault.jpg" alt="Vídeo: instalação do ThinWindow pelo app de desktop do Claude" width="720"></a>
 </p>
 
 <!-- RESULTS:START -->
