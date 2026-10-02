@@ -3,7 +3,7 @@
   "name": "thinwindow",
   "displayName": "ThinWindow",
   "version": "0.3.0",
-  "description": "Less in the window. Less on the bill. ThinWindow makes Claude Code use less context — without changing the outcome. A Claude Code plugin and Agent Skill, benchmarked on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens, with the same success rate.",
+  "description": "Less in the window. Less on the bill. ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens.",
   "author": {
     "name": "Iván Luna",
     "url": "https://github.com/imprvhub"

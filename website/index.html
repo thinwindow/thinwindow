@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ThinWindow documentation</title>
-  <meta name="description" content="Less in the window. Less on the bill. ThinWindow makes Claude Code use less context — without changing the outcome. A Claude Code plugin and Agent Skill, benchmarked on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens, with the same success rate.">
+  <meta name="description" content="Less in the window. Less on the bill. ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens.">
   <meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121317" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32.png">
@@ -20,7 +20,7 @@
   <aside class="sidebar">
     <a class="brand" href="#overview">
       <img src="../assets/icon.iconset/icon_32x32@2x.png" alt="" width="32" height="32">
-      <span>ThinWindow <small>docs · v0.2.2</small></span>
+      <span>ThinWindow <small>docs · v0.3.0</small></span>
     </a>
     <nav aria-label="Documentation">
       <div class="nav-group">
@@ -75,7 +75,7 @@
         <img src="../assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="96" height="96">
         <div>
           <h1>ThinWindow</h1>
-          <p class="lede"><strong>Less in the window. Less on the bill.</strong> ThinWindow makes Claude Code use less context — without changing the outcome. A Claude Code plugin and Agent Skill, benchmarked on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens, with the same success rate. Listed in the official Claude Code plugin directory.</p>
+          <p class="lede"><strong>Less in the window. Less on the bill.</strong> ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens. Listed in the official Claude Code plugin directory.</p>
         </div>
       </header>
 
@@ -229,7 +229,7 @@ Say less
 
       <section id="hooks" aria-labelledby="hooks-h">
         <h2 id="hooks-h"><span class="num">05</span>Hooks reference</h2>
-        <p>The hooks are part of the Claude Code plugin, and they're what does most of the work. Every threshold below is configurable; see <a href="#configuration">Configuration</a>.</p>
+        <p>The hooks are part of the plugin, and they're what does most of the work (the Claude apps don't run plugin hooks). Every threshold below is configurable; see <a href="#configuration">Configuration</a>.</p>
 
         <h3><code>SessionStart</code></h3>
         <p>On startup, resume, clear, compact and fork: adds <code>rules/thinwindow.md</code> to the context. On compact and clear, it also resets read tracking.</p>
@@ -273,7 +273,7 @@ Say less
 
       <section id="examples" aria-labelledby="examples-h">
         <h2 id="examples-h"><span class="num">06</span>Examples</h2>
-        <p>What the agent asks for, and what it gets with ThinWindow installed. All of these are default behaviours of the Claude Code plugin.</p>
+        <p>What the agent asks for, and what it gets with ThinWindow installed. All of these are default behaviours of the plugin.</p>
 
         <div class="example">
           <div class="call">Read src/command.js   <span class="muted"># a file over 400 lines, no range</span></div>
@@ -490,7 +490,7 @@ node bench/report.mjs</code></pre>
           <tbody>
             <tr><td><code>rules/thinwindow.md</code></td><td>The rules: the single source of truth for the behaviour.</td></tr>
             <tr><td><code>skills/thinwindow/</code></td><td>The Agent Skill, with a bundled <code>thinwindow-run</code>.</td></tr>
-            <tr><td><code>.claude-plugin/</code>, <code>hooks/</code></td><td>The Claude Code plugin manifest, its marketplace entry and the hooks.</td></tr>
+            <tr><td><code>.claude-plugin/</code>, <code>hooks/</code></td><td>The plugin manifest, its marketplace entry and the hooks.</td></tr>
             <tr><td><code>adapters/AGENTS.md</code></td><td>The rules as a snippet for agents that read <code>AGENTS.md</code>.</td></tr>
             <tr><td><code>bench/</code></td><td>Tasks, runner, report, hidden checks, reference solutions and raw results.</td></tr>
             <tr><td><code>docs/</code></td><td>Product spec, configuration reference and manual testing guide.</td></tr>
