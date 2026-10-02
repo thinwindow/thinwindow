@@ -19,6 +19,7 @@ import {
   validateTask,
 } from '../scripts/check.mjs';
 import { HOOK_ENV } from '../hooks/lib/hook-io.mjs';
+import { PATHS as DIRECTORY_PATHS, absoluteLinks } from '../scripts/build-directory.mjs';
 import { syncedContent } from '../scripts/sync-rules.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -141,4 +142,26 @@ test('the hooks read only the environment variables they name', () => {
       assert.deepEqual(reads, expected, `${dir}/${f}`);
     }
   }
+});
+
+test('the directory branch points relative links at main', () => {
+  const isDir = (p) => p === 'bench/results';
+  const md = [
+    '![chart](bench/results/chart.svg) [raw](bench/results) [docs](docs/a.md#x "t") [top](#install) [x](https://e.com/a)',
+    '<a href="README.es.md">es</a> <img src="assets/i.png">',
+  ].join('\n');
+  assert.equal(
+    absoluteLinks(md, 'README.md', isDir),
+    [
+      '![chart](https://raw.githubusercontent.com/thinwindow/thinwindow/main/bench/results/chart.svg)' +
+        ' [raw](https://github.com/thinwindow/thinwindow/tree/main/bench/results)' +
+        ' [docs](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md#x "t") [top](#install) [x](https://e.com/a)',
+      '<a href="https://github.com/thinwindow/thinwindow/blob/main/README.es.md">es</a>' +
+        ' <img src="https://raw.githubusercontent.com/thinwindow/thinwindow/main/assets/i.png">',
+    ].join('\n'),
+  );
+  // Resolved from the file's own folder.
+  assert.equal(absoluteLinks('[d](../../docs/a.md)', 'skills/thinwindow/SKILL.md'), '[d](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md)');
+  // A closed list: bench/, the website, images and CLAUDE.md stay out.
+  assert.deepEqual(DIRECTORY_PATHS, ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md']);
 });
