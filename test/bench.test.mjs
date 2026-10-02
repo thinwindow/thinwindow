@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { buildClaudeArgs, claudeEnv, parseResult, parseTrace, ruleAbsolute } from '../bench/lib/claude.mjs';
+import { buildClaudeArgs, claudeEnv, parseResult, parseTrace, parseTraceTails, ruleAbsolute } from '../bench/lib/claude.mjs';
 import { BENCH_DIR, FIXTURES_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../bench/lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from '../bench/lib/pricing.mjs';
 import { readResultFile, resultsPath } from '../bench/lib/results.mjs';
@@ -454,6 +454,21 @@ test('parseTrace lists tool calls from stream-json output', () => {
     JSON.stringify({ type: 'result', num_turns: 2 }),
   ].join('\n');
   assert.deepEqual(parseTrace(out), ['Read [1+120] /r/src/a.py', 'Bash pytest -q tests']);
+});
+
+test('parseTraceTails keeps the end of each tool result, aligned with the trace', () => {
+  const as = (content) => JSON.stringify({ type: 'assistant', message: { content } });
+  const user = (content) => JSON.stringify({ type: 'user', message: { content } });
+  const out = [
+    as([{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'sh make-utils.sh' } }]),
+    as([{ type: 'tool_use', id: 't2', name: 'Read', input: { file_path: '/r/a.js' } }]),
+    as([{ type: 'tool_use', id: 't3', name: 'Bash', input: { command: 'node --test' } }]),
+    user([{ type: 'tool_result', tool_use_id: 't1', is_error: true, content: 'line 1\nsyntax error near `)`\n' }]),
+    user([{ type: 'tool_result', tool_use_id: 't2', content: [{ type: 'text', text: 'x'.repeat(300) + 'END' }] }]),
+  ].join('\n');
+  const tails = parseTraceTails(out, { chars: 10 });
+  assert.equal(tails.length, parseTrace(out).length);
+  assert.deepEqual(tails, ['[error] r near `)`', 'xxxxxxxEND', null]);
 });
 
 test('modelLabel reads the family and version out of a model id', () => {

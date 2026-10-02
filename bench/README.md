@@ -33,7 +33,9 @@ For each task, condition and repetition, `bench/run.mjs`:
    grouped under (`modelResolved`) is the one `modelUsage` shows did most of
    the work, not what an alias like `sonnet` maps to. Effort isn't pinned:
    each run records it as Claude Code reports it, or `default` (Claude
-   Code's default for the model) when it doesn't.
+   Code's default for the model) when it doesn't. `trace` lists the tool
+   calls, one line each, and `traceTails` the last 200 characters of each
+   call's result, so a repeated attempt can be read from the file.
 4. Runs the task's `verify` command in the clone. Exit code 0 is a success.
 5. Appends one JSON line to `bench/results/<date>-<model>.jsonl` and deletes
    the clone.

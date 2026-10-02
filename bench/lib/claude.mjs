@@ -211,6 +211,36 @@ export function parseTrace(stdout, { maxSteps = 80 } = {}) {
   return steps;
 }
 
+// The last `chars` characters of each traced call's result, aligned with
+// parseTrace by index (null when the stream has no result for it), so a
+// repeated attempt can be told apart from a retry after an error (#7).
+export function parseTraceTails(stdout, { maxSteps = 80, chars = 200 } = {}) {
+  const ids = [];
+  const tails = [];
+  for (const line of String(stdout || '').split('\n')) {
+    let e;
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const content = Array.isArray(e?.message?.content) ? e.message.content : [];
+    for (const c of content) {
+      if (e.type === 'assistant' && c.type === 'tool_use' && ids.length < maxSteps) {
+        ids.push(c.id);
+        tails.push(null);
+      } else if (e.type === 'user' && c.type === 'tool_result') {
+        const i = c.tool_use_id ? ids.indexOf(c.tool_use_id) : -1;
+        if (i === -1) continue;
+        const text = typeof c.content === 'string' ? c.content : (c.content || []).map((p) => p.text || '').join(' ');
+        const flat = text.replace(/\s+/g, ' ').trim();
+        tails[i] = `${c.is_error ? '[error] ' : ''}${flat.slice(-chars)}`;
+      }
+    }
+  }
+  return tails;
+}
+
 export function claudeVersion(cmd = 'claude', prefixArgs = []) {
   const res = runSync(cmd, [...prefixArgs, '--version'], { allowFail: true, timeoutMs: 30000 });
   if (res.status !== 0) return null;
