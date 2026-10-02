@@ -1,6 +1,15 @@
 {
   "generatedBy": "bench/docs.mjs",
   "schema": 1,
+  "surfaces": {
+    "measured": [
+      "Claude Code"
+    ],
+    "notMeasuredYet": [
+      "Cowork",
+      "Claude apps"
+    ]
+  },
   "tasks": 8,
   "runs": 112,
   "models": [

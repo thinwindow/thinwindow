@@ -38,6 +38,13 @@ const FAMILY_RANK = { opus: 0, sonnet: 1, haiku: 2, fable: 3 };
 // bench/results/archive/: the results table names them once they are gone
 // from bench/results/.
 const LEGACY = { 'claude-sonnet-5': '0.2.2' };
+// Where the runs were measured. Cowork and the Claude apps load plugins too,
+// but none of these numbers come from them.
+const SURFACES = {
+  en: 'Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements.',
+  es: 'Todas las corridas se midieron en Claude Code, no en Cowork ni en las apps de Claude; las versiones posteriores a 0.3.0 van a sumar esas mediciones.',
+  'pt-BR': 'Todas as execuções foram medidas no Claude Code, não no Cowork nem nos apps do Claude; as versões depois da 0.3.0 vão trazer essas medições.',
+};
 const CONDS = ['baseline', 'thinwindow'];
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
@@ -129,6 +136,7 @@ export function buildReport(files = listResultFiles()) {
   return {
     generatedBy: 'bench/docs.mjs',
     schema: 1,
+    surfaces: { measured: ['Claude Code'], notMeasuredYet: ['Cowork', 'Claude apps'] },
     tasks: [...new Set(records.map((r) => r.task))].sort().length,
     runs: records.length,
     models,
@@ -193,7 +201,8 @@ const LOCALES = {
       'every run recorded is in the table, except runs superseded by a later version\n' +
       'of the code on the same task, which are kept in\n' +
       '[`bench/results/archive/`](bench/results/archive). Per-task figures, the\n' +
-      'spread and the raw data are in [Benchmark](#benchmark) below.',
+      'spread and the raw data are in [Benchmark](#benchmark) below.\n' +
+      SURFACES.en,
     legacy: (label, v) => `${label} (legacy), measured on ${v}: see [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'and',
     passedIntro: (t0, t1) => `The ${t0}–${t1}% at the top counts only runs that passed their hidden check.`,
@@ -238,7 +247,8 @@ const LOCALES = {
       'ninguna: todas las que se registraron están en la tabla, salvo las que reemplazó\n' +
       'una versión posterior del código en la misma tarea, que se guardan en\n' +
       '[`bench/results/archive/`](bench/results/archive). El detalle por tarea y los\n' +
-      'datos crudos están en [Benchmark](#benchmark).',
+      'datos crudos están en [Benchmark](#benchmark).\n' +
+      SURFACES.es,
     legacy: (label, v) => `${label} (legado), medido en ${v}: ver [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'y',
     passedIntro: (t0, t1) => `La cifra de arriba, entre un ${t0}% y un ${t1}%, cuenta solo las corridas que pasaron su verificación oculta.`,
@@ -264,7 +274,8 @@ const LOCALES = {
       'nenhuma: tudo o que foi registrado está na tabela, exceto as execuções que uma\n' +
       'versão posterior do código substituiu na mesma tarefa, guardadas em\n' +
       '[`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os\n' +
-      'dados brutos estão em [Benchmark](#benchmark).',
+      'dados brutos estão em [Benchmark](#benchmark).\n' +
+      SURFACES['pt-BR'],
     legacy: (label, v) => `${label} (legado), medido na ${v}: veja [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'e',
     passedIntro: (t0, t1) => `A faixa de ${t0}% a ${t1}% no topo conta só as execuções que passaram na verificação oculta.`,
@@ -414,7 +425,7 @@ export function siteFootnote(report) {
     `        <p class="small muted">Same ${report.tasks} tasks, ${report.runs} runs, one agent per run. ` +
     `Claude Code ${claude}, ${dates}. ThinWindow ${versions}. ` +
     'Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; ' +
-    `success counts every run. ${passedNote(report, LOCALES.en)}</p>`
+    `success counts every run. ${passedNote(report, LOCALES.en)} ${SURFACES.en}</p>`
   );
 }
 

@@ -31,6 +31,7 @@ every run recorded is in the table, except runs superseded by a later version
 of the code on the same task, which are kept in
 [`bench/results/archive/`](bench/results/archive). Per-task figures, the
 spread and the raw data are in [Benchmark](#benchmark) below.
+Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements.
 
 The 13–19% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −18.8% over the 7 tasks where both conditions have a passing run, against −23.0% over all 8. Opus 5.5 and Sonnet 5 passed every run. On Haiku 4.5, ThinWindow runs failed the hidden check more often than baseline runs: 3 of 16 against 2 of 16. 95% CI: bootstrap over the tasks. Where it includes zero, the change can't be told apart from none on this task set. A run stopped by the turn cap ended at the limit before the agent finished; its tokens aren't comparable with a finished run's.
 <!-- RESULTS:END -->
