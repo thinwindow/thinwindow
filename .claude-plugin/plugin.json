@@ -10,6 +10,8 @@
   },
   "homepage": "https://github.com/thinwindow/thinwindow",
   "repository": "https://github.com/thinwindow/thinwindow",
+  "supportUrl": "https://github.com/thinwindow/thinwindow/issues",
+  "privacyPolicyUrl": "https://github.com/thinwindow/thinwindow#what-it-reads-writes-and-sends",
   "license": "MIT",
   "keywords": ["tokens", "context", "cost", "hooks", "read", "benchmark"]
 }
