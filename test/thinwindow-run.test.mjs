@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, isAbsolute } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -33,10 +33,21 @@ const script = (n, exit = 0) =>
 test('preserves the exit code and reports it', async () => {
   const r = await runCapture([NODE, '-e', 'process.exitCode = 7']);
   assert.equal(r.code, 7);
-  assert.match(r.out, /^exit 7 · /m);
+  assert.equal(r.out, 'exit 7\n');
   const ok = await runCapture([NODE, '-e', '']);
   assert.equal(ok.code, 0);
-  assert.match(ok.out, /^exit 0 · \S+ · 0 lines of output$/m);
+  assert.equal(ok.out, '');
+});
+
+test('a short successful output comes back whole and as is', async () => {
+  const r = await runCapture([NODE, '-e', script(10)]);
+  assert.equal(r.code, 0);
+  assert.equal(r.out, `${Array.from({ length: 10 }, (_, i) => (i === 9 ? 'line 10 Error: bad thing 10' : `line ${i + 1}`)).join('\n')}\n`);
+  const eleven = await runCapture([NODE, '-e', script(11)]);
+  assert.match(eleven.out, /--- last 10 lines ---/);
+  const failed = await runCapture([NODE, '-e', script(3, 2)]);
+  assert.equal(failed.code, 2);
+  assert.equal(failed.out, 'line 1\nline 2\nline 3\nexit 2\n');
 });
 
 test('prints only the last 40 lines plus earlier deduplicated matches', async () => {
@@ -89,7 +100,9 @@ test('captures stderr too', async () => {
   const r = await runCapture([NODE, '-e', 'console.error("panic: stderr line"); process.exitCode = 2']);
   assert.equal(r.code, 2);
   assert.match(r.out, /panic: stderr line/);
-  assert.match(readFileSync(r.logPath, 'utf8'), /panic: stderr line/);
+  // Nothing was cut, so no log path is printed; the log is still kept.
+  const [log] = readdirSync(logDir(r.base));
+  assert.match(readFileSync(join(logDir(r.base), log), 'utf8'), /panic: stderr line/);
 });
 
 test('a single argument runs through the shell', async () => {
@@ -128,9 +141,7 @@ test('the command the hook writes runs the runner and shows the original command
     env: { ...process.env, THINWINDOW: '', TMPDIR: tmp, TEMP: tmp, TMP: tmp },
   });
   assert.equal(res.status, 4);
-  assert.match(res.stdout, /^via hook$/m);
-  assert.match(res.stdout, /full log: /);
-  assert.ok(!res.stdout.includes('thinwindow-run.mjs'), 'the summary names the command, not the runner');
+  assert.equal(res.stdout, 'via hook\nexit 4\n');
 });
 
 test('strips ANSI codes and carriage-return redraws from the summary', () => {
@@ -154,10 +165,12 @@ test('formatSummary reports signals', () => {
     code: 143,
     signal: 'SIGTERM',
     durationMs: 61000,
-    summary: { lines: 0, tail: [], matches: [], matchCount: 0 },
+    summary: { lines: 50, tail: Array(40).fill('x'), matches: [], matchCount: 0 },
     logPath: '/tmp/x.log',
   });
-  assert.match(text, /killed by SIGTERM \(exit 143\) · 1m01s · 0 lines of output/);
+  assert.match(text, /killed by SIGTERM \(exit 143\) · 1m01s · 50 lines of output/);
+  const short = formatSummary({ display: 'sleep 9', code: 143, signal: 'SIGTERM', durationMs: 61000, summary: { lines: 0, tail: [], matches: [], matchCount: 0 }, logPath: '/tmp/x.log' });
+  assert.equal(short, 'killed by SIGTERM (exit 143)\n');
 });
 
 test('spawnSpec', () => {
