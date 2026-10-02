@@ -13,7 +13,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { delimiter, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseResult, parseTrace } from './lib/claude.mjs';
+import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseInit, parseResult, parseTrace } from './lib/claude.mjs';
 import { ROOT_DIR } from './lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from './lib/pricing.mjs';
 import { runProcess, runSync, tail, which } from './lib/proc.mjs';
@@ -119,7 +119,8 @@ export function estimateCost({ plan, model, history = [], estRunUsd = null }) {
   const resolved = resolveModel(model);
   const price = priceOf(model);
   const prior = price ? costOf(PRIOR_RUN_TOKENS, price) : null;
-  const mine = history.filter((r) => r.model === model || r.modelResolved === resolved);
+  // By the model the run used: `sonnet` meant Sonnet 5 before 5.5 (#21).
+  const mine = history.filter((r) => (r.modelResolved || resolveModel(r.model)) === resolved);
   const costs = (pred) => mine.filter(pred).map((r) => r.costUsd);
   const allMedian = median(costs(() => true));
   const basis = { override: 0, taskCondition: 0, task: 0, model: 0, prior: 0, unknown: 0 };
@@ -277,6 +278,11 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
       modelsUsed: [],
       sessionId: null,
     });
+    // The model that did the work, not the alias table's guess (#21).
+    if (record.modelsUsed?.length) record.modelResolved = resolveModel(record.modelsUsed[0]);
+    // Effort isn't pinned (Claude Code's default for the model); recorded as
+    // Claude Code reports it, or as the env override, or as "default".
+    record.effort = parseInit(res.stdout)?.effort ?? agentEnv.CLAUDE_CODE_EFFORT_LEVEL ?? 'default';
     record.trace = parseTrace(res.stdout);
     record.exitCode = res.code;
     record.timedOut = res.timedOut;

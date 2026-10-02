@@ -29,7 +29,11 @@ For each task, condition and repetition, `bench/run.mjs`:
    the baseline also runs with `THINWINDOW=off`.
 3. Records input, cache-creation, cache-read and output tokens (from
    `modelUsage`, so subagents count), `total_cost_usd`, `num_turns`,
-   `duration_ms` and `is_error` from the JSON result.
+   `duration_ms` and `is_error` from the JSON result. The model the run is
+   grouped under (`modelResolved`) is the one `modelUsage` shows did most of
+   the work, not what an alias like `sonnet` maps to. Effort isn't pinned:
+   each run records it as Claude Code reports it, or `default` (Claude
+   Code's default for the model) when it doesn't.
 4. Runs the task's `verify` command in the clone. Exit code 0 is a success.
 5. Appends one JSON line to `bench/results/<date>-<model>.jsonl` and deletes
    the clone.

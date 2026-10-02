@@ -34,6 +34,10 @@ const REPORT_JSON = join(RESULTS_DIR, 'report.json');
 // Opus before Sonnet before Haiku, newest version first: the order a reader
 // expects, not the alphabetical order the raw files happen to have.
 const FAMILY_RANK = { opus: 0, sonnet: 1, haiku: 2, fable: 3 };
+// Models measured on an earlier version whose runs now live only in
+// bench/results/archive/: the results table names them once they are gone
+// from bench/results/.
+const LEGACY = { 'claude-sonnet-5': '0.2.2' };
 const CONDS = ['baseline', 'thinwindow'];
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
@@ -190,6 +194,7 @@ const LOCALES = {
       'of the code on the same task, which are kept in\n' +
       '[`bench/results/archive/`](bench/results/archive). Per-task figures, the\n' +
       'spread and the raw data are in [Benchmark](#benchmark) below.',
+    legacy: (label, v) => `${label} (legacy), measured on ${v}: see [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'and',
     passedIntro: (t0, t1) => `The ${t0}–${t1}% at the top counts only runs that passed their hidden check.`,
     passedModel: (m, passed, all) =>
@@ -234,6 +239,7 @@ const LOCALES = {
       'una versión posterior del código en la misma tarea, que se guardan en\n' +
       '[`bench/results/archive/`](bench/results/archive). El detalle por tarea y los\n' +
       'datos crudos están en [Benchmark](#benchmark).',
+    legacy: (label, v) => `${label} (legado), medido en ${v}: ver [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'y',
     passedIntro: (t0, t1) => `La cifra de arriba, entre un ${t0}% y un ${t1}%, cuenta solo las corridas que pasaron su verificación oculta.`,
     passedModel: (m, passed, all) =>
@@ -259,6 +265,7 @@ const LOCALES = {
       'versão posterior do código substituiu na mesma tarefa, guardadas em\n' +
       '[`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os\n' +
       'dados brutos estão em [Benchmark](#benchmark).',
+    legacy: (label, v) => `${label} (legado), medido na ${v}: veja [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'e',
     passedIntro: (t0, t1) => `A faixa de ${t0}% a ${t1}% no topo conta só as execuções que passaram na verificação oculta.`,
     passedModel: (m, passed, all) =>
@@ -304,6 +311,9 @@ export function resultsBlock(report, lang) {
   return [
     table(L.results, ['---', '---:', '---:', '---:', ':---:', ':---:', '---:'], rows),
     L.resultsNote(report),
+    ...Object.entries(LEGACY)
+      .filter(([id]) => !report.models.some((m) => m.id === id))
+      .map(([id, v]) => L.legacy(modelLabel(id).label, v)),
     [passedNote(report, L), ...worse, L.ciNote].join(' '),
   ].join('\n\n');
 }

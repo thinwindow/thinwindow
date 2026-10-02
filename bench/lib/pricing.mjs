@@ -12,6 +12,7 @@ export const PRICES = {
   'claude-opus-4-8': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
   'claude-opus-4-7': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
   'claude-opus-4-6': { input: 5, output: 25, cacheWrite: 10, cacheRead: 0.5 },
+  'claude-sonnet-5-5': { input: 2, output: 10, cacheWrite: 4, cacheRead: 0.2 },
   'claude-sonnet-5': { input: 2, output: 10, cacheWrite: 4, cacheRead: 0.2 },
   'claude-sonnet-4-6': { input: 3, output: 15, cacheWrite: 6, cacheRead: 0.3 },
   'claude-haiku-4-5': { input: 1, output: 5, cacheWrite: 2, cacheRead: 0.1 },
@@ -21,7 +22,7 @@ export const PRICES = {
 // (https://code.claude.com/docs/en/model-config). Other providers differ.
 export const ALIASES = {
   opus: 'claude-opus-5-5',
-  sonnet: 'claude-sonnet-5',
+  sonnet: 'claude-sonnet-5-5',
   haiku: 'claude-haiku-4-5',
   fable: 'claude-fable-5-1',
   best: 'claude-fable-5-1',

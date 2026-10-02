@@ -161,10 +161,31 @@ export function parseResult(stdout) {
     durationMs: n(json.duration_ms),
     isError: json.is_error === true,
     subtype: json.subtype || null,
-    modelsUsed: json.modelUsage ? Object.keys(json.modelUsage) : [],
+    // Most tokens first: the main loop's model, then subagents and fallbacks.
+    modelsUsed: json.modelUsage
+      ? Object.entries(json.modelUsage)
+          .map(([id, m]) => [id, n(m.inputTokens) + n(m.cacheCreationInputTokens) + n(m.cacheReadInputTokens) + n(m.outputTokens)])
+          .sort((a, b) => b[1] - a[1])
+          .map(([id]) => id)
+      : [],
     sessionId: json.session_id || null,
     resultText: typeof json.result === 'string' ? json.result : null,
   };
+}
+
+// The stream's system/init event: the model and Claude Code version the run
+// started with, and the effort level when Claude Code publishes it.
+export function parseInit(stdout) {
+  for (const line of String(stdout || '').split('\n')) {
+    let e;
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (e && e.type === 'system' && e.subtype === 'init') return e;
+  }
+  return null;
 }
 
 // The agent's tool calls, one short line each, so a run can be compared with
