@@ -179,6 +179,10 @@ async function replayStep(step, ctx, reads) {
   const d = out?.hookSpecificOutput;
   const hook = !d ? 'none' : d.permissionDecision === 'deny' ? 'deny' : 'rewrite';
   if (d) row.why = mechanisms(d.permissionDecisionReason || d.additionalContext);
+  // A noisy command is rewritten without a note; the command itself says so.
+  if (d?.updatedInput?.command?.includes('thinwindow-run ') && !command.includes('thinwindow-run ')) {
+    row.why = [...new Set([...row.why, 'command run through thinwindow-run'])];
+  }
   const skip = notReplayable(command);
   if (skip) return { ...row, hook, skipped: skip };
   const before = await runBash(command, ctx.dir, ctx.env);

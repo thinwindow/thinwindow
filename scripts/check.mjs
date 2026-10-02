@@ -270,11 +270,11 @@ export function runChecks(root = ROOT) {
     for (const problem of staleRanges()) errors.push(`${problem} (the data moved; update the sentence)`);
   }
 
-  for (const bin of ['bin/thinwindow-run', 'skills/thinwindow/scripts/thinwindow-run.mjs']) {
-    const file = join(root, bin);
-    if (!existsSync(file)) errors.push(`${bin}: missing`);
-    else if (process.platform !== 'win32' && (statSync(file).mode & 0o111) === 0) errors.push(`${bin}: not executable`);
-  }
+  const runner = 'skills/thinwindow/scripts/thinwindow-run.mjs';
+  const file = join(root, runner);
+  if (!existsSync(file)) errors.push(`${runner}: missing`);
+  else if (process.platform !== 'win32' && (statSync(file).mode & 0o111) === 0) errors.push(`${runner}: not executable`);
+  if (existsSync(join(root, 'bin'))) errors.push('bin/: Cowork and the Claude apps refuse a plugin with a top-level bin/');
 
   return { errors, budget };
 }

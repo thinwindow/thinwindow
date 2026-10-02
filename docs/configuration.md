@@ -82,7 +82,8 @@ context.
   with no `-m`/`--max-count`, no exclude flag (`--exclude-dir` for grep;
   `-g`/`--type` for `rg`) and no output-bounding flag (`-c`/`-l`/`-L`,
   `--count`, `--files-with-matches`); or `git diff` with no summary flag
-  (`--stat` and friends) and no path after `--`. Scoping to a subdirectory,
+  (`--stat` and friends) and no path, either after `--` or naming a file or
+  directory that exists. Scoping to a subdirectory,
   a single file, or a pipe/redirect (same as above) avoids it.
 
 **PreToolUse `Grep`**
@@ -92,7 +93,15 @@ context.
 
 **`thinwindow-run`** keeps the full log in the temp dir and prints the exit
 code and duration, then the last 10 lines when the command succeeded, or the
-last 40 lines plus earlier error-like lines when it failed.
+last 40 lines plus earlier error-like lines when it failed. When nothing would
+be cut (at most 10 lines on success, 40 on failure), it prints the output as it
+is, plus the exit code if the command failed. The hook runs it as
+`node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs' <cmd>` and
+points a direct `thinwindow-run <cmd>` at the same path. To run those calls
+without a permission prompt, allow
+`Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)`; it replaces
+`Bash(thinwindow-run *)`, which no longer matches. Either rule approves every
+command it wraps.
 
 thinwindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any

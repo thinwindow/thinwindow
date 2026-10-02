@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { checkBash } from '../hooks/lib/bash-guard.mjs';
+import { RUN, checkBash, resolveRunner } from '../hooks/lib/bash-guard.mjs';
 import { loadConfig } from '../hooks/lib/config.mjs';
 import { lines, makeProject } from './helpers.mjs';
 
@@ -159,6 +159,7 @@ const CAPPED = [
   'pip install -q -r requirements.txt',
   'thinwindow-run npm test',
   'CI=1 thinwindow-run npm test',
+  `${RUN} npm test`,
   'npm test | grep -c passing',
   'npm view react version',
   'npm run dev',
@@ -189,7 +190,7 @@ test('an identical retry of a soft-blocked command goes through once', () => {
 test('noisy commands are rewritten through thinwindow-run by default', () => {
   const r = decide('npm test');
   assert.equal(r.action, 'rewrite');
-  assert.equal(r.command, 'thinwindow-run npm test');
+  assert.equal(r.command, `${RUN} npm test`);
 });
 
 test('anti-pattern denials are not bypassed by retrying', () => {
@@ -202,8 +203,19 @@ test('rewrite mode wraps noisy commands with thinwindow-run', () => {
   const config = { ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: true };
   const r = decide('cd app && CI=1 npm test -- -u && npm run build', { config });
   assert.equal(r.action, 'rewrite');
-  assert.equal(r.command, 'cd app && CI=1 thinwindow-run npm test -- -u && thinwindow-run npm run build');
-  assert.equal(decide('timeout 60 cargo test', { config }).command, 'timeout 60 thinwindow-run cargo test');
+  assert.equal(r.command, `cd app && CI=1 ${RUN} npm test -- -u && ${RUN} npm run build`);
+  assert.equal(decide('timeout 60 cargo test', { config }).command, `timeout 60 ${RUN} cargo test`);
+});
+
+test('RUN calls the skill runner with a quoted absolute path', () => {
+  assert.match(RUN, /^node '.+thinwindow-run\.mjs'$/);
+});
+
+test('resolveRunner points command-position thinwindow-run at the runner', () => {
+  assert.equal(resolveRunner('thinwindow-run npm test'), `${RUN} npm test`);
+  assert.equal(resolveRunner('cd app && CI=1 thinwindow-run npm i | tail -5'), `cd app && CI=1 ${RUN} npm i | tail -5`);
+  assert.equal(resolveRunner('thinwindow-run a; thinwindow-run b'), `${RUN} a; ${RUN} b`);
+  for (const cmd of ['echo thinwindow-run', 'npm test', `${RUN} npm test`, 'if then (']) assert.equal(resolveRunner(cmd), cmd);
 });
 
 test('rewrite mode leaves sudo commands to the soft block', () => {
@@ -287,6 +299,9 @@ const SCOPE_ALLOWED = [
   'git diff --shortstat',
   'git diff --name-only',
   'git diff HEAD~1 -- src/foo.ts',
+  // a file or directory named without `--` is a path too
+  'git diff src/small.ts',
+  'git diff src',
 ];
 
 for (const cmd of SCOPE_ALLOWED) {
@@ -339,8 +354,8 @@ test('scope issues are fixed in place by default', () => {
   assert.equal(decide('git diff').command, 'git diff --stat');
   assert.equal(decide('git -C sub diff HEAD~1').command, 'git -C sub diff --stat HEAD~1');
   const both = decide('git diff && npm test');
-  assert.equal(both.command, 'git diff --stat && thinwindow-run npm test');
+  assert.equal(both.command, `git diff --stat && ${RUN} npm test`);
   assert.match(both.context, /git diff --stat/);
-  assert.match(both.context, /thinwindow-run/);
+  assert.match(both.command, /thinwindow-run/);
   assert.equal(decide('sudo grep -rn foo .').action, 'deny');
 });

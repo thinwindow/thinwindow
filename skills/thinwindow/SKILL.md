@@ -42,7 +42,9 @@ to a log file in the OS temp dir, and prints only:
   matching error, fail, warn, panic or exception,
 - the path of the full log.
 
-It exits with the command's own exit code. Open the log only when the summary
+When nothing would be cut (at most 10 lines on success, 40 on failure), it
+prints the output as it is, plus the exit code if the command failed. It exits
+with the command's own exit code. Open the log only when the summary
 is not enough, and then grep it or read a range.
 
 ```sh
@@ -51,7 +53,8 @@ thinwindow-run pytest -x tests/test_api.py
 thinwindow-run "npm ci && npm run build"   # a single quoted argument runs through the shell
 ```
 
-With the thinwindow Claude Code plugin installed, `thinwindow-run` is on the
-shell's `PATH`. Otherwise run the copy bundled with this skill:
+With the thinwindow Claude Code plugin installed, its Bash hook points
+`thinwindow-run` at this copy, so the bare name works. Otherwise run the copy
+bundled with this skill:
 `node <this skill's directory>/scripts/thinwindow-run.mjs <cmd>`. It needs
 Node.js 18 or newer and nothing else.

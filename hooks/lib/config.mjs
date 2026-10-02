@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { debug } from './hook-io.mjs';
+import { HOOK_ENV, debug } from './hook-io.mjs';
 
 // Regular expressions, tested against one command of a Bash call after
 // leading VAR=value assignments and wrappers (sudo, env, time, timeout...)
@@ -71,14 +71,14 @@ function merge(acc, raw) {
   return out;
 }
 
-export function isOffSwitch(env = process.env) {
+export function isOffSwitch(env = HOOK_ENV) {
   const v = String(env.THINWINDOW || '').toLowerCase();
   return v === 'off' || v === '0' || v === 'false' || v === 'disabled';
 }
 
 // projectDir: where .thinwindow.json is looked up. Claude Code exports
 // CLAUDE_PROJECT_DIR to hooks (https://code.claude.com/docs/en/hooks#reference-scripts-by-path).
-export function loadConfig({ projectDir, env = process.env, home = homedir() } = {}) {
+export function loadConfig({ projectDir, env = HOOK_ENV, home = homedir() } = {}) {
   let config = merge(DEFAULTS, {});
   if (home) config = merge(config, readJson(join(home, '.thinwindow.json')));
   if (projectDir) config = merge(config, readJson(join(projectDir, '.thinwindow.json')));
