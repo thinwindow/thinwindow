@@ -4,11 +4,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, relative, isAbsolute } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { RUN } from '../hooks/lib/bash-guard.mjs';
 import { Summarizer, formatSummary, logDir, run, spawnSpec } from '../skills/thinwindow/scripts/thinwindow-run.mjs';
 import { tempDir } from './helpers.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BIN = join(ROOT, 'bin', 'thinwindow-run');
+const SCRIPT = join(ROOT, 'skills', 'thinwindow', 'scripts', 'thinwindow-run.mjs');
 const NODE = process.execPath;
 
 function sink() {
@@ -110,7 +111,7 @@ test('no arguments prints usage and exits 2', async () => {
 });
 
 test('THINWINDOW=off passes output through untouched', async () => {
-  const res = spawnSync(NODE, [BIN, NODE, '-e', 'console.log("raw"); process.exitCode = 5'], {
+  const res = spawnSync(NODE, [SCRIPT, NODE, '-e', 'console.log("raw"); process.exitCode = 5'], {
     encoding: 'utf8',
     env: { ...process.env, THINWINDOW: 'off' },
   });
@@ -118,15 +119,18 @@ test('THINWINDOW=off passes output through untouched', async () => {
   assert.equal(res.stdout, 'raw\n');
 });
 
-test('bin/thinwindow-run works as an executable entry point', () => {
+// Claude Code's Bash tool is Git Bash on Windows; a bare `bash` or `sh` in CI
+// there can resolve to the WSL stub, so this runs on POSIX only.
+test('the command the hook writes runs the runner and shows the original command', { skip: process.platform === 'win32' }, () => {
   const tmp = tempDir('thinwindow-tmp-');
-  const res = spawnSync(NODE, [BIN, NODE, '-e', 'console.log("via bin"); process.exitCode = 4'], {
+  const res = spawnSync('sh', ['-c', `${RUN} '${NODE}' -e 'console.log("via hook"); process.exitCode = 4'`], {
     encoding: 'utf8',
     env: { ...process.env, THINWINDOW: '', TMPDIR: tmp, TEMP: tmp, TMP: tmp },
   });
   assert.equal(res.status, 4);
-  assert.match(res.stdout, /^via bin$/m);
+  assert.match(res.stdout, /^via hook$/m);
   assert.match(res.stdout, /full log: /);
+  assert.ok(!res.stdout.includes('thinwindow-run.mjs'), 'the summary names the command, not the runner');
 });
 
 test('strips ANSI codes and carriage-return redraws from the summary', () => {
