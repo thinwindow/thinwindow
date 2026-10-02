@@ -165,3 +165,10 @@ test('the directory branch points relative links at main', () => {
   // A closed list: bench/, the website, images and CLAUDE.md stay out.
   assert.deepEqual(DIRECTORY_PATHS, ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md']);
 });
+
+test('the directory build pins README images to the commit it packages', () => {
+  assert.equal(
+    absoluteLinks('![c](bench/results/chart.svg) [d](docs/a.md)', 'README.md', () => false, 'abc123'),
+    '![c](https://raw.githubusercontent.com/thinwindow/thinwindow/abc123/bench/results/chart.svg) [d](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md)',
+  );
+});

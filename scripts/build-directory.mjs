@@ -17,27 +17,28 @@ import { parseArgs } from 'node:util';
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const BRANCH = 'directory';
 const REPO = 'https://github.com/thinwindow/thinwindow';
-const RAW = 'https://raw.githubusercontent.com/thinwindow/thinwindow/main';
+const RAW = 'https://raw.githubusercontent.com/thinwindow/thinwindow';
 
 // The closed list (PLAN §3). Adding a path here is a decision, not a fix.
 export const PATHS = ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md'];
 export const LIMITS = { files: 512, bytes: 256 * 1024 };
 const IMAGE = /\.(svg|png|jpe?g|gif|webp|ico)$/i;
 
-// A relative link target in `file` (a repo path) -> its URL on main.
-export function absoluteUrl(target, file, isDir = () => false) {
+// A relative link target in `file` (a repo path) -> its URL on main. Images
+// resolve at `ref`, so a build can pin them to the commit it packages.
+export function absoluteUrl(target, file, isDir = () => false, ref = 'main') {
   if (/^([a-z][a-z0-9+.-]*:|#|\/\/)/i.test(target)) return target;
   const [path, hash] = target.split(/(?=#)/);
   const p = posix.normalize(posix.join(posix.dirname(file), path.replace(/^\//, '')));
-  if (IMAGE.test(p)) return `${RAW}/${p}${hash || ''}`;
+  if (IMAGE.test(p)) return `${RAW}/${ref}/${p}${hash || ''}`;
   return `${REPO}/${isDir(p) ? 'tree' : 'blob'}/main/${p}${hash || ''}`;
 }
 
 // Markdown links and images, and href/src attributes of inline HTML.
-export function absoluteLinks(md, file, isDir) {
+export function absoluteLinks(md, file, isDir, ref) {
   return md
-    .replace(/\]\(([^)\s]+)((?:\s+"[^"]*")?)\)/g, (_, url, title) => `](${absoluteUrl(url, file, isDir)}${title})`)
-    .replace(/\b(href|src)="([^"]+)"/g, (_, attr, url) => `${attr}="${absoluteUrl(url, file, isDir)}"`);
+    .replace(/\]\(([^)\s]+)((?:\s+"[^"]*")?)\)/g, (_, url, title) => `](${absoluteUrl(url, file, isDir, ref)}${title})`)
+    .replace(/\b(href|src)="([^"]+)"/g, (_, attr, url) => `${attr}="${absoluteUrl(url, file, isDir, ref)}"`);
 }
 
 // Every file under `dir`, as paths relative to it, without .git.
@@ -83,6 +84,8 @@ function ensureWorktree(dir) {
 
 export function build({ dir, validate = true, log = console.log }) {
   const head = git(['rev-parse', '--short', 'HEAD']).stdout.trim();
+  // Images pinned to this commit: main can lag behind the version being packaged.
+  const sha = git(['rev-parse', 'HEAD']).stdout.trim();
   ensureWorktree(dir);
   const wt = (args, opts) => git(args, { cwd: dir, ...opts });
   wt(['rm', '-r', '-q', '--cached', '--ignore-unmatch', '.']);
@@ -94,7 +97,7 @@ export function build({ dir, validate = true, log = console.log }) {
   const isDir = (p) => existsSync(join(ROOT, p)) && statSync(join(ROOT, p)).isDirectory();
   for (const f of walk(dir).filter((f) => f.endsWith('.md'))) {
     const p = join(dir, f);
-    writeFileSync(p, absoluteLinks(readFileSync(p, 'utf8'), f, isDir));
+    writeFileSync(p, absoluteLinks(readFileSync(p, 'utf8'), f, isDir, sha));
   }
   const { files, problems } = treeProblems(dir);
   if (problems.length) throw new Error(`the tree breaks the directory's limits:\n  ${problems.join('\n  ')}`);
