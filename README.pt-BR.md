@@ -12,6 +12,10 @@
 </p>
 
 <p align="center">
+  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Para onde vão os tokens</b></a> (em inglês) · <a href="#benchmark">Benchmark e dados brutos</a> · <a href="#instalação">Instalação</a>
+</p>
+
+<p align="center">
   <a href="README.md">English</a> · <a href="README.es.md">Español</a> · <b>Português</b>
 </p>
 
