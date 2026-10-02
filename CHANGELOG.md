@@ -33,10 +33,15 @@ project uses [Semantic Versioning](https://semver.org).
   (`traceTails`), so a repeated attempt can be read from the result files
   (#7).
 - `scripts/build-directory.mjs` builds the `directory` branch the plugin
-  directory tracks: only the plugin's files, with the README's links pointing
-  at `main`.
+  directory tracks: only the plugin's files, with the README's links and
+  images pinned to the commit it packages.
 - The manifest names a support page (the issues) and a privacy page (what
   ThinWindow reads, writes and sends).
+- The READMEs show how to install from the plugin directory and link a video
+  of the install from the Claude desktop app.
+- A README section on what changed between the 0.2.2 and 0.3.0 measurements
+  (Claude Code, the Sonnet model, the account environment) and what it did to
+  the numbers.
 
 ### Changed
 
@@ -59,6 +64,9 @@ project uses [Semantic Versioning](https://semver.org).
   plugin directory."
 - The results, the site and `report.json` say every run was measured in
   Claude Code, not in Cowork or the Claude apps.
+- The tagline names Claude Code, Cowork and the Claude apps, the surfaces the
+  plugin directory lists ThinWindow for, and says the benchmark ran in Claude
+  Code. The Spanish README is written in the third person.
 - CI actions updated (#22–#26).
 
 ### Fixed
