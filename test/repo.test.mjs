@@ -1,7 +1,7 @@
 // The same checks CI runs through scripts/check.mjs, plus unit tests for
 // the validators themselves.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,7 @@ import {
   validateSkill,
   validateTask,
 } from '../scripts/check.mjs';
+import { HOOK_ENV } from '../hooks/lib/hook-io.mjs';
 import { syncedContent } from '../scripts/sync-rules.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -129,4 +130,15 @@ test('labels.json defines every label the templates and the stale workflow use',
     assert.ok(used.includes(name), `${name} not found in templates/stale workflow`);
   }
   for (const name of used) assert.ok(defined.has(name), `${name} is used but not defined`);
+});
+
+test('the hooks read only the environment variables they name', () => {
+  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR']);
+  for (const dir of ['hooks', 'hooks/lib']) {
+    for (const f of readdirSync(join(ROOT, dir)).filter((n) => n.endsWith('.mjs'))) {
+      const reads = readFileSync(join(ROOT, dir, f), 'utf8').match(/process\.env(\.\w+)?/g) || [];
+      const expected = f === 'hook-io.mjs' ? Object.keys(HOOK_ENV).map((k) => `process.env.${k}`) : [];
+      assert.deepEqual(reads, expected, `${dir}/${f}`);
+    }
+  }
 });
