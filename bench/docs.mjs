@@ -41,9 +41,9 @@ const LEGACY = { 'claude-sonnet-5': '0.2.2' };
 // Where the runs were measured. Cowork and the Claude apps load plugins too,
 // but none of these numbers come from them.
 const SURFACES = {
-  en: 'Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements.',
-  es: 'Todas las corridas se midieron en Claude Code, no en Cowork ni en las apps de Claude; las versiones posteriores a 0.3.0 van a sumar esas mediciones.',
-  'pt-BR': 'Todas as execuções foram medidas no Claude Code, não no Cowork nem nos apps do Claude; as versões depois da 0.3.0 vão trazer essas medições.',
+  en: 'Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements. Haiku 4.5 has two runs per task and condition; Opus 5.5 and Sonnet 5.5, three. The runs came from two accounts whose Claude Code sessions start with different built-in tools; both conditions of each task share the same mix.',
+  es: 'Todas las corridas se midieron en Claude Code, no en Cowork ni en las apps de Claude; las versiones posteriores a 0.3.0 van a sumar esas mediciones. Haiku 4.5 tiene dos corridas por tarea y condición; Opus 5.5 y Sonnet 5.5, tres. Las corridas salieron de dos cuentas cuyas sesiones de Claude Code arrancan con herramientas integradas distintas; las dos condiciones de cada tarea tienen la misma mezcla.',
+  'pt-BR': 'Todas as execuções foram medidas no Claude Code, não no Cowork nem nos apps do Claude; as versões depois da 0.3.0 vão trazer essas medições. O Haiku 4.5 tem duas execuções por tarefa e condição; o Opus 5.5 e o Sonnet 5.5, três. As execuções vieram de duas contas cujas sessões do Claude Code começam com ferramentas integradas diferentes; as duas condições de cada tarefa têm a mesma mistura.',
 };
 const CONDS = ['baseline', 'thinwindow'];
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
@@ -178,6 +178,7 @@ export function ranges(report) {
   const r = (xs, f) => [f(Math.min(...xs)), f(Math.max(...xs))];
   return {
     tokens: r(saved, (x) => Math.round(x)),
+    cost: r(report.models.map((m) => -m.total.costDelta), (x) => Math.round(x)),
     cacheRead: r(read, (x) => Math.round(x)),
     contextCost: r(context, (x) => Math.round(x)),
     outputCost: r(report.models.map((m) => m.costMix.output), (x) => Math.round(x)),
@@ -483,20 +484,19 @@ export function renderedSite(text, report) {
 export function rangeClaims(report) {
   const r = ranges(report);
   const [t0, t1] = r.tokens;
+  const [k0, k1] = r.cost;
   const [c0, c1] = r.cacheRead;
-  const [x0, x1] = r.contextCost;
   const [p0, p1] = r.outputCost;
   const o0 = r.output[0].toFixed(1);
   const o1 = r.output[1].toFixed(1);
   const es = (x) => x.replace('.', ',');
-  const tagline = [`${c0}–${c1}% of tokens`, `${x0}–${x1}% of the bill`, `${t0}–${t1}% fewer tokens`];
+  const tagline = [`${k0}–${k1}% lower cost`, `${t0}–${t1}% fewer tokens`];
   return [
     ['README.md', [...tagline, `${c0}% to ${c1}%`, `${o0}% to ${o1}%`, `${p0}–${p1}% of the cost`]],
     [
       'README.es.md',
       [
-        `entre el ${c0}% y el ${c1}% de los tokens`,
-        `entre el ${x0}% y el ${x1}% de la factura`,
+        `entre un ${k0}% y un ${k1}% menos de costo`,
         `entre un ${t0}% y un ${t1}% menos de tokens`,
         `entre el ${es(o0)}% y el ${es(o1)}%`,
         `entre el ${p0}% y el ${p1}% del costo`,
@@ -504,7 +504,7 @@ export function rangeClaims(report) {
     ],
     [
       'README.pt-BR.md',
-      [`de ${c0}% a ${c1}% dos tokens`, `de ${x0}% a ${x1}% da conta`, `de ${t0}% a ${t1}% menos tokens`, `${es(o0)}% a ${es(o1)}%`, `de ${p0}% a ${p1}% do custo`],
+      [`de ${k0}% a ${k1}% menos custo`, `de ${t0}% a ${t1}% menos tokens`, `${es(o0)}% a ${es(o1)}%`, `de ${p0}% a ${p1}% do custo`],
     ],
     ['package.json', tagline],
     ['.claude-plugin/plugin.json', tagline],

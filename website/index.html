@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ThinWindow documentation</title>
-  <meta name="description" content="Less in the window. Less on the bill. Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.">
+  <meta name="description" content="Less in the window. Less on the bill. ThinWindow makes Claude Code use less context — without changing the outcome. A Claude Code plugin and Agent Skill, benchmarked on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens, with the same success rate.">
   <meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121317" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32.png">
@@ -75,7 +75,7 @@
         <img src="../assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="96" height="96">
         <div>
           <h1>ThinWindow</h1>
-          <p class="lede"><strong>Less in the window. Less on the bill.</strong> Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.</p>
+          <p class="lede"><strong>Less in the window. Less on the bill.</strong> ThinWindow makes Claude Code use less context — without changing the outcome. A Claude Code plugin and Agent Skill, benchmarked on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens, with the same success rate. Listed in the official Claude Code plugin directory.</p>
         </div>
       </header>
 
@@ -107,8 +107,8 @@
         <div class="formula" role="img" aria-label="tokens roughly equal context size times turns">
           <span>tokens</span><span class="op">≈</span><span class="term ctx">context size</span><span class="op">×</span><span class="term turns">turns</span>
         </div>
-        <p>than to the length of the answer. In the benchmark runs, <strong>roughly 87% to 96% of all tokens billed were cache reads</strong>: context being re-sent, turn after turn. The agent's own output was under 2% of tokens.</p>
-        <p>Priced, the picture shifts: a cache read costs a tenth of an input token or less, a cache write twice one, and output five times one, so output is 16–27% of the cost. Telling an agent to be brief touches that part. Stopping it from pulling a 2,000-line file into context on turn 3 touches the cache writes and reads, on every turn that follows.</p>
+        <p>than to the length of the answer. In the benchmark runs, <strong>roughly 90% to 95% of all tokens billed were cache reads</strong>: context being re-sent, turn after turn. The agent's own output was under 2% of tokens.</p>
+        <p>Priced, the picture shifts: a cache read costs a tenth of an input token or less, a cache write twice one, and output five times one, so output is 19–27% of the cost. Telling an agent to be brief touches that part. Stopping it from pulling a 2,000-line file into context on turn 3 touches the cache writes and reads, on every turn that follows.</p>
 
         <figure class="illustration">
           <div class="figure-box">
@@ -375,14 +375,14 @@ Say less
           <thead><tr><th>Model</th><th class="n">Tokens</th><th class="n">Cost</th><th class="n">Turns</th><th class="n">Success baseline → ThinWindow</th><th class="n">Runs</th></tr></thead>
           <tbody>
             <!-- ROWS:START -->
-            <tr><td>Opus 5.5</td><td class="n win">−15.8%</td><td class="n win">−19.4%</td><td class="n">77.5 → 67.5</td><td class="n">16/16 → 16/16</td><td class="n">32</td></tr>
-            <tr><td>Sonnet 5</td><td class="n win">−13.2%</td><td class="n win">−7.9%</td><td class="n">62 → 62</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
-            <tr><td>Haiku 4.5</td><td class="n win">−23.0%</td><td class="n win">−20.2%</td><td class="n">230.5 → 220.5</td><td class="n">14/16 → 13/16</td><td class="n">32</td></tr>
+            <tr><td>Opus 5.5</td><td class="n win">−2.9%</td><td class="n win">−10.5%</td><td class="n">75 → 76</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
+            <tr><td>Sonnet 5.5</td><td class="n win">−2.6%</td><td class="n win">−6.5%</td><td class="n">56 → 53</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
+            <tr><td>Haiku 4.5</td><td class="n win">−3.3%</td><td class="n win">−7.7%</td><td class="n">212.5 → 225.5</td><td class="n">12/16 → 12/16</td><td class="n">32</td></tr>
             <!-- ROWS:END -->
           </tbody>
         </table></div>
         <!-- FOOTNOTE:START -->
-        <p class="small muted">Same 8 tasks, 112 runs, one agent per run. Claude Code 2.1.282, 2026-09-25 to 2026-09-26. ThinWindow 0.1.0 (a6ebe93) on Opus 5.5; 0.2.0 (30e9c6b), 0.1.0 (528598a) on Sonnet 5; 0.1.0 (05cc89d), 0.1.0 (a6ebe93) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run. The 13–19% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −18.8% over the 7 tasks where both conditions have a passing run, against −23.0% over all 8. Opus 5.5 and Sonnet 5 passed every run. Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements.</p>
+        <p class="small muted">Same 8 tasks, 128 runs, one agent per run. Claude Code 2.1.287, 2026-10-02. ThinWindow 0.3.0 (6546385) on Opus 5.5; 0.3.0 (6546385) on Sonnet 5.5; 0.3.0 (6546385) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run. The 3–6% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −5.8% over the 6 tasks where both conditions have a passing run, against −3.3% over all 8. Opus 5.5 and Sonnet 5.5 passed every run. Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements. Haiku 4.5 has two runs per task and condition; Opus 5.5 and Sonnet 5.5, three. The runs came from two accounts whose Claude Code sessions start with different built-in tools; both conditions of each task share the same mix.</p>
         <!-- FOOTNOTE:END -->
 
         <div class="callout warn">
@@ -394,15 +394,15 @@ Say less
         <p>Bars left of zero are tokens saved with ThinWindow; bars to the right are tokens lost. Not every task improves.</p>
         <figure>
           <div class="figure-box"><img src="../bench/results/chart-claude-opus-5-5.svg" alt="Change in total tokens per task for Opus 5.5" loading="lazy"></div>
-          <figcaption>Opus 5.5 · 32 runs, up to 2 per task and condition.</figcaption>
+          <figcaption>Opus 5.5 · 48 runs, 3 per task and condition.</figcaption>
         </figure>
         <figure>
-          <div class="figure-box"><img src="../bench/results/chart-claude-sonnet-5.svg" alt="Change in total tokens per task for Sonnet 5" loading="lazy"></div>
-          <figcaption>Sonnet 5 · 48 runs, up to 3 per task and condition.</figcaption>
+          <div class="figure-box"><img src="../bench/results/chart-claude-sonnet-5-5.svg" alt="Change in total tokens per task for Sonnet 5.5" loading="lazy"></div>
+          <figcaption>Sonnet 5.5 · 48 runs, 3 per task and condition.</figcaption>
         </figure>
         <figure>
           <div class="figure-box"><img src="../bench/results/chart-claude-haiku-4-5.svg" alt="Change in total tokens per task for Haiku 4.5" loading="lazy"></div>
-          <figcaption>Haiku 4.5 · 32 runs, up to 2 per task and condition.</figcaption>
+          <figcaption>Haiku 4.5 · 32 runs, 2 per task and condition.</figcaption>
         </figure>
         <p>The per-task tables, with medians and min–max ranges, are in <code>bench/results/report.md</code> and in the README.</p>
 
@@ -438,14 +438,13 @@ Say less
           <li><strong>Cost</strong> is Claude Code's own estimate (<code>total_cost_usd</code>), not a bill. On a subscription you pay in usage limits instead, but the ratio is the same.</li>
           <li><strong>Turns</strong> count the top-level agent loop only. Work delegated to a subagent is included in tokens and cost but not in turns, so tokens and cost are the fair comparison.</li>
           <li><strong>The rules and thresholds were tuned on these same tasks.</strong> Savings on other work will differ.</li>
-          <li><strong>One task was re-measured after a fix.</strong> On Sonnet 5, every ThinWindow run of <code>commander-ci-config</code> capped <code>cat .github/workflows/*.yml</code> at 60 lines and cut the file the task asks about; the hook now keeps short concatenations whole (<a href="https://github.com/thinwindow/thinwindow/issues/7">#7</a>). That task's three ThinWindow runs were re-run at 30e9c6b (+29.3% → +3.9%), and the three they replace are in <code>bench/results/archive/</code>. No other recorded run makes that call, so no other task was re-run.</li>
         </ul>
 
         <h3>Where the remaining headroom is</h3>
         <ul>
           <!-- HEADROOM:START -->
-          <li><strong>Not every task improves.</strong> On Sonnet 5, three of the eight tasks cost more with ThinWindow. Just neutralising those regressions, without saving a token anywhere else, would take Sonnet 5 from −13.2% to about −17.5%, and Opus 5.5 from −15.8% to about −17.7%. Most of the near-term headroom is in not making short tasks worse.</li>
-          <li><strong>Turns are the untapped factor.</strong> Opus 5.5 took 12.9% fewer turns and cut cost by 19.4%; Sonnet 5 took as many turns as without it and cut cost by 7.9%. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was reverted rather than kept and quietly excluded. That experiment is still in the history.</li>
+          <li><strong>Not every task improves.</strong> On Sonnet 5.5, six of the eight tasks cost more with ThinWindow. Just neutralising those regressions, without saving a token anywhere else, would take Sonnet 5.5 from −2.6% to about −13.1%, and Haiku 4.5 from −3.3% to about −10.2%. Most of the near-term headroom is in not making short tasks worse.</li>
+          <li><strong>Turns are the untapped factor.</strong> Sonnet 5.5 took 5.4% fewer turns and cut cost by 6.5%; Haiku 4.5 took 6.1% more turns and cut cost by 7.7%. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was reverted rather than kept and quietly excluded. That experiment is still in the history.</li>
           <!-- HEADROOM:END -->
         </ul>
 
@@ -473,10 +472,10 @@ node bench/report.mjs</code></pre>
         <h2 id="status-h"><span class="num">11</span>Project status</h2>
         <div class="table-wrap"><table>
           <tbody>
-            <tr><td>Version</td><td><code>0.2.2</code>, which states each result with its uncertainty and names the quantity behind each percentage. The plugin behaves as in <code>0.2.1</code>, which keeps short concatenations whole (<a href="https://github.com/thinwindow/thinwindow/issues/7">#7</a>). <code>0.2.0</code> was the first measured release, and <code>0.1.0</code> the first complete build, without benchmark results. Each run records the manifest version it ran with: 109 runs record <code>0.1.0</code>, because the manifest was bumped only at release, and the three re-measured runs record <code>0.2.0</code>. Each run's commit hash identifies the exact code.</td></tr>
+            <tr><td>Version</td><td><code>0.3.0</code>. The hook runs the skill's bundled script instead of a top-level <code>bin/</code> (<a href="https://github.com/thinwindow/thinwindow/issues/13">#13</a>), short command output and named-file diffs come back as they are, and the measurements add Sonnet 5.5 (<a href="https://github.com/thinwindow/thinwindow/issues/21">#21</a>). Every run in the tables records <code>0.3.0</code> and the commit <code>6546385</code>; the 0.2.2 results are in <code>bench/results/archive/</code>.</td></tr>
             <tr><td>Built</td><td>Rules, Agent Skill, <code>AGENTS.md</code> snippet, Claude Code plugin with <code>SessionStart</code>, <code>Read</code>, <code>Bash</code> and <code>Grep</code> hooks, <code>thinwindow-run</code>, configuration, tests and CI on macOS, Linux and Windows (Node 18 and 22).</td></tr>
             <!-- MEASURED:START -->
-            <tr><td>Measured</td><td>Three models, 112 runs, as above. The launch target (≥25% fewer tokens at equal success) is not met yet.</td></tr>
+            <tr><td>Measured</td><td>Three models, 128 runs, as above. The launch target (≥25% fewer tokens at equal success) is not met yet.</td></tr>
             <!-- MEASURED:END -->
             <tr><td>In progress</td><td>Removing the regressions on short tasks, and reducing turns without hurting success.</td></tr>
             <tr><td>Out of scope for v0.1</td><td>An npm package, a hosted service, and telemetry of any kind.</td></tr>
@@ -518,7 +517,7 @@ node bench/report.mjs</code></pre>
         </details>
         <details>
           <summary>Why not just tell the agent to be brief?</summary>
-          <p>It helps, and the rules ask for it: output is under 2% of tokens, but at five times the input price it is 16–27% of the cost. The rest is context: a long answer is paid once, while a long read is written to the cache once and read again on every turn that follows it.</p>
+          <p>It helps, and the rules ask for it: output is under 2% of tokens, but at five times the input price it is 19–27% of the cost. The rest is context: a long answer is paid once, while a long read is written to the cache once and read again on every turn that follows it.</p>
         </details>
         <details>
           <summary>Does it send my code or telemetry anywhere?</summary>
