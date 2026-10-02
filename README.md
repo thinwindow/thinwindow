@@ -8,7 +8,12 @@
 
 <p align="center">
   <strong>Less in the window. Less on the bill.</strong><br>
-  Your agent pays for its context twice: once to cache it, then again on every turn that re-reads it. The re-reads alone are 87–96% of tokens; the two payments together are 73–84% of the bill. ThinWindow is a Claude Code plugin and an Agent Skill that shrinks the context: 13–19% fewer tokens, measured in Claude Code on three models, on eight tasks in two Python and JavaScript repositories.
+  ThinWindow makes Claude Code use less context — without changing the outcome. A Claude Code plugin and Agent Skill, benchmarked on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens, with the same success rate.<br>
+  Listed in the official Claude Code plugin directory.
+</p>
+
+<p align="center">
+  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Where the tokens go</b></a> · <a href="#benchmark">Benchmark and raw data</a> · <a href="#install">Install</a> · <a href="https://www.youtube.com/watch?v=ks1_B5Uq5Gc">Install video</a>
 </p>
 
 <p align="center">
@@ -18,17 +23,18 @@
 <!-- RESULTS:START -->
 | Model | Tokens (95% CI) | Tokens, passing runs | Cost (95% CI) | Success baseline → ThinWindow | Stopped by the turn cap | Runs |
 | --- | ---: | ---: | ---: | :---: | :---: | ---: |
-| Opus 5.5 | −15.8% (−28.3% to +0.4%) | −15.8% | −19.4% (−26.2% to −10.2%) | 16/16 → 16/16 | 0/16 → 0/16 | 32 |
-| Sonnet 5 | −13.2% (−30.4% to +7.0%) | −13.2% | −7.9% (−18.4% to +2.5%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
-| Haiku 4.5 | −23.0% (−36.0% to −10.8%) | −18.8% | −20.2% (−30.5% to −10.9%) | 14/16 → 13/16 | 7/16 → 3/16 | 32 |
+| Opus 5.5 | −2.9% (−13.3% to +9.3%) | −2.9% | −10.5% (−16.5% to −3.0%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
+| Sonnet 5.5 | −2.6% (−23.1% to +17.5%) | −2.6% | −6.5% (−20.0% to +7.6%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
+| Haiku 4.5 | −3.3% (−19.1% to +12.2%) | −5.8% | −7.7% (−21.8% to +3.5%) | 12/16 → 12/16 | 5/16 → 5/16 | 32 |
 
-Same 8 tasks, 112 runs, one agent per run, no cherry-picking:
+Same 8 tasks, 128 runs, one agent per run, no cherry-picking:
 every run recorded is in the table, except runs superseded by a later version
 of the code on the same task, which are kept in
 [`bench/results/archive/`](bench/results/archive). Per-task figures, the
 spread and the raw data are in [Benchmark](#benchmark) below.
+Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements. Haiku 4.5 has two runs per task and condition; Opus 5.5 and Sonnet 5.5, three. The runs came from two accounts whose Claude Code sessions start with different built-in tools; both conditions of each task share the same mix.
 
-The 13–19% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −18.8% over the 7 tasks where both conditions have a passing run, against −23.0% over all 8. Opus 5.5 and Sonnet 5 passed every run. On Haiku 4.5, ThinWindow runs failed the hidden check more often than baseline runs: 3 of 16 against 2 of 16. 95% CI: bootstrap over the tasks. Where it includes zero, the change can't be told apart from none on this task set. A run stopped by the turn cap ended at the limit before the agent finished; its tokens aren't comparable with a finished run's.
+The 3–6% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −5.8% over the 6 tasks where both conditions have a passing run, against −3.3% over all 8. Opus 5.5 and Sonnet 5.5 passed every run. 95% CI: bootstrap over the tasks. Where it includes zero, the change can't be told apart from none on this task set. A run stopped by the turn cap ended at the limit before the agent finished; its tokens aren't comparable with a finished run's.
 <!-- RESULTS:END -->
 
 ## Why context is the bill
@@ -42,19 +48,19 @@ every subsequent turn. The cost of a session is therefore closer to
 tokens ≈ context size × turns
 ```
 
-than to the length of the answer. In the baseline runs measured here, **87% to 96%
+than to the length of the answer. In the baseline runs measured here, **90% to 95%
 of all tokens billed were cache reads** — context being re-sent, turn after turn —
-against 0.6% to 1.9% for the agent's own output:
+against 0.8% to 1.4% for the agent's own output:
 
 <!-- CACHE:START -->
 | Model | Share of | Cache reads | Cache writes | Output |
 | --- | --- | ---: | ---: | ---: |
-| Opus 5.5 | tokens | 92.0% | 6.6% | 1.3% |
-|  | cost | 18.8% | 54.3% | 26.9% |
-| Sonnet 5 | tokens | 87.1% | 11.0% | 1.9% |
-|  | cost | 21.6% | 54.4% | 24.0% |
-| Haiku 4.5 | tokens | 96.4% | 2.9% | 0.6% |
-|  | cost | 51.9% | 31.6% | 16.4% |
+| Opus 5.5 | tokens | 91.7% | 6.9% | 1.4% |
+|  | cost | 18.1% | 54.6% | 27.2% |
+| Sonnet 5.5 | tokens | 89.7% | 8.9% | 1.4% |
+|  | cost | 26.7% | 52.9% | 20.4% |
+| Haiku 4.5 | tokens | 95.5% | 3.7% | 0.8% |
+|  | cost | 45.7% | 35.5% | 18.7% |
 <!-- CACHE:END -->
 
 Priced, the same runs look different (the cost rows): a cache read costs a
@@ -69,6 +75,18 @@ How the bill splits by kind of token, what the agent calls, and what happens
 to runs that don't finish: [Where the tokens go](docs/WHERE-THE-TOKENS-GO.md).
 
 ## Install
+
+**From the plugin directory** (Claude Code, Cowork and the Claude apps): in
+the Claude desktop app, Customize → Plugins → Discover → ThinWindow; in Claude
+Code, `/plugin` → Discover → ThinWindow, or:
+
+```
+claude plugin install thinwindow@anthropic-plugin-directory
+```
+
+[Watch it installed from the Claude desktop app](https://www.youtube.com/watch?v=ks1_B5Uq5Gc). In the Claude apps
+plugins don't run hooks, so ThinWindow works there as an Agent Skill only; the
+benchmark was measured in Claude Code.
 
 **Claude Code** (rules + hooks, the full version):
 
@@ -102,7 +120,9 @@ Turn it off at any time with `THINWINDOW=off`, or `"enabled": false` in
    - Re-reading an unchanged file that is already in context is refused.
    - Installs, builds, tests and lints run through `thinwindow-run`: the full
      log goes to a temp file, the agent sees the exit code, the tail and the
-     error lines.
+     error lines. When nothing would be cut (10 lines or fewer on success, 40
+     on failure), the output comes back as it is, with the exit code if the
+     command failed.
    - `cat` of huge files, lockfiles or minified files, `git log` without `-n`,
      `ls -R`, `tree` without `-L` and unbounded `find` get a cheaper
      replacement. Content `Grep` gets `head_limit: 100`.
@@ -135,12 +155,12 @@ No dependencies, no telemetry, Node 18+. Details and every option:
 ## Benchmark
 
 <!-- BENCH:START -->
-Three models, 8 tasks, 112 runs. Charts and tables are generated by
+Three models, 8 tasks, 128 runs. Charts and tables are generated by
 [`bench/report.mjs`](bench/report.mjs) from the raw run files.
 
 ### Opus 5.5
 
-`claude-opus-5-5` (requested as `opus`) · Claude Code 2.1.282 · ThinWindow 0.1.0 (a6ebe93) · 32 runs, up to 2 per task and condition · 2026-09-25
+`claude-opus-5-5` · Claude Code 2.1.287 · ThinWindow 0.3.0 (6546385) · 48 runs, up to 3 per task and condition · 2026-10-02
 
 ![Change in total tokens per task, Opus 5.5: bars left of zero mean fewer tokens with ThinWindow; whiskers span every pair of runs](bench/results/chart-claude-opus-5-5.svg)
 
@@ -148,47 +168,47 @@ Three models, 8 tasks, 112 runs. Charts and tables are generated by
 
 | Task | Tokens baseline (min–max) | Tokens ThinWindow (min–max) | Δ tokens | Cost baseline | Cost ThinWindow | Δ cost | Turns baseline | Turns ThinWindow | Success baseline | Success ThinWindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| click-choice-brackets | 320k (301k–339k) | 278k (261k–294k) | −13.2% | $0.36 | $0.24 | −33.6% | 12.5 | 11.5 | 2/2 | 2/2 |
-| click-footer-year | 119k (119k–119k) | 136k (121k–151k) | +14.1% | $0.13 | $0.13 | +3.9% | 4.5 | 5.5 | 2/2 | 2/2 |
-| click-help-spec | 444k (412k–475k) | 266k (230k–302k) | −40.1% | $0.34 | $0.25 | −27.2% | 16 | 13 | 2/2 | 2/2 |
-| commander-ci-config | 92k (92k–92k) | 107k (91k–123k) | +17.0% | $0.13 | $0.12 | −0.9% | 3 | 3.5 | 2/2 | 2/2 |
-| commander-command-clash | 284k (281k–286k) | 275k (273k–278k) | −3.0% | $0.32 | $0.28 | −10.2% | 13 | 10.5 | 2/2 | 2/2 |
-| commander-extract-utils | 385k (331k–439k) | 258k (223k–292k) | −33.1% | $0.28 | $0.20 | −27.6% | 13.5 | 8 | 2/2 | 2/2 |
-| commander-negate-default-order | 334k (314k–354k) | 340k (301k–379k) | +1.8% | $0.38 | $0.30 | −19.7% | 11 | 12 | 2/2 | 2/2 |
-| commander-rename-display-width | 122k (122k–122k) | 107k (92k–123k) | −11.9% | $0.14 | $0.13 | −6.0% | 4 | 3.5 | 2/2 | 2/2 |
-| **Total** | **2.10M** | **1.77M** | **−15.8%** | **$2.06** | **$1.66** | **−19.4%** | 77.5 | 67.5 | **16/16** | **16/16** |
+| click-choice-brackets | 304k (282k–307k) | 370k (343k–395k) | +21.7% | $0.27 | $0.28 | +3.7% | 11 | 14 | 3/3 | 3/3 |
+| click-footer-year | 123k (91k–186k) | 123k (73k–185k) | +0.1% | $0.13 | $0.13 | −3.7% | 5 | 4 | 3/3 | 3/3 |
+| click-help-spec | 412k (356k–451k) | 384k (275k–456k) | −7.0% | $0.33 | $0.29 | −11.7% | 15 | 14 | 3/3 | 3/3 |
+| commander-ci-config | 93k (56k–124k) | 94k (56k–126k) | +0.6% | $0.12 | $0.12 | −2.2% | 3 | 3 | 3/3 | 3/3 |
+| commander-command-clash | 330k (289k–382k) | 239k (239k–291k) | −27.4% | $0.36 | $0.30 | −16.2% | 13 | 9 | 3/3 | 3/3 |
+| commander-extract-utils | 241k (234k–299k) | 267k (262k–307k) | +10.9% | $0.25 | $0.23 | −6.0% | 10 | 13 | 3/3 | 3/3 |
+| commander-negate-default-order | 457k (380k–490k) | 423k (269k–501k) | −7.5% | $0.45 | $0.35 | −22.3% | 14 | 15 | 3/3 | 3/3 |
+| commander-rename-display-width | 124k (74k–124k) | 125k (76k–125k) | +0.5% | $0.14 | $0.13 | −5.5% | 4 | 4 | 3/3 | 3/3 |
+| **Total** | **2.08M** | **2.02M** | **−2.9%** | **$2.05** | **$1.84** | **−10.5%** | 75 | 76 | **24/24** | **24/24** |
 
 </details>
 
-Raw runs: [`bench/results/opus-528598a.jsonl`](bench/results/opus-528598a.jsonl)
+Raw runs: [`bench/results/opus-5-5-6546385.jsonl`](bench/results/opus-5-5-6546385.jsonl)
 
-### Sonnet 5
+### Sonnet 5.5
 
-`claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · ThinWindow 0.2.0 (30e9c6b), 0.1.0 (528598a) · 48 runs, up to 3 per task and condition · 2026-09-25 to 2026-09-26
+`claude-sonnet-5-5` · Claude Code 2.1.287 · ThinWindow 0.3.0 (6546385) · 48 runs, up to 3 per task and condition · 2026-10-02
 
-![Change in total tokens per task, Sonnet 5: bars left of zero mean fewer tokens with ThinWindow; whiskers span every pair of runs](bench/results/chart-claude-sonnet-5.svg)
+![Change in total tokens per task, Sonnet 5.5: bars left of zero mean fewer tokens with ThinWindow; whiskers span every pair of runs](bench/results/chart-claude-sonnet-5-5.svg)
 
 <details><summary>Per-task table</summary>
 
 | Task | Tokens baseline (min–max) | Tokens ThinWindow (min–max) | Δ tokens | Cost baseline | Cost ThinWindow | Δ cost | Turns baseline | Turns ThinWindow | Success baseline | Success ThinWindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| click-choice-brackets | 203k (149k–265k) | 194k (142k–233k) | −4.7% | $0.15 | $0.13 | −13.0% | 10 | 12 | 3/3 | 3/3 |
-| click-footer-year | 73k (72k–73k) | 73k (72k–74k) | +0.4% | $0.06 | $0.06 | −1.6% | 4 | 4 | 3/3 | 3/3 |
-| click-help-spec | 186k (163k–232k) | 83k (80k–107k) | −55.3% | $0.14 | $0.09 | −35.5% | 8 | 5 | 3/3 | 3/3 |
-| commander-ci-config | 75k (75k–75k) | 78k (77k–78k) | +3.9% | $0.06 | $0.07 | +4.5% | 4 | 4 | 3/3 | 3/3 |
-| commander-command-clash | 180k (159k–220k) | 137k (130k–204k) | −23.8% | $0.16 | $0.15 | −4.0% | 10 | 9 | 3/3 | 3/3 |
-| commander-extract-utils | 141k (80k–167k) | 189k (164k–266k) | +33.9% | $0.10 | $0.12 | +15.3% | 9 | 12 | 3/3 | 3/3 |
-| commander-negate-default-order | 258k (203k–327k) | 205k (151k–278k) | −20.3% | $0.17 | $0.15 | −8.5% | 13 | 12 | 3/3 | 3/3 |
-| commander-rename-display-width | 74k (55k–75k) | 74k (55k–76k) | −0.3% | $0.06 | $0.06 | −1.0% | 4 | 4 | 3/3 | 3/3 |
-| **Total** | **1.19M** | **1.03M** | **−13.2%** | **$0.91** | **$0.83** | **−7.9%** | 62 | 62 | **24/24** | **24/24** |
+| click-choice-brackets | 189k (102k–268k) | 127k (97k–226k) | −33.1% | $0.14 | $0.09 | −37.3% | 6 | 6 | 3/3 | 3/3 |
+| click-footer-year | 120k (90k–149k) | 153k (74k–215k) | +28.0% | $0.07 | $0.08 | +16.7% | 5 | 6 | 3/3 | 3/3 |
+| click-help-spec | 241k (150k–283k) | 129k (83k–268k) | −46.4% | $0.14 | $0.10 | −28.0% | 12 | 5 | 3/3 | 3/3 |
+| commander-ci-config | 124k (75k–156k) | 126k (77k–127k) | +2.1% | $0.08 | $0.08 | +2.2% | 4 | 4 | 3/3 | 3/3 |
+| commander-command-clash | 208k (125k–239k) | 242k (174k–271k) | +16.7% | $0.16 | $0.16 | −2.4% | 9 | 11 | 3/3 | 3/3 |
+| commander-extract-utils | 156k (96k–156k) | 193k (163k–298k) | +24.1% | $0.09 | $0.11 | +17.5% | 6 | 8 | 3/3 | 3/3 |
+| commander-negate-default-order | 204k (199k–299k) | 235k (171k–273k) | +15.1% | $0.14 | $0.15 | +4.6% | 11 | 10 | 3/3 | 3/3 |
+| commander-rename-display-width | 91k (55k–92k) | 93k (55k–125k) | +1.8% | $0.07 | $0.07 | +2.0% | 3 | 3 | 3/3 | 3/3 |
+| **Total** | **1.33M** | **1.30M** | **−2.6%** | **$0.88** | **$0.83** | **−6.5%** | 56 | 53 | **24/24** | **24/24** |
 
 </details>
 
-Raw runs: [`bench/results/sonnet-30e9c6b.jsonl`](bench/results/sonnet-30e9c6b.jsonl), [`bench/results/sonnet-528598a.jsonl`](bench/results/sonnet-528598a.jsonl)
+Raw runs: [`bench/results/sonnet-5-5-6546385.jsonl`](bench/results/sonnet-5-5-6546385.jsonl)
 
 ### Haiku 4.5
 
-`claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.282 · ThinWindow 0.1.0 (05cc89d), 0.1.0 (a6ebe93) · 32 runs, up to 2 per task and condition · 2026-09-25
+`claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.287 · ThinWindow 0.3.0 (6546385) · 32 runs, up to 2 per task and condition · 2026-10-02
 
 ![Change in total tokens per task, Haiku 4.5: bars left of zero mean fewer tokens with ThinWindow; whiskers span every pair of runs](bench/results/chart-claude-haiku-4-5.svg)
 
@@ -196,19 +216,19 @@ Raw runs: [`bench/results/sonnet-30e9c6b.jsonl`](bench/results/sonnet-30e9c6b.js
 
 | Task | Tokens baseline (min–max) | Tokens ThinWindow (min–max) | Δ tokens | Cost baseline | Cost ThinWindow | Δ cost | Turns baseline | Turns ThinWindow | Success baseline | Success ThinWindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| click-choice-brackets | 1.51M (1.41M–1.62M) | 1.15M (1.05M–1.26M) | −23.7% | $0.28 | $0.21 | −26.6% | 37 | 32.5 | 2/2 | 2/2 |
-| click-footer-year | 259k (187k–331k) | 209k (197k–221k) | −19.5% | $0.06 | $0.06 | −8.3% | 9 | 7.5 | 2/2 | 2/2 |
-| click-help-spec | 1.84M (1.67M–2.00M) | 1.63M (1.23M–2.02M) | −11.4% | $0.32 | $0.29 | −8.3% | 41 | 38 | 2/2 | 2/2 |
-| commander-ci-config | 129k (96k–162k) | 142k (120k–165k) | +10.3% | $0.04 | $0.05 | +6.2% | 5 | 5 | 2/2 | 2/2 |
-| commander-command-clash | 1.80M (1.49M–2.11M) | 1.65M (1.48M–1.82M) | −8.3% | $0.33 | $0.30 | −10.2% | 41 | 41 | 1/2 | 1/2 |
-| commander-extract-utils | 1.29M (1.09M–1.48M) | 662k (581k–743k) | −48.6% | $0.27 | $0.15 | −45.0% | 20 | 18 | 2/2 | 2/2 |
-| commander-negate-default-order | 1.96M (1.82M–2.10M) | 1.78M (1.45M–2.10M) | −9.3% | $0.37 | $0.34 | −9.8% | 39.5 | 37.5 | 2/2 | 2/2 |
-| commander-rename-display-width | 2.31M (2.26M–2.37M) | 1.32M (724k–1.92M) | −42.9% | $0.39 | $0.27 | −31.2% | 38 | 41 | 1/2 | 0/2 |
-| **Total** | **11.10M** | **8.54M** | **−23.0%** | **$2.06** | **$1.65** | **−20.2%** | 230.5 | 220.5 | **14/16** | **13/16** |
+| click-choice-brackets | 1.49M (1.39M–1.58M) | 1.35M (1.35M–1.35M) | −9.3% | $0.27 | $0.25 | −9.1% | 41 | 40.5 | 2/2 | 2/2 |
+| click-footer-year | 155k (141k–169k) | 210k (119k–300k) | +35.0% | $0.05 | $0.06 | +23.8% | 6.5 | 8.5 | 2/2 | 2/2 |
+| click-help-spec | 1.32M (1.21M–1.44M) | 1.44M (1.40M–1.48M) | +9.0% | $0.26 | $0.27 | +3.3% | 34 | 39.5 | 2/2 | 2/2 |
+| commander-ci-config | 96k (96k–96k) | 97k (97k–98k) | +1.3% | $0.04 | $0.04 | +1.6% | 5 | 5 | 2/2 | 2/2 |
+| commander-command-clash | 1.69M (1.62M–1.75M) | 1.40M (1.28M–1.52M) | −17.0% | $0.33 | $0.28 | −14.8% | 41 | 38.5 | 0/2 | 0/2 |
+| commander-extract-utils | 827k (677k–976k) | 416k (413k–419k) | −49.7% | $0.21 | $0.11 | −49.0% | 14.5 | 14.5 | 2/2 | 2/2 |
+| commander-negate-default-order | 1.50M (1.34M–1.67M) | 1.56M (1.50M–1.62M) | +4.0% | $0.31 | $0.32 | +4.4% | 36.5 | 38 | 2/2 | 2/2 |
+| commander-rename-display-width | 1.13M (941k–1.33M) | 1.46M (1.35M–1.58M) | +29.1% | $0.25 | $0.26 | +4.2% | 34 | 41 | 0/2 | 0/2 |
+| **Total** | **8.21M** | **7.94M** | **−3.3%** | **$1.71** | **$1.58** | **−7.7%** | 212.5 | 225.5 | **12/16** | **12/16** |
 
 </details>
 
-Raw runs: [`bench/results/haiku-528598a.jsonl`](bench/results/haiku-528598a.jsonl)
+Raw runs: [`bench/results/haiku-6546385.jsonl`](bench/results/haiku-6546385.jsonl)
 
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (ThinWindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. 95% CI: percentile bootstrap over the tasks (100,000 resamples) of the sum of the per-task medians. The chart's whiskers span every pairing of a ThinWindow run with a baseline run of the same task; where one crosses zero, the two conditions' ranges overlap. The ThinWindow rules and thresholds were tuned on these same tasks.
 <!-- BENCH:END -->
@@ -248,18 +268,11 @@ usage limits instead, but the ratio is the same.
   counts and the tool-call trace. The tables above are generated from those
   files by [`bench/report.mjs`](bench/report.mjs); no number in this README is
   typed by hand.
-- One task was re-measured after a fix. On Sonnet 5, every ThinWindow run of
-  commander-ci-config capped `cat .github/workflows/*.yml` at 60 lines and cut
-  the file the task asks about; the hook now keeps short concatenations whole
-  ([#7](https://github.com/thinwindow/thinwindow/issues/7)). That task's three
-  ThinWindow runs were re-run at 30e9c6b (+29.3% → +3.9%), and the three they
-  replace are in [`bench/results/archive/`](bench/results/archive). No other
-  recorded run makes that call, so no other task was re-run.
 - The rules were tuned on these same 8 tasks, on two CLI-argument-parsing
   libraries, in JavaScript and Python. That is a narrow slice of software. Your
   savings on other work will differ.
-- Samples are small. Agents are noisy: the same task took 4 turns in one run and
-  9 in the next (commander-extract-utils on Sonnet 5, without ThinWindow), which
+- Samples are small. Agents are noisy: the same task took 7 turns in one run and
+  13 in the next (click-help-spec on Sonnet 5.5, without ThinWindow), which
   is why the tables report medians and per-task spread rather than a single
   headline average.
 - Re-run it against your own account and your own limits:
@@ -280,18 +293,19 @@ improving them and to re-publish the raw files each time.
 
 Two things are visible in the data above:
 
-- **Not every task improves.** On Sonnet 5, three of the eight tasks still cost
-  more with ThinWindow than without. Neutralising just those regressions —
-  without saving a single extra token anywhere else — would take Sonnet from
-  −13.2% to about −17.5%, and Opus from −15.8% to about −17.7%. Most of the
+- **Not every task improves.** On Sonnet 5.5, six of the eight tasks use more
+  tokens with ThinWindow than without; on Opus 5.5 and Haiku 4.5, five.
+  Neutralising just those regressions — without saving a single extra token
+  anywhere else — would take Sonnet 5.5 from −2.6% to about −13.1%, Opus 5.5
+  from −2.9% to about −7.4% and Haiku 4.5 from −3.3% to about −10.2%. Most of the
   near-term headroom is in not making short tasks worse, not in squeezing the
   long ones further. What the traces show for each of them is in
   [#7](https://github.com/thinwindow/thinwindow/issues/7).
 - **Turns are the untapped factor.** Since cost is roughly context × turns, a
-  turn saved is worth as much as a large read avoided. Opus took 12.9% fewer
-  turns here and cut cost by 19.4%; Sonnet took as many turns as without
-  ThinWindow and cut cost by 7.9%. An earlier attempt at explicit "use fewer
-  turns" rules made Sonnet measurably worse and was reverted rather than kept
+  turn saved is worth as much as a large read avoided. Sonnet 5.5 took 5.4%
+  fewer turns here and cut cost by 6.5%; Haiku 4.5 took 6.1% more turns and
+  cut cost by 7.7%; Opus 5.5 took 1.3% more turns and cut cost by 10.5%. An earlier attempt at explicit "use fewer
+  turns" rules made Sonnet 5 measurably worse and was reverted rather than kept
   and quietly excluded — that reverted experiment is still in the history.
 
 ## What ThinWindow does to tool output
@@ -318,23 +332,22 @@ bill splits.
 <!-- TIER1:START -->
 | Model | Calls in the baseline traces | Replayed | Changed by the hooks | Tool output of the replayed calls (characters) | Change |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 106 | 52 | 2 | 83,853 → 84,720 | +1.0% |
-| Sonnet 5 | 134 | 66 | 3 | 114,982 → 115,879 | +0.8% |
-| Haiku 4.5 | 366 | 250 | 41 | 861,988 → 524,951 | −39.1% |
+| Opus 5.5 | 106 | 52 | 2 | 83,849 → 83,856 | +0.0% |
+| Sonnet 5.5 | 0 | 0 | 0 | 0 → 0 | – |
+| Haiku 4.5 | 366 | 250 | 37 | 861,927 → 515,933 | −40.1% |
 
 | What the hook did | Calls | Before | After | Calls that grew |
 | --- | ---: | ---: | ---: | ---: |
 | Large Read: first lines and an outline | 10 | 374,240 | 55,614 | 0 |
-| Command run through thinwindow-run | 27 | 45,261 | 30,393 | 20 |
+| Command run through thinwindow-run | 27 | 45,258 | 20,374 | 11 |
 | Recursive search capped | 1 | 4,481 | 2,011 | 0 |
-| Git diff shown as --stat | 5 | 622 | 1,313 | 5 |
 
 Not replayed: 183 calls the trace cut short (it keeps 140 characters of each), 33 that write files, run a script or change the repository, and 22 whose file could not be matched.
 
 The change in the bill is a different quantity, measured in [Benchmark](#benchmark), and not the same size:
-- Opus 5.5: the hooks change 2 of 106 calls and add 1.0% to the replayed tool output; in the benchmark they acted in 1 of 16 ThinWindow runs, and the measured change in cost is −19.4% (95% CI −26.2% to −10.2%).
-- Sonnet 5: the hooks change 3 of 134 calls and add 0.8% to the replayed tool output; in the benchmark they acted in 3 of 24 ThinWindow runs, and the measured change in cost is −7.9% (95% CI −18.4% to +2.5%).
-- Haiku 4.5: the hooks change 41 of 366 calls and cut the replayed tool output by 39.1%; in the benchmark they acted in 9 of 16 ThinWindow runs, and the measured change in cost is −20.2% (95% CI −30.5% to −10.9%).
+- Opus 5.5: the hooks change 2 of 106 calls and add 0.0% to the replayed tool output; in the benchmark they acted in 1 of 24 ThinWindow runs, and the measured change in cost is −10.5% (95% CI −16.5% to −3.0%).
+- Sonnet 5.5: the hooks change 0 of 0 calls and add 0.0% to the replayed tool output; in the benchmark they acted in 3 of 24 ThinWindow runs, and the measured change in cost is −6.5% (95% CI −20.0% to +7.6%).
+- Haiku 4.5: the hooks change 37 of 366 calls and cut the replayed tool output by 40.1%; in the benchmark they acted in 10 of 16 ThinWindow runs, and the measured change in cost is −7.7% (95% CI −21.8% to +3.5%).
 
 Where the hooks barely act, the measured change comes from the rules, which change what the agent does, or from run-to-run noise, not from trimming tool output.
 <!-- TIER1:END -->
@@ -401,8 +414,8 @@ struggles there either way: three of its four runs failed, and every run took 35
 turns or more.
 
 **Why not just tell the agent to be brief?** It helps, and the rules ask for
-it: output is only 0.6% to 1.9% of tokens, but at five times the input price it
-is 16–27% of the cost (see [Why context is the bill](#why-context-is-the-bill)).
+it: output is only 0.8% to 1.4% of tokens, but at five times the input price it
+is 19–27% of the cost (see [Why context is the bill](#why-context-is-the-bill)).
 The rest is context: a long answer is paid once, while a long read is written
 to the cache once and read again on every turn that follows it.
 

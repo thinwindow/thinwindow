@@ -9,12 +9,21 @@
 
 const STDIN_TIMEOUT_MS = 5000;
 
-export function debugEnabled(env = process.env) {
+// The only environment variables the hooks read: the off switch, the debug
+// switch and the project dir Claude Code sets. Nothing else from the
+// environment is read or passed around.
+export const HOOK_ENV = {
+  THINWINDOW: process.env.THINWINDOW,
+  THINWINDOW_DEBUG: process.env.THINWINDOW_DEBUG,
+  CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
+};
+
+export function debugEnabled(env = HOOK_ENV) {
   const v = String(env.THINWINDOW_DEBUG || '').toLowerCase();
   return v !== '' && v !== '0' && v !== 'false' && v !== 'off';
 }
 
-export function debug(message, env = process.env) {
+export function debug(message, env = HOOK_ENV) {
   if (!debugEnabled(env)) return;
   try {
     process.stderr.write(`[thinwindow] ${message}\n`);

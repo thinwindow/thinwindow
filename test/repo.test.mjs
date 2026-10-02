@@ -1,7 +1,7 @@
 // The same checks CI runs through scripts/check.mjs, plus unit tests for
 // the validators themselves.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,8 @@ import {
   validateSkill,
   validateTask,
 } from '../scripts/check.mjs';
+import { HOOK_ENV } from '../hooks/lib/hook-io.mjs';
+import { PATHS as DIRECTORY_PATHS, absoluteLinks } from '../scripts/build-directory.mjs';
 import { syncedContent } from '../scripts/sync-rules.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -129,4 +131,46 @@ test('labels.json defines every label the templates and the stale workflow use',
     assert.ok(used.includes(name), `${name} not found in templates/stale workflow`);
   }
   for (const name of used) assert.ok(defined.has(name), `${name} is used but not defined`);
+});
+
+test('the hooks read only the environment variables they name', () => {
+  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR']);
+  for (const dir of ['hooks', 'hooks/lib']) {
+    for (const f of readdirSync(join(ROOT, dir)).filter((n) => n.endsWith('.mjs'))) {
+      const reads = readFileSync(join(ROOT, dir, f), 'utf8').match(/process\.env(\.\w+)?/g) || [];
+      const expected = f === 'hook-io.mjs' ? Object.keys(HOOK_ENV).map((k) => `process.env.${k}`) : [];
+      assert.deepEqual(reads, expected, `${dir}/${f}`);
+    }
+  }
+});
+
+test('the directory branch points relative links at main', () => {
+  const isDir = (p) => p === 'bench/results';
+  const md = [
+    '![chart](bench/results/chart.svg) [raw](bench/results) [docs](docs/a.md#x "t") [top](#install) [x](https://e.com/a)',
+    '<a href="README.es.md">es</a> <img src="assets/i.png">',
+  ].join('\n');
+  assert.equal(
+    absoluteLinks(md, 'README.md', isDir),
+    [
+      '![chart](https://raw.githubusercontent.com/thinwindow/thinwindow/main/bench/results/chart.svg)' +
+        ' [raw](https://github.com/thinwindow/thinwindow/tree/main/bench/results)' +
+        ' [docs](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md#x "t") [top](#install) [x](https://e.com/a)',
+      '<a href="https://github.com/thinwindow/thinwindow/blob/main/README.es.md">es</a>' +
+        ' <img src="https://raw.githubusercontent.com/thinwindow/thinwindow/main/assets/i.png">',
+    ].join('\n'),
+  );
+  // Resolved from the file's own folder.
+  assert.equal(absoluteLinks('[d](../../docs/a.md)', 'skills/thinwindow/SKILL.md'), '[d](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md)');
+  // A closed list: bench/, the website, images and CLAUDE.md stay out.
+  assert.deepEqual(DIRECTORY_PATHS, ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md']);
+});
+
+test('the directory build pins README links and images to the commit it packages', () => {
+  assert.equal(
+    absoluteLinks('![c](bench/results/chart.svg) [d](docs/a.md) [r](bench/results)', 'README.md', (p) => p === 'bench/results', 'abc123'),
+    '![c](https://raw.githubusercontent.com/thinwindow/thinwindow/abc123/bench/results/chart.svg)' +
+      ' [d](https://github.com/thinwindow/thinwindow/blob/abc123/docs/a.md)' +
+      ' [r](https://github.com/thinwindow/thinwindow/tree/abc123/bench/results)',
+  );
 });

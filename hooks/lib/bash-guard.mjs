@@ -4,6 +4,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, parse as parsePath, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { countLines, isBinary, isLockfile, isMinified } from './files.mjs';
 import { displayPath, isAllowlistedPath } from './read-guard.mjs';
 import { baseName, commandWords, parseShell } from './shell.mjs';
@@ -13,6 +14,30 @@ import { consumeDenied, recordDenied } from './state.mjs';
 const CAPPING = new Set(['head', 'tail', 'wc', 'grep', 'egrep', 'fgrep', 'rg', 'ag', 'sed', 'awk', 'jq', 'cut', 'uniq']);
 const PRINTERS = new Set(['cat', 'bat', 'batcat', 'nl', 'less', 'more', 'tac']);
 const QUIET = /^(-q+|--quiet|--silent|--reporter=(dot|dots|silent|min|summary)|--(log-?level)=(error|silent|quiet))$/;
+
+// The plugin ships no bin/ (Cowork and the Claude apps refuse a plugin with a
+// top-level bin/), so commands run through the skill's runner by full path.
+// Single quotes: install paths can hold spaces, and nothing inside expands.
+const RUNNER = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'skills', 'thinwindow', 'scripts', 'thinwindow-run.mjs');
+export const RUN = `node '${RUNNER.replace(/'/g, `'\\''`)}'`;
+
+function isRunner(argv) {
+  return baseName(argv[0]) === 'thinwindow-run' || (baseName(argv[0]) === 'node' && baseName(argv[1] || '') === 'thinwindow-run.mjs');
+}
+
+// Points each command-position `thinwindow-run` (the rules and the soft block
+// name it) at the runner. It only locates the command, so the handler applies
+// it after counting what thinwindow did.
+export function resolveRunner(command) {
+  const parsed = parseShell(command);
+  if (!parsed.ok) return command;
+  const calls = parsed.pipelines
+    .flatMap((p) => p.stages.map((s) => commandWords(s).words[0]))
+    .filter((w) => w?.text === 'thinwindow-run');
+  let out = command;
+  for (const w of calls.sort((a, b) => b.start - a.start)) out = `${out.slice(0, w.start)}${RUN}${out.slice(w.end)}`;
+  return out;
+}
 
 function words(stage) {
   return commandWords(stage).words.map((w) => w.text);
@@ -159,9 +184,10 @@ const DIFF_SUMMARY_FLAGS = new Set([
   '--stat', '--shortstat', '--numstat', '--name-only', '--name-status', '--compact-summary', '--summary',
 ]);
 
-// git diff with no summary flag and no explicit path can print an unbounded
-// amount of changed code.
-function checkGitDiff(argv) {
+// git diff with no summary flag and no path can print an unbounded amount of
+// changed code. A path comes after `--`, or on its own when it names a file or
+// directory that exists (`git diff src/a.js`): that diff is what was asked for.
+function checkGitDiff(argv, ctx) {
   if (baseName(argv[0]) !== 'git') return null;
   let k = 1;
   while (k < argv.length && argv[k].startsWith('-')) {
@@ -173,6 +199,7 @@ function checkGitDiff(argv) {
   if (rest.some((a) => DIFF_SUMMARY_FLAGS.has(a) || a.startsWith('--stat='))) return null;
   const dashIdx = rest.indexOf('--');
   if (dashIdx !== -1 && rest.length > dashIdx + 1) return null;
+  if (rest.some((a) => !a.startsWith('-') && existsSync(resolve(ctx.cwd, a)))) return null;
   return (
     'thinwindow: git diff with no --stat and no path can print an unbounded amount of changed code. ' +
     'Run git diff --stat first to see what changed, then git diff -- <path> for just the file you need.'
@@ -233,7 +260,7 @@ function findNoisy(parsed, ctx) {
     const { words: cw, wrappers } = commandWords(stage);
     if (cw.length === 0) continue;
     const argv = cw.map((w) => w.text);
-    if (baseName(argv[0]) === 'thinwindow-run' || isQuiet(argv)) continue;
+    if (isRunner(argv) || isQuiet(argv)) continue;
     const cmd = argv.join(' ');
     if (ctx.config.noisyPatterns.some((re) => re.test(cmd))) {
       const text = ctx.source.slice(cw[0].start, stage.end).trim();
@@ -270,7 +297,7 @@ function findScopeIssues(parsed, ctx) {
       hits.push({ text, reason, wrappers, edits, note });
       continue;
     }
-    reason = checkGitDiff(argv);
+    reason = checkGitDiff(argv, ctx);
     if (reason) {
       let k = 1;
       while (k < cw.length && cw[k].text.startsWith('-')) k += cw[k].text === '-C' || cw[k].text === '-c' ? 2 : 1;
@@ -399,19 +426,15 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
     const edits = [
       ...scopeIssues.flatMap((s) => s.edits),
       ...truncations.flatMap((t) => t.edits),
-      ...noisy.map((h) => ({ at: h.cmdStart, insert: 'thinwindow-run ' })),
+      ...noisy.map((h) => ({ at: h.cmdStart, insert: `${RUN} ` })),
     ];
     let rewritten = command;
     for (const e of edits.sort((a, b) => b.at - a.at)) rewritten = `${rewritten.slice(0, e.at)}${e.insert}${rewritten.slice(e.end ?? e.at)}`;
+    // thinwindow-run's own output says what it cut and where the full log is,
+    // so a noisy command needs no note; a short one comes back whole.
     const notes = [...scopeIssues.map((s) => s.note), ...truncations.map((t) => t.note)];
-    if (noisy.length > 0) {
-      notes.push(
-        `thinwindow ran ${noisy.map((h) => `\`${h.cmd}\``).join(', ')} through thinwindow-run, so the output is a summary: ` +
-          'exit code, the last lines, the error lines, and the path of the full log.',
-      );
-    }
     const kind = scopeIssues.length > 0 ? 'scope' : noisy.length > 0 ? 'noisy' : 'uncap';
-    return { action: 'rewrite', kind, command: rewritten, context: notes.join(' ') };
+    return { action: 'rewrite', kind, command: rewritten, context: notes.join(' ') || undefined };
   }
 
   if (scopeIssues.length > 0) {

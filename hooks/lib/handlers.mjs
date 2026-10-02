@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
-import { debug } from './hook-io.mjs';
-import { checkBash } from './bash-guard.mjs';
+import { HOOK_ENV, debug } from './hook-io.mjs';
+import { checkBash, resolveRunner } from './bash-guard.mjs';
 import { checkGrepTool } from './grep-guard.mjs';
 import { checkRead } from './read-guard.mjs';
 import { pruneStates, resetState, updateState } from './state.mjs';
@@ -20,7 +20,7 @@ function projectDirOf(input, env) {
 // (or /clear) the content read earlier is gone from the context, so the
 // read-tracking state starts over.
 // Output schema: https://code.claude.com/docs/en/hooks#sessionstart-decision-control
-export function handleSessionStart(input, { env = process.env, home, stateBase } = {}) {
+export function handleSessionStart(input, { env = HOOK_ENV, home, stateBase } = {}) {
   const config = loadConfig({ projectDir: projectDirOf(input, env), env, home });
   if (!config.enabled) {
     debug('SessionStart: disabled', env);
@@ -40,14 +40,14 @@ export function handleSessionStart(input, { env = process.env, home, stateBase }
 // the way (the normal permission flow applies; thinwindow never returns
 // "allow", so it can't approve anything the user wouldn't).
 // Output schema: https://code.claude.com/docs/en/hooks#pretooluse-decision-control
-export function handlePreToolUse(input, { env = process.env, home, stateBase, now = Date.now() } = {}) {
+export function handlePreToolUse(input, { env = HOOK_ENV, home, stateBase, now = Date.now() } = {}) {
   const tool = input.tool_name;
   if (tool !== 'Read' && tool !== 'Bash' && tool !== 'Grep') return null;
   const projectDir = projectDirOf(input, env);
   const config = loadConfig({ projectDir, env, home });
   if (!config.enabled) return null;
 
-  const result = updateState(
+  let result = updateState(
     input.session_id,
     (state) => {
       const r =
@@ -65,6 +65,11 @@ export function handlePreToolUse(input, { env = process.env, home, stateBase, no
     },
     { base: stateBase, now },
   );
+  if (tool === 'Bash' && result.action !== 'deny') {
+    const command = result.action === 'rewrite' ? result.command : input.tool_input?.command;
+    const resolved = typeof command === 'string' ? resolveRunner(command) : command;
+    if (resolved !== command) result = { ...result, action: 'rewrite', command: resolved };
+  }
   const subject = input.tool_input?.file_path ?? input.tool_input?.command ?? input.tool_input?.pattern;
   debug(`${tool} ${result.action} (${result.kind}): ${subject}`, env);
 

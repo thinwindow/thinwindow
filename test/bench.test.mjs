@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { buildClaudeArgs, claudeEnv, parseResult, parseTrace, ruleAbsolute } from '../bench/lib/claude.mjs';
+import { buildClaudeArgs, claudeEnv, parseResult, parseTrace, parseTraceTails, ruleAbsolute } from '../bench/lib/claude.mjs';
 import { BENCH_DIR, FIXTURES_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../bench/lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from '../bench/lib/pricing.mjs';
 import { readResultFile, resultsPath } from '../bench/lib/results.mjs';
@@ -15,7 +15,7 @@ import { inlineChars, mechanisms, notReplayable, readChars } from '../bench/inpu
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
-import { costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, staleRanges, tokenMix } from '../bench/docs.mjs';
+import { buildReport, costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, resultsBlock, staleRanges, tokenMix } from '../bench/docs.mjs';
 import { tempDir } from './helpers.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -120,8 +120,8 @@ test('parseResult reads usage, preferring modelUsage (includes subagents)', () =
     session_id: 's1',
     usage: { input_tokens: 1, cache_creation_input_tokens: 2, cache_read_input_tokens: 3, output_tokens: 4 },
     modelUsage: {
-      'claude-sonnet-5': { inputTokens: 10, outputTokens: 20, cacheReadInputTokens: 300, cacheCreationInputTokens: 40, costUSD: 0.4 },
       'claude-haiku-4-5': { inputTokens: 1, outputTokens: 2, cacheReadInputTokens: 3, cacheCreationInputTokens: 4, costUSD: 0.1 },
+      'claude-sonnet-5': { inputTokens: 10, outputTokens: 20, cacheReadInputTokens: 300, cacheCreationInputTokens: 40, costUSD: 0.4 },
     },
   };
   const r = parseResult(JSON.stringify(json));
@@ -134,6 +134,7 @@ test('parseResult reads usage, preferring modelUsage (includes subagents)', () =
   assert.equal(r.numTurns, 7);
   assert.equal(r.durationMs, 1234);
   assert.equal(r.isError, false);
+  // Most tokens first, whatever order Claude Code lists them in.
   assert.deepEqual(r.modelsUsed, ['claude-sonnet-5', 'claude-haiku-4-5']);
 
   const noMu = parseResult(JSON.stringify({ ...json, modelUsage: undefined, is_error: true, subtype: 'error_max_turns' }));
@@ -147,7 +148,7 @@ test('parseResult reads usage, preferring modelUsage (includes subagents)', () =
 });
 
 test('pricing and cost estimate', () => {
-  assert.equal(resolveModel('sonnet'), 'claude-sonnet-5');
+  assert.equal(resolveModel('sonnet'), 'claude-sonnet-5-5');
   assert.equal(resolveModel('opus'), 'claude-opus-5-5');
   assert.equal(resolveModel('claude-haiku-4-5-20251001'), 'claude-haiku-4-5');
   assert.equal(priceOf('some-unknown-model'), null);
@@ -161,9 +162,11 @@ test('pricing and cost estimate', () => {
   assert.ok(Math.abs(prior.total - 4 * costOf(PRIOR_RUN_TOKENS, price)) < 1e-9);
 
   const history = [
-    { model: 'sonnet', modelResolved: 'claude-sonnet-5', task: 'a', condition: 'baseline', costUsd: 1 },
-    { model: 'sonnet', modelResolved: 'claude-sonnet-5', task: 'a', condition: 'baseline', costUsd: 3 },
-    { model: 'claude-sonnet-5', modelResolved: 'claude-sonnet-5', task: 'a', condition: 'thinwindow', costUsd: 1 },
+    { model: 'sonnet', modelResolved: 'claude-sonnet-5-5', task: 'a', condition: 'baseline', costUsd: 1 },
+    { model: 'sonnet', modelResolved: 'claude-sonnet-5-5', task: 'a', condition: 'baseline', costUsd: 3 },
+    { model: 'claude-sonnet-5-5', modelResolved: 'claude-sonnet-5-5', task: 'a', condition: 'thinwindow', costUsd: 1 },
+    // Sonnet 5, run when `sonnet` still meant it: not a Sonnet 5.5 estimate.
+    { model: 'sonnet', modelResolved: 'claude-sonnet-5', task: 'a', condition: 'baseline', costUsd: 50 },
     { model: 'opus', modelResolved: 'claude-opus-5-5', task: 'b', condition: 'baseline', costUsd: 100 },
   ];
   const est = estimateCost({ plan, model: 'sonnet', history });
@@ -224,9 +227,11 @@ if (args[0] === '--version') { console.log('0.0.1 (Fake Claude)'); process.exit(
 writeFileSync('args.json', JSON.stringify({ args, THINWINDOW: process.env.THINWINDOW ?? null }));
 const prompt = args[args.indexOf('-p') + 1];
 if (!prompt.includes('fail')) writeFileSync('done.txt', 'ok');
+console.log(JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5-5', effort: 'medium' }));
 console.log(JSON.stringify({
   type: 'result', subtype: 'success', is_error: false, duration_ms: 50, num_turns: 3, total_cost_usd: 0.4,
   usage: { input_tokens: 10, cache_creation_input_tokens: 100, cache_read_input_tokens: 1000, output_tokens: 5 },
+  modelUsage: { 'claude-haiku-4-5-20251001': { inputTokens: 10, cacheCreationInputTokens: 100, cacheReadInputTokens: 1000, outputTokens: 5 } },
 }));
 `;
 
@@ -264,7 +269,9 @@ test('runBench end to end with a fake claude and a local repo', { skip: process.
   assert.equal(solved.numTurns, 3);
   assert.equal(solved.commit, repo.commit);
   assert.equal(solved.claudeVersion, '0.0.1');
-  assert.equal(solved.modelResolved, 'claude-sonnet-5');
+  // From the run's modelUsage, not from what the alias `sonnet` maps to.
+  assert.equal(solved.modelResolved, 'claude-haiku-4-5');
+  assert.equal(solved.effort, 'medium');
   assert.equal(solved.thinwindowVersion, JSON.parse(readFileSync(join(ROOT_DIR, '.claude-plugin', 'plugin.json'), 'utf8')).version);
   const argsSkin = JSON.parse(readFileSync(join(solved.workdir, 'args.json'), 'utf8'));
   assert.ok(argsSkin.args.includes('--plugin-dir'));
@@ -449,10 +456,34 @@ test('parseTrace lists tool calls from stream-json output', () => {
   assert.deepEqual(parseTrace(out), ['Read [1+120] /r/src/a.py', 'Bash pytest -q tests']);
 });
 
+test('parseTraceTails keeps the end of each tool result, aligned with the trace', () => {
+  const as = (content) => JSON.stringify({ type: 'assistant', message: { content } });
+  const user = (content) => JSON.stringify({ type: 'user', message: { content } });
+  const out = [
+    as([{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'sh make-utils.sh' } }]),
+    as([{ type: 'tool_use', id: 't2', name: 'Read', input: { file_path: '/r/a.js' } }]),
+    as([{ type: 'tool_use', id: 't3', name: 'Bash', input: { command: 'node --test' } }]),
+    user([{ type: 'tool_result', tool_use_id: 't1', is_error: true, content: 'line 1\nsyntax error near `)`\n' }]),
+    user([{ type: 'tool_result', tool_use_id: 't2', content: [{ type: 'text', text: 'x'.repeat(300) + 'END' }] }]),
+  ].join('\n');
+  const tails = parseTraceTails(out, { chars: 10 });
+  assert.equal(tails.length, parseTrace(out).length);
+  assert.deepEqual(tails, ['[error] r near `)`', 'xxxxxxxEND', null]);
+});
+
 test('modelLabel reads the family and version out of a model id', () => {
   assert.deepEqual(modelLabel('claude-opus-5-5'), { family: 'opus', label: 'Opus 5.5' });
   assert.deepEqual(modelLabel('claude-haiku-4-5'), { family: 'haiku', label: 'Haiku 4.5' });
   assert.equal(modelLabel('claude-sonnet-5').label, 'Sonnet 5');
+  assert.equal(modelLabel('claude-sonnet-5-5').label, 'Sonnet 5.5');
+});
+
+test('the results say where the runs were measured', () => {
+  const r = buildReport();
+  assert.match(resultsBlock(r, 'en'), /measured in Claude Code, not in Cowork or the Claude apps/);
+  assert.match(resultsBlock(r, 'es'), /se midieron en Claude Code, no en Cowork/);
+  assert.match(resultsBlock(r, 'pt-BR'), /medidas no Claude Code, não no Cowork/);
+  assert.deepEqual(r.surfaces.measured, ['Claude Code']);
 });
 
 test('tokenMix is the share of billed tokens by kind', () => {

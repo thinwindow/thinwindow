@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="780" height="470" viewBox="0 0 780 470" role="img" aria-labelledby="t d">
 <title id="t">ThinWindow benchmark: change in total tokens per task, claude-opus-5-5</title>
-<desc id="d">One bar per task: the change in median total tokens with ThinWindow against plain Claude Code; left of zero is fewer tokens, right of zero more. Each whisker spans every pairing of a ThinWindow run with a baseline run of that task. Total 2.10M versus 1.77M (−15.8%). 95% interval over the 8 tasks: −28.3% to +0.4%. It includes zero: on these tasks the change can’t be told apart from none. Success 16/16 versus 16/16.</desc>
+<desc id="d">One bar per task: the change in median total tokens with ThinWindow against plain Claude Code; left of zero is fewer tokens, right of zero more. Each whisker spans every pairing of a ThinWindow run with a baseline run of that task. Total 2.08M versus 2.02M (−2.9%). 95% interval over the 8 tasks: −13.3% to +9.3%. It includes zero: on these tasks the change can’t be told apart from none. Success 24/24 versus 24/24.</desc>
 <style>
   /* Edit these six lines to restyle every chart. Light values first, dark
      below; both are validated categorical slots 1 and 2. */
@@ -20,64 +20,70 @@
 </style>
 <rect width="780" height="470" fill="var(--surface)"/>
 <text class="ink h1" x="0" y="24">Change in total tokens per task</text>
-<text class="ink2 h2" x="0" y="44">claude-opus-5-5 · Claude Code 2.1.282 · medians of up to 2 runs per task and condition</text>
-<text class="ink" x="0" y="76" font-size="24" font-weight="680">−15.8%</text>
-<text class="ink2 h2" x="104" y="76">total tokens · 2.10M → 1.77M · success 16/16 → 16/16</text>
-<text class="ink h2" x="0" y="98">95% interval over the 8 tasks: −28.3% to +0.4%. It includes zero: on these tasks the change can’t be told apart from none.</text>
+<text class="ink2 h2" x="0" y="44">claude-opus-5-5 · Claude Code 2.1.287 · medians of up to 3 runs per task and condition</text>
+<text class="ink" x="0" y="76" font-size="24" font-weight="680">−2.9%</text>
+<text class="ink2 h2" x="104" y="76">total tokens · 2.08M → 2.02M · success 24/24 → 24/24</text>
+<text class="ink h2" x="0" y="98">95% interval over the 8 tasks: −13.3% to +9.3%. It includes zero: on these tasks the change can’t be told apart from none.</text>
 <rect class="win" x="0" y="114" width="11" height="11" rx="2"/><text class="ink lbl" x="17" y="124">fewer tokens with ThinWindow</text>
 <rect class="lose" x="206" y="114" width="11" height="11" rx="2"/><text class="ink lbl" x="223" y="124">more tokens with ThinWindow</text>
 <path class="whisk" d="M412,115.5V123.5M412,119.5H440M440,115.5V123.5"/>
 <text class="ink lbl" x="448" y="124">range over every pair of runs</text>
 <line class="grid" x1="230.0" y1="137" x2="230.0" y2="409"/>
-<text class="ink2 val" x="230.0" y="448" text-anchor="middle">−60%</text>
-<line class="grid" x1="324.8" y1="137" x2="324.8" y2="409"/>
-<text class="ink2 val" x="324.8" y="448" text-anchor="middle">−40%</text>
-<line class="grid" x1="419.6" y1="137" x2="419.6" y2="409"/>
-<text class="ink2 val" x="419.6" y="448" text-anchor="middle">−20%</text>
-<line class="grid" x1="609.2" y1="137" x2="609.2" y2="409"/>
-<text class="ink2 val" x="609.2" y="448" text-anchor="middle">+20%</text>
+<text class="ink2 val" x="230.0" y="448" text-anchor="middle">−75%</text>
+<line class="grid" x1="297.7" y1="137" x2="297.7" y2="409"/>
+<text class="ink2 val" x="297.7" y="448" text-anchor="middle">−50%</text>
+<line class="grid" x1="365.4" y1="137" x2="365.4" y2="409"/>
+<text class="ink2 val" x="365.4" y="448" text-anchor="middle">−25%</text>
+<line class="grid" x1="500.9" y1="137" x2="500.9" y2="409"/>
+<text class="ink2 val" x="500.9" y="448" text-anchor="middle">+25%</text>
+<line class="grid" x1="568.6" y1="137" x2="568.6" y2="409"/>
+<text class="ink2 val" x="568.6" y="448" text-anchor="middle">+50%</text>
+<line class="grid" x1="636.3" y1="137" x2="636.3" y2="409"/>
+<text class="ink2 val" x="636.3" y="448" text-anchor="middle">+75%</text>
 <line class="grid" x1="704.0" y1="137" x2="704.0" y2="409"/>
-<text class="ink2 val" x="704.0" y="448" text-anchor="middle">+40%</text>
-<line class="zero" x1="514.4" y1="137" x2="514.4" y2="409"/>
-<text class="ink2 val" x="514.4" y="448" text-anchor="middle">0</text>
-<text class="ink lbl" x="202" y="153" text-anchor="end">click-help-spec</text>
-<text class="ink2 val" x="202" y="166" text-anchor="end">444k → 266k</text>
-<path class="win" d="M328.5,146.5H514.4V161.5H328.5A4,4 0 0 1 324.5,157.5V150.5A4,4 0 0 1 328.5,146.5Z"><title>click-help-spec: 444k → 266k tokens (−40.1%); over every pair of runs −51.6% to −26.7%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M269.6,150V158M269.6,154H387.8M387.8,150V158"/>
-<text class="ink delta" x="722" y="158">−40.1%</text>
-<text class="ink lbl" x="202" y="187" text-anchor="end">commander-extract-utils</text>
-<text class="ink2 val" x="202" y="200" text-anchor="end">385k → 258k</text>
-<path class="win" d="M361.5,180.5H514.4V195.5H361.5A4,4 0 0 1 357.5,191.5V184.5A4,4 0 0 1 361.5,180.5Z"><title>commander-extract-utils: 385k → 258k tokens (−33.1%); over every pair of runs −49.3% to −11.7%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M280.9,184V192M280.9,188H459.0M459.0,184V192"/>
-<text class="ink delta" x="722" y="192">−33.1%</text>
-<text class="ink lbl" x="202" y="221" text-anchor="end">click-choice-brackets</text>
-<text class="ink2 val" x="202" y="234" text-anchor="end">320k → 278k</text>
-<path class="win" d="M455.8,214.5H514.4V229.5H455.8A4,4 0 0 1 451.8,225.5V218.5A4,4 0 0 1 455.8,214.5Z"><title>click-choice-brackets: 320k → 278k tokens (−13.2%); over every pair of runs −23.1% to −2.1%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M405.0,218V226M405.0,222H504.5M504.5,218V226"/>
-<text class="ink delta" x="722" y="226">−13.2%</text>
-<text class="ink lbl" x="202" y="255" text-anchor="end">commander-rename-display-width</text>
-<text class="ink2 val" x="202" y="268" text-anchor="end">122k → 107k</text>
-<path class="win" d="M462.1,248.5H514.4V263.5H462.1A4,4 0 0 1 458.1,259.5V252.5A4,4 0 0 1 462.1,248.5Z"><title>commander-rename-display-width: 122k → 107k tokens (−11.9%); over every pair of runs −24.9% to +1.2%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M396.3,252V260M396.3,256H519.9M519.9,252V260"/>
-<text class="ink delta" x="722" y="260">−11.9%</text>
-<text class="ink lbl" x="202" y="289" text-anchor="end">commander-command-clash</text>
-<text class="ink2 val" x="202" y="302" text-anchor="end">284k → 275k</text>
-<path class="win" d="M504.2,282.5H514.4V297.5H504.2A4,4 0 0 1 500.2,293.5V286.5A4,4 0 0 1 504.2,282.5Z"><title>commander-command-clash: 284k → 275k tokens (−3.0%); over every pair of runs −4.6% to −1.4%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M492.5,286V294M492.5,290H508.0M508.0,286V294"/>
-<text class="ink delta" x="722" y="294">−3.0%</text>
-<text class="ink lbl" x="202" y="323" text-anchor="end">commander-negate-default-order</text>
-<text class="ink2 val" x="202" y="336" text-anchor="end">334k → 340k</text>
-<path class="lose" d="M514.4,316.5H518.8A4,4 0 0 1 522.8,320.5V327.5A4,4 0 0 1 518.8,331.5H514.4Z"><title>commander-negate-default-order: 334k → 340k tokens (+1.8%); over every pair of runs −15.1% to +20.9%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M442.7,320V328M442.7,324H613.3M613.3,320V328"/>
-<text class="ink delta" x="722" y="328">+1.8%</text>
-<text class="ink lbl" x="202" y="357" text-anchor="end">click-footer-year</text>
-<text class="ink2 val" x="202" y="370" text-anchor="end">119k → 136k</text>
-<path class="lose" d="M514.4,350.5H577.2A4,4 0 0 1 581.2,354.5V361.5A4,4 0 0 1 577.2,365.5H514.4Z"><title>click-footer-year: 119k → 136k tokens (+14.1%); over every pair of runs +1.5% to +26.7%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M521.5,354V362M521.5,358H641.0M641.0,354V362"/>
-<text class="ink delta" x="722" y="362">+14.1%</text>
-<text class="ink lbl" x="202" y="391" text-anchor="end">commander-ci-config</text>
-<text class="ink2 val" x="202" y="404" text-anchor="end">92k → 107k</text>
-<path class="lose" d="M514.4,384.5H590.9A4,4 0 0 1 594.9,388.5V395.5A4,4 0 0 1 590.9,399.5H514.4Z"><title>commander-ci-config: 92k → 107k tokens (+17.0%); over every pair of runs −0.6% to +34.6%, success 2/2 → 2/2</title></path>
-<path class="whisk" d="M511.6,388V396M511.6,392H678.3M678.3,388V396"/>
-<text class="ink delta" x="722" y="396">+17.0%</text>
+<text class="ink2 val" x="704.0" y="448" text-anchor="middle">+100%</text>
+<line class="zero" x1="433.1" y1="137" x2="433.1" y2="409"/>
+<text class="ink2 val" x="433.1" y="448" text-anchor="middle">0</text>
+<text class="ink lbl" x="202" y="153" text-anchor="end">commander-command-clash</text>
+<text class="ink2 val" x="202" y="166" text-anchor="end">330k → 239k</text>
+<path class="win" d="M363.0,146.5H433.1V161.5H363.0A4,4 0 0 1 359.0,157.5V150.5A4,4 0 0 1 363.0,146.5Z"><title>commander-command-clash: 330k → 239k tokens (−27.4%); over every pair of runs −37.5% to +0.7%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M331.7,150V158M331.7,154H435.0M435.0,150V158"/>
+<text class="ink delta" x="722" y="158">−27.4%</text>
+<text class="ink lbl" x="202" y="187" text-anchor="end">commander-negate-default-order</text>
+<text class="ink2 val" x="202" y="200" text-anchor="end">457k → 423k</text>
+<path class="win" d="M416.8,180.5H433.1V195.5H416.8A4,4 0 0 1 412.8,191.5V184.5A4,4 0 0 1 416.8,180.5Z"><title>commander-negate-default-order: 457k → 423k tokens (−7.5%); over every pair of runs −45.1% to +31.8%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M310.9,184V192M310.9,188H519.3M519.3,184V192"/>
+<text class="ink delta" x="722" y="192">−7.5%</text>
+<text class="ink lbl" x="202" y="221" text-anchor="end">click-help-spec</text>
+<text class="ink2 val" x="202" y="234" text-anchor="end">412k → 384k</text>
+<path class="win" d="M418.2,214.5H433.1V229.5H418.2A4,4 0 0 1 414.2,225.5V218.5A4,4 0 0 1 418.2,214.5Z"><title>click-help-spec: 412k → 384k tokens (−7.0%); over every pair of runs −39.1% to +28.2%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M327.2,218V226M327.2,222H509.6M509.6,218V226"/>
+<text class="ink delta" x="722" y="226">−7.0%</text>
+<text class="ink lbl" x="202" y="255" text-anchor="end">click-footer-year</text>
+<text class="ink2 val" x="202" y="268" text-anchor="end">123k → 123k</text>
+<path class="lose" d="M433.1,248.5H433.1A1.5,1.5 0 0 1 434.6,250.0V262.0A1.5,1.5 0 0 1 433.1,263.5H433.1Z"><title>click-footer-year: 123k → 123k tokens (+0.1%); over every pair of runs −60.8% to +104.1%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M268.5,252V260M268.5,256H704.0"/>
+<path class="arrow" d="M704.0,256l-7,-4v8z"/>
+<text class="ink delta" x="722" y="260">+0.1%</text>
+<text class="ink lbl" x="202" y="289" text-anchor="end">commander-rename-display-width</text>
+<text class="ink2 val" x="202" y="302" text-anchor="end">124k → 125k</text>
+<path class="lose" d="M433.1,282.5H433.1A1.5,1.5 0 0 1 434.6,284.0V296.0A1.5,1.5 0 0 1 433.1,297.5H433.1Z"><title>commander-rename-display-width: 124k → 125k tokens (+0.5%); over every pair of runs −38.6% to +68.5%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M328.7,286V294M328.7,290H618.6M618.6,286V294"/>
+<text class="ink delta" x="722" y="294">+0.5%</text>
+<text class="ink lbl" x="202" y="323" text-anchor="end">commander-ci-config</text>
+<text class="ink2 val" x="202" y="336" text-anchor="end">93k → 94k</text>
+<path class="lose" d="M433.1,316.5H433.1A1.6493646216932802,1.6493646216932802 0 0 1 434.8,318.1V329.9A1.6493646216932802,1.6493646216932802 0 0 1 433.1,331.5H433.1Z"><title>commander-ci-config: 93k → 94k tokens (+0.6%); over every pair of runs −54.6% to +123.7%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M285.2,320V328M285.2,324H704.0"/>
+<path class="arrow" d="M704.0,324l-7,-4v8z"/>
+<text class="ink delta" x="722" y="328">+0.6%</text>
+<text class="ink lbl" x="202" y="357" text-anchor="end">commander-extract-utils</text>
+<text class="ink2 val" x="202" y="370" text-anchor="end">241k → 267k</text>
+<path class="lose" d="M433.1,350.5H458.6A4,4 0 0 1 462.6,354.5V361.5A4,4 0 0 1 458.6,365.5H433.1Z"><title>commander-extract-utils: 241k → 267k tokens (+10.9%); over every pair of runs −12.3% to +31.0%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M399.9,354V362M399.9,358H517.0M517.0,354V362"/>
+<text class="ink delta" x="722" y="362">+10.9%</text>
+<text class="ink lbl" x="202" y="391" text-anchor="end">click-choice-brackets</text>
+<text class="ink2 val" x="202" y="404" text-anchor="end">304k → 370k</text>
+<path class="lose" d="M433.1,384.5H487.9A4,4 0 0 1 491.9,388.5V395.5A4,4 0 0 1 487.9,399.5H433.1Z"><title>click-choice-brackets: 304k → 370k tokens (+21.7%); over every pair of runs +11.8% to +40.2%, success 3/3 → 3/3</title></path>
+<path class="whisk" d="M465.0,388V396M465.0,392H542.0M542.0,388V396"/>
+<text class="ink delta" x="722" y="396">+21.7%</text>
 </svg>

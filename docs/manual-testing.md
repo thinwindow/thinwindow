@@ -84,13 +84,16 @@ replacement. `git log -n 3 --oneline` runs normally.
 
 Prompt: `Run exactly this command: npm test`
 
-Expect no denial: the command runs as `thinwindow-run npm test`. The output is
+Expect no denial: the command runs as
+`node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs' npm test`. The output is
 a summary: an `exit 0 · <duration> · <n> lines of output` header, the last 10
 lines (the last 40 and the error-like lines when the command fails), and
 `full log: <temp dir>/thinwindow/logs/...log`. The log file holds every line.
-`thinwindow-run` is found because the plugin puts its `bin/` on the Bash
-tool's `PATH`. A normal permission prompt still appears if your settings would
-prompt for it.
+Then prompt `Run exactly this command: thinwindow-run npm test`: the hook
+points it at the same path, so there is no *command not found*. A normal
+permission prompt still appears if your settings would prompt for it; allowing
+`Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)` in your
+permission settings silences it.
 
 ## 9. Soft-block mode
 

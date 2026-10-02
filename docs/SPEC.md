@@ -98,11 +98,16 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
     `"rewrite": false`, a soft block that suggests `thinwindow-run <cmd>`.
 - **PreToolUse `Grep`**: a content search with no `head_limit` gets
   `head_limit: 100`.
-- **`bin/thinwindow-run`**: runs the command, saves the full stdout and stderr to
+- **`thinwindow-run`** (`skills/thinwindow/scripts/thinwindow-run.mjs`): the
+  plugin ships no `bin/`, which Cowork and the Claude apps refuse, so the Bash
+  hook runs it as `node '<path>'` and points a direct `thinwindow-run` call at
+  the same path. It runs the command, saves the full stdout and stderr to
   a log in the OS temp dir (never inside the user's repo), prints the exit code,
   the duration, the last 10 lines on success (on failure, the last 40 lines and
   up to 40 deduplicated earlier lines that match error/fail/warn/panic/exception),
-  and the log path. Preserves the exit code.
+  and the log path. When nothing would be cut (at most 10 lines on success, 40 on
+  failure), it prints the output unchanged, plus the exit code on failure.
+  Preserves the exit code.
 - State: one JSON file per session in the OS temp dir, keyed by `session_id`.
 - Config: `.thinwindow.json` in the project root, or `~/.thinwindow.json`, for
   thresholds, noisy-command patterns, an allowlist, `rewrite` and `enabled`.

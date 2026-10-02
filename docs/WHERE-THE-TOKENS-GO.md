@@ -15,18 +15,18 @@ of the cost.
 <!-- MIX:START -->
 | Model | Condition | Share of | Input | Cache writes | Cache reads | Output |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Opus 5.5 | baseline | tokens | 0.0% | 6.6% | 92.0% | 1.3% |
-|  |  | cost | 0.0% | 54.3% | 18.8% | 26.9% |
-|  | thinwindow | tokens | 0.0% | 6.5% | 92.3% | 1.1% |
-|  |  | cost | 0.0% | 55.8% | 19.7% | 24.4% |
-| Sonnet 5 | baseline | tokens | 0.0% | 11.0% | 87.1% | 1.9% |
-|  |  | cost | 0.0% | 54.4% | 21.6% | 24.0% |
-|  | thinwindow | tokens | 0.0% | 10.4% | 87.7% | 1.9% |
-|  |  | cost | 0.0% | 53.4% | 22.5% | 24.1% |
-| Haiku 4.5 | baseline | tokens | 0.0% | 2.9% | 96.4% | 0.6% |
-|  |  | cost | 0.1% | 31.6% | 51.9% | 16.4% |
-|  | thinwindow | tokens | 0.0% | 2.9% | 96.3% | 0.8% |
-|  |  | cost | 0.1% | 30.1% | 50.0% | 19.8% |
+| Opus 5.5 | baseline | tokens | 0.0% | 6.9% | 91.7% | 1.4% |
+|  |  | cost | 0.0% | 54.6% | 18.1% | 27.2% |
+|  | thinwindow | tokens | 0.0% | 6.1% | 92.8% | 1.2% |
+|  |  | cost | 0.0% | 53.6% | 20.5% | 25.9% |
+| Sonnet 5.5 | baseline | tokens | 0.0% | 8.9% | 89.7% | 1.4% |
+|  |  | cost | 0.0% | 52.9% | 26.7% | 20.4% |
+|  | thinwindow | tokens | 0.0% | 8.2% | 90.6% | 1.2% |
+|  |  | cost | 0.0% | 52.1% | 28.9% | 18.9% |
+| Haiku 4.5 | baseline | tokens | 0.0% | 3.7% | 95.5% | 0.8% |
+|  |  | cost | 0.1% | 35.5% | 45.7% | 18.7% |
+|  | thinwindow | tokens | 0.0% | 2.9% | 96.2% | 0.9% |
+|  |  | cost | 0.1% | 29.5% | 48.2% | 22.1% |
 <!-- MIX:END -->
 
 Each share is of the sum over all runs of one model and condition. "Cost"
@@ -35,9 +35,9 @@ prices each kind of token at its list price:
 <!-- PRICES:START -->
 | Model | Input | Cache write (1 hour) | Cache read | Output | Runs | `total_cost_usd`, sum | Tokens × prices, sum | Largest gap, one run |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | $4 | $8 | $0.2 | $20 | 32 | $7.4217 | $7.4217 | $0.000000 |
-| Sonnet 5 | $2 | $4 | $0.2 | $10 | 48 | $5.3960 | $5.3960 | $0.000000 |
-| Haiku 4.5 | $1 | $2 | $0.1 | $5 | 32 | $7.4170 | $7.4170 | $0.000000 |
+| Opus 5.5 | $4 | $8 | $0.2 | $20 | 48 | $11.7167 | $11.7167 | $0.000000 |
+| Sonnet 5.5 | $2 | $4 | $0.2 | $10 | 48 | $5.1075 | $5.1075 | $0.000000 |
+| Haiku 4.5 | $1 | $2 | $0.1 | $5 | 32 | $6.5929 | $6.5929 | $0.000000 |
 <!-- PRICES:END -->
 
 Prices are USD per million tokens, from Anthropic's
@@ -62,9 +62,9 @@ cost ≈ N × cache-write price + N × cache-read price × (T − k)
 <!-- TWICE:START -->
 | Model | Median turns, baseline run | Cache write | Cache read | Write ÷ read | Write share of a turn-1 token |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 11.5 | $8 | $0.2 | 40× | 79.2% |
-| Sonnet 5 | 8 | $4 | $0.2 | 20× | 74.1% |
-| Haiku 4.5 | 36.5 | $2 | $0.1 | 20× | 36.0% |
+| Opus 5.5 | 10 | $8 | $0.2 | 40× | 81.6% |
+| Sonnet 5.5 | 6 | $4 | $0.2 | 20× | 80.0% |
+| Haiku 4.5 | 31.5 | $2 | $0.1 | 20× | 39.6% |
 <!-- TWICE:END -->
 
 The last column is the write's share of what one token costs over a median
@@ -86,12 +86,12 @@ Turns here are Claude Code's `num_turns`, the top-level agent loop.
 <!-- TOOLS:START -->
 | Model | Condition | Tool calls | Bash | Read | Edit | Write | Grep | Glob | Other |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | baseline | 139 | 58.3% | 18.0% | 20.9% | 2.9% | 0.0% | 0.0% | 0.0% |
-|  | thinwindow | 119 | 58.0% | 16.0% | 22.7% | 3.4% | 0.0% | 0.0% | 0.0% |
-| Sonnet 5 | baseline | 162 | 77.8% | 6.2% | 13.0% | 3.1% | 0.0% | 0.0% | 0.0% |
-|  | thinwindow | 157 | 68.2% | 12.1% | 15.3% | 4.5% | 0.0% | 0.0% | 0.0% |
-| Haiku 4.5 | baseline | 445 | 54.2% | 28.1% | 15.5% | 2.2% | 0.0% | 0.0% | 0.0% |
-|  | thinwindow | 425 | 49.4% | 29.4% | 19.1% | 2.1% | 0.0% | 0.0% | 0.0% |
+| Opus 5.5 | baseline | 206 | 55.8% | 14.1% | 26.2% | 3.9% | 0.0% | 0.0% | 0.0% |
+|  | thinwindow | 205 | 58.0% | 15.6% | 22.9% | 3.4% | 0.0% | 0.0% | 0.0% |
+| Sonnet 5.5 | baseline | 135 | 75.6% | 5.2% | 12.6% | 5.9% | 0.0% | 0.0% | 0.7% |
+|  | thinwindow | 140 | 72.9% | 5.7% | 16.4% | 5.0% | 0.0% | 0.0% | 0.0% |
+| Haiku 4.5 | baseline | 409 | 49.4% | 27.1% | 21.3% | 2.2% | 0.0% | 0.0% | 0.0% |
+|  | thinwindow | 435 | 49.9% | 29.4% | 17.9% | 2.8% | 0.0% | 0.0% | 0.0% |
 <!-- TOOLS:END -->
 
 Shares of every tool call in the traces of the published runs. On macOS, Linux
@@ -106,9 +106,9 @@ What ThinWindow's hooks did in the ThinWindow runs, as the runner recorded it:
 <!-- HOOKS:START -->
 | Model | ThinWindow runs | Runs where a hook acted | Rewrites | Refusals |
 | --- | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 16 | 1 | 2 | 0 |
-| Sonnet 5 | 24 | 3 | 3 | 0 |
-| Haiku 4.5 | 16 | 9 | 23 | 0 |
+| Opus 5.5 | 24 | 1 | 2 | 0 |
+| Sonnet 5.5 | 24 | 3 | 3 | 0 |
+| Haiku 4.5 | 16 | 10 | 25 | 1 |
 <!-- HOOKS:END -->
 
 Across the three models, the Read tool's share of the baseline calls and the
@@ -129,9 +129,9 @@ one run in both conditions, with the number of tasks in parentheses.
 <!-- QUALITY:START -->
 | Model | Stopped by the turn cap | Of those, baseline runs that passed | Failed the hidden check | Tokens, all runs (tasks) | Passing runs only | All runs, same tasks as passing | Finished runs only |
 | --- | :---: | :---: | :---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 0/16 → 0/16 | – | 0/16 → 0/16 | −15.8% (8) | −15.8% (8) | −15.8% (8) | −15.8% (8) |
-| Sonnet 5 | 0/24 → 0/24 | – | 0/24 → 0/24 | −13.2% (8) | −13.2% (8) | −13.2% (8) | −13.2% (8) |
-| Haiku 4.5 | 7/16 → 3/16 | 6/7 | 2/16 → 3/16 | −23.0% (8) | −18.8% (7) | −17.8% (7) | −26.5% (6) |
+| Opus 5.5 | 0/24 → 0/24 | – | 0/24 → 0/24 | −2.9% (8) | −2.9% (8) | −2.9% (8) | −2.9% (8) |
+| Sonnet 5.5 | 0/24 → 0/24 | – | 0/24 → 0/24 | −2.6% (8) | −2.6% (8) | −2.6% (8) | −2.6% (8) |
+| Haiku 4.5 | 5/16 → 5/16 | 3/5 | 4/16 → 4/16 | −3.3% (8) | −5.8% (6) | −5.8% (6) | −1.3% (5) |
 <!-- QUALITY:END -->
 
 Where every run finished and passed, every column is the same. Where they are
@@ -164,9 +164,9 @@ work, and is reported as such.
 ## Sources
 
 <!-- SOURCES:START -->
-- Opus 5.5: Raw runs: [`bench/results/opus-528598a.jsonl`](../bench/results/opus-528598a.jsonl).
-- Sonnet 5: Raw runs: [`bench/results/sonnet-30e9c6b.jsonl`](../bench/results/sonnet-30e9c6b.jsonl), [`bench/results/sonnet-528598a.jsonl`](../bench/results/sonnet-528598a.jsonl).
-- Haiku 4.5: Raw runs: [`bench/results/haiku-528598a.jsonl`](../bench/results/haiku-528598a.jsonl).
+- Opus 5.5: Raw runs: [`bench/results/opus-5-5-6546385.jsonl`](../bench/results/opus-5-5-6546385.jsonl).
+- Sonnet 5.5: Raw runs: [`bench/results/sonnet-5-5-6546385.jsonl`](../bench/results/sonnet-5-5-6546385.jsonl).
+- Haiku 4.5: Raw runs: [`bench/results/haiku-6546385.jsonl`](../bench/results/haiku-6546385.jsonl).
 <!-- SOURCES:END -->
 
 Computed by [`bench/docs.mjs`](../bench/docs.mjs); the intervals by
