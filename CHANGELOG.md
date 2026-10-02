@@ -6,6 +6,22 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-02
+
+### Measured
+
+- 128 runs at `6546385` with Claude Code 2.1.287: Opus 5.5 and Sonnet 5.5
+  with three runs per task and condition, Haiku 4.5 with two. Against the runs
+  without ThinWindow: 7–11% lower cost and 3–6% fewer tokens on runs that
+  passed their hidden check, with the same success rate on all three models.
+  Opus 5.5: −10.5% cost (95% CI −16.5% to −3.0%), −2.9% tokens. Sonnet 5.5:
+  −6.5% cost, −2.6% tokens. Haiku 4.5: −7.7% cost, −3.3% tokens (−5.8% on
+  runs that passed). Only the Opus cost interval excludes zero.
+- 0.2.2 measured 13–19% fewer tokens with Claude Code 2.1.282; its runs are in
+  `bench/results/archive/`. The 0.3.0 runs came from two accounts whose
+  Claude Code sessions start with different built-in tools; both conditions of
+  each task share the same mix.
+
 ### Added
 
 - The benchmark measures Sonnet 5.5, which the `sonnet` alias now resolves to
@@ -30,12 +46,17 @@ project uses [Semantic Versioning](https://semver.org).
   `node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs'` and points
   a direct `thinwindow-run` call at the same path, so the rules and the output
   the agent sees are unchanged.
-- Permission rules: `Bash(thinwindow-run *)` no longer matches. Allow
+- **Breaking:** permission rules: `Bash(thinwindow-run *)` no longer matches. Allow
   `Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)` instead.
 - The hooks read three environment variables by name (`THINWINDOW`,
   `THINWINDOW_DEBUG`, `CLAUDE_PROJECT_DIR`) instead of passing the whole
   environment around. Behaviour is unchanged.
 - The README's tagline links to the page that backs it (#20).
+- The tagline leads with what 0.3.0 measured: 7–11% lower cost and 3–6% fewer
+  tokens on Opus 5.5, Sonnet 5.5 and Haiku 4.5, with the same success rate.
+  `scripts/check.mjs` holds the cost range to the runs, as it does the token
+  range. The READMEs and the site add "Listed in the official Claude Code
+  plugin directory."
 - The results, the site and `report.json` say every run was measured in
   Claude Code, not in Cowork or the Claude apps.
 - CI actions updated (#22–#26).
@@ -46,9 +67,9 @@ project uses [Semantic Versioning](https://semver.org).
   (at most 10 lines on success, 40 on failure) there is no command echo, line
   count or log path, only the exit code if the command failed. It used to wrap
   every output in a summary, and the hook added a note, which made short
-  output longer.
+  output longer (#18).
 - `git diff <file>` keeps its diff. The guard counted a path only after `--`,
-  so a diff the agent asked for by name came back as `--stat`.
+  so a diff the agent asked for by name came back as `--stat` (#18).
 
 ## [0.2.2] - 2026-09-27
 
@@ -213,7 +234,8 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/thinwindow/thinwindow/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/thinwindow/thinwindow/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/thinwindow/thinwindow/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/thinwindow/thinwindow/compare/v0.1.0...v0.2.0
