@@ -478,14 +478,8 @@ test('modelLabel reads the family and version out of a model id', () => {
   assert.equal(modelLabel('claude-sonnet-5-5').label, 'Sonnet 5.5');
 });
 
-test('the results table names Sonnet 5 as legacy once its runs are archived', () => {
+test('the results say where the runs were measured', () => {
   const r = buildReport();
-  const others = r.models.filter((m) => m.id !== 'claude-sonnet-5');
-  assert.match(resultsBlock({ ...r, models: others }, 'en'), /^Sonnet 5 \(legacy\), measured on 0\.2\.2: see /m);
-  assert.match(resultsBlock({ ...r, models: others }, 'es'), /^Sonnet 5 \(legado\), medido en 0\.2\.2/m);
-  const withIt = [...others, { ...others[0], id: 'claude-sonnet-5', label: 'Sonnet 5' }];
-  assert.doesNotMatch(resultsBlock({ ...r, models: withIt }, 'en'), /legacy/);
-  // Every language says where the runs were measured.
   assert.match(resultsBlock(r, 'en'), /measured in Claude Code, not in Cowork or the Claude apps/);
   assert.match(resultsBlock(r, 'es'), /se midieron en Claude Code, no en Cowork/);
   assert.match(resultsBlock(r, 'pt-BR'), /medidas no Claude Code, não no Cowork/);

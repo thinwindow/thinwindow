@@ -34,8 +34,6 @@ of the code on the same task, which are kept in
 spread and the raw data are in [Benchmark](#benchmark) below.
 Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements. Haiku 4.5 has two runs per task and condition; Opus 5.5 and Sonnet 5.5, three. The runs came from two accounts whose Claude Code sessions start with different built-in tools; both conditions of each task share the same mix.
 
-Sonnet 5 (legacy), measured on 0.2.2: see [`bench/results/archive/`](bench/results/archive).
-
 The 3–6% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −5.8% over the 6 tasks where both conditions have a passing run, against −3.3% over all 8. Opus 5.5 and Sonnet 5.5 passed every run. 95% CI: bootstrap over the tasks. Where it includes zero, the change can't be told apart from none on this task set. A run stopped by the turn cap ended at the limit before the agent finished; its tokens aren't comparable with a finished run's.
 <!-- RESULTS:END -->
 
