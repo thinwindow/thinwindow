@@ -36,6 +36,8 @@ project uses [Semantic Versioning](https://semver.org).
   `THINWINDOW_DEBUG`, `CLAUDE_PROJECT_DIR`) instead of passing the whole
   environment around. Behaviour is unchanged.
 - The README's tagline links to the page that backs it (#20).
+- The results, the site and `report.json` say every run was measured in
+  Claude Code, not in Cowork or the Claude apps.
 - CI actions updated (#22–#26).
 
 ### Fixed

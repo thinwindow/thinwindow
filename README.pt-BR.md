@@ -31,6 +31,7 @@ nenhuma: tudo o que foi registrado está na tabela, exceto as execuções que um
 versão posterior do código substituiu na mesma tarefa, guardadas em
 [`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os
 dados brutos estão em [Benchmark](#benchmark).
+Todas as execuções foram medidas no Claude Code, não no Cowork nem nos apps do Claude; as versões depois da 0.3.0 vão trazer essas medições.
 
 A faixa de 13% a 19% no topo conta só as execuções que passaram na verificação oculta. No Haiku 4.5, isso dá −18,8% nas 7 tarefas em que as duas condições têm uma execução aprovada, contra −23,0% nas 8. Opus 5.5 e Sonnet 5 passaram em todas as execuções. No Haiku 4.5, as execuções com ThinWindow falharam na verificação oculta mais vezes que as de base: 3 de 16 contra 2 de 16. IC 95%: bootstrap sobre as tarefas. Onde inclui o zero, a mudança não se distingue de nenhuma neste conjunto de tarefas. Uma execução interrompida pelo limite de turnos terminou no limite antes de o agente acabar; seus tokens não são comparáveis com os de uma execução concluída.
 <!-- RESULTS:END -->
