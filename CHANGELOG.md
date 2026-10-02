@@ -28,7 +28,7 @@ project uses [Semantic Versioning](https://semver.org).
   (#21). Each run is filed under the model its `modelUsage` shows did the
   work, not under what the alias maps to, and records its effort level as
   Claude Code reports it, or `default`. Sonnet 5's runs move to
-  `bench/results/archive/` and the results table names them as legacy.
+  `bench/results/archive/`.
 - The trace keeps the last 200 characters of each tool result
   (`traceTails`), so a repeated attempt can be read from the result files
   (#7).

@@ -34,10 +34,6 @@ const REPORT_JSON = join(RESULTS_DIR, 'report.json');
 // Opus before Sonnet before Haiku, newest version first: the order a reader
 // expects, not the alphabetical order the raw files happen to have.
 const FAMILY_RANK = { opus: 0, sonnet: 1, haiku: 2, fable: 3 };
-// Models measured on an earlier version whose runs now live only in
-// bench/results/archive/: the results table names them once they are gone
-// from bench/results/.
-const LEGACY = { 'claude-sonnet-5': '0.2.2' };
 // Where the runs were measured. Cowork and the Claude apps load plugins too,
 // but none of these numbers come from them.
 const SURFACES = {
@@ -204,7 +200,6 @@ const LOCALES = {
       '[`bench/results/archive/`](bench/results/archive). Per-task figures, the\n' +
       'spread and the raw data are in [Benchmark](#benchmark) below.\n' +
       SURFACES.en,
-    legacy: (label, v) => `${label} (legacy), measured on ${v}: see [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'and',
     passedIntro: (t0, t1) => `The ${t0}–${t1}% at the top counts only runs that passed their hidden check.`,
     passedModel: (m, passed, all) =>
@@ -250,7 +245,6 @@ const LOCALES = {
       '[`bench/results/archive/`](bench/results/archive). El detalle por tarea y los\n' +
       'datos crudos están en [Benchmark](#benchmark).\n' +
       SURFACES.es,
-    legacy: (label, v) => `${label} (legado), medido en ${v}: ver [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'y',
     passedIntro: (t0, t1) => `La cifra de arriba, entre un ${t0}% y un ${t1}%, cuenta solo las corridas que pasaron su verificación oculta.`,
     passedModel: (m, passed, all) =>
@@ -277,7 +271,6 @@ const LOCALES = {
       '[`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os\n' +
       'dados brutos estão em [Benchmark](#benchmark).\n' +
       SURFACES['pt-BR'],
-    legacy: (label, v) => `${label} (legado), medido na ${v}: veja [\`bench/results/archive/\`](bench/results/archive).`,
     and: 'e',
     passedIntro: (t0, t1) => `A faixa de ${t0}% a ${t1}% no topo conta só as execuções que passaram na verificação oculta.`,
     passedModel: (m, passed, all) =>
@@ -323,9 +316,6 @@ export function resultsBlock(report, lang) {
   return [
     table(L.results, ['---', '---:', '---:', '---:', ':---:', ':---:', '---:'], rows),
     L.resultsNote(report),
-    ...Object.entries(LEGACY)
-      .filter(([id]) => !report.models.some((m) => m.id === id))
-      .map(([id, v]) => L.legacy(modelLabel(id).label, v)),
     [passedNote(report, L), ...worse, L.ciNote].join(' '),
   ].join('\n\n');
 }

@@ -34,8 +34,6 @@ versão posterior do código substituiu na mesma tarefa, guardadas em
 dados brutos estão em [Benchmark](#benchmark).
 Todas as execuções foram medidas no Claude Code, não no Cowork nem nos apps do Claude; as versões depois da 0.3.0 vão trazer essas medições. O Haiku 4.5 tem duas execuções por tarefa e condição; o Opus 5.5 e o Sonnet 5.5, três. As execuções vieram de duas contas cujas sessões do Claude Code começam com ferramentas integradas diferentes; as duas condições de cada tarefa têm a mesma mistura.
 
-Sonnet 5 (legado), medido na 0.2.2: veja [`bench/results/archive/`](bench/results/archive).
-
 A faixa de 3% a 6% no topo conta só as execuções que passaram na verificação oculta. No Haiku 4.5, isso dá −5,8% nas 6 tarefas em que as duas condições têm uma execução aprovada, contra −3,3% nas 8. Opus 5.5 e Sonnet 5.5 passaram em todas as execuções. IC 95%: bootstrap sobre as tarefas. Onde inclui o zero, a mudança não se distingue de nenhuma neste conjunto de tarefas. Uma execução interrompida pelo limite de turnos terminou no limite antes de o agente acabar; seus tokens não são comparáveis com os de uma execução concluída.
 <!-- RESULTS:END -->
 

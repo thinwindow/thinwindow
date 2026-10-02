@@ -34,8 +34,6 @@ una versión posterior del código en la misma tarea, que se guardan en
 datos crudos están en [Benchmark](#benchmark).
 Todas las corridas se midieron en Claude Code, no en Cowork ni en las apps de Claude; las versiones posteriores a 0.3.0 van a sumar esas mediciones. Haiku 4.5 tiene dos corridas por tarea y condición; Opus 5.5 y Sonnet 5.5, tres. Las corridas salieron de dos cuentas cuyas sesiones de Claude Code arrancan con herramientas integradas distintas; las dos condiciones de cada tarea tienen la misma mezcla.
 
-Sonnet 5 (legado), medido en 0.2.2: ver [`bench/results/archive/`](bench/results/archive).
-
 La cifra de arriba, entre un 3% y un 6%, cuenta solo las corridas que pasaron su verificación oculta. En Haiku 4.5 eso da −5,8% sobre las 6 tareas en las que ambas condiciones tienen una corrida aprobada, frente a −3,3% sobre las 8. Opus 5.5 y Sonnet 5.5 pasaron todas las corridas. IC 95%: bootstrap sobre las tareas. Donde incluye el cero, el cambio no se distingue de ninguno en este conjunto de tareas. Una corrida cortada por el tope de turnos terminó en el límite antes de que el agente acabara; sus tokens no son comparables con los de una corrida terminada.
 <!-- RESULTS:END -->
 
