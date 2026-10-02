@@ -41,7 +41,7 @@ jobs:
           sed -i -e 's#\.\./assets/#assets/#g' -e 's#\.\./bench/#bench/#g' _site/index.html
           if grep -n '\.\./' _site/index.html; then echo "unrewritten ../ path"; exit 1; fi
       - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deployment
