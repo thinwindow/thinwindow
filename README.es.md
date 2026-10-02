@@ -8,7 +8,8 @@
 
 <p align="center">
   <strong>Menos en la ventana. Menos en la factura.</strong><br>
-  Tu agente paga su contexto dos veces: una para guardarlo en caché y otra en cada turno que lo vuelve a leer. Solo las relecturas son entre el 87% y el 96% de los tokens; los dos pagos juntos, entre el 73% y el 84% de la factura. ThinWindow es un plugin de Claude Code y un Agent Skill que reduce ese contexto: entre un 13% y un 19% menos de tokens, medido en Claude Code con tres modelos, en ocho tareas de dos repositorios de Python y JavaScript.
+  ThinWindow hace que Claude Code use menos contexto, sin cambiar el resultado. Un plugin de Claude Code y un Agent Skill, medido con Opus 5.5, Sonnet 5.5 y Haiku 4.5: entre un 7% y un 11% menos de costo, entre un 3% y un 6% menos de tokens, con la misma tasa de éxito.<br>
+  Listado en el directorio oficial de plugins de Claude Code.
 </p>
 
 <p align="center">
@@ -22,18 +23,20 @@
 <!-- RESULTS:START -->
 | Modelo | Tokens (IC 95%) | Tokens, corridas aprobadas | Costo (IC 95%) | Éxito base → ThinWindow | Cortadas por el tope de turnos | Corridas |
 | --- | ---: | ---: | ---: | :---: | :---: | ---: |
-| Opus 5.5 | −15,8% (−28,3% a +0,4%) | −15,8% | −19,4% (−26,2% a −10,2%) | 16/16 → 16/16 | 0/16 → 0/16 | 32 |
-| Sonnet 5 | −13,2% (−30,4% a +7,0%) | −13,2% | −7,9% (−18,4% a +2,5%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
-| Haiku 4.5 | −23,0% (−36,0% a −10,8%) | −18,8% | −20,2% (−30,5% a −10,9%) | 14/16 → 13/16 | 7/16 → 3/16 | 32 |
+| Opus 5.5 | −2,9% (−13,3% a +9,3%) | −2,9% | −10,5% (−16,5% a −3,0%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
+| Sonnet 5.5 | −2,6% (−23,1% a +17,5%) | −2,6% | −6,5% (−20,0% a +7,6%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
+| Haiku 4.5 | −3,3% (−19,1% a +12,2%) | −5,8% | −7,7% (−21,8% a +3,5%) | 12/16 → 12/16 | 5/16 → 5/16 | 32 |
 
-Las mismas 8 tareas, 112 corridas, un agente por corrida, sin descartar
+Las mismas 8 tareas, 128 corridas, un agente por corrida, sin descartar
 ninguna: todas las que se registraron están en la tabla, salvo las que reemplazó
 una versión posterior del código en la misma tarea, que se guardan en
 [`bench/results/archive/`](bench/results/archive). El detalle por tarea y los
 datos crudos están en [Benchmark](#benchmark).
-Todas las corridas se midieron en Claude Code, no en Cowork ni en las apps de Claude; las versiones posteriores a 0.3.0 van a sumar esas mediciones.
+Todas las corridas se midieron en Claude Code, no en Cowork ni en las apps de Claude; las versiones posteriores a 0.3.0 van a sumar esas mediciones. Haiku 4.5 tiene dos corridas por tarea y condición; Opus 5.5 y Sonnet 5.5, tres. Las corridas salieron de dos cuentas cuyas sesiones de Claude Code arrancan con herramientas integradas distintas; las dos condiciones de cada tarea tienen la misma mezcla.
 
-La cifra de arriba, entre un 13% y un 19%, cuenta solo las corridas que pasaron su verificación oculta. En Haiku 4.5 eso da −18,8% sobre las 7 tareas en las que ambas condiciones tienen una corrida aprobada, frente a −23,0% sobre las 8. Opus 5.5 y Sonnet 5 pasaron todas las corridas. En Haiku 4.5, las corridas con ThinWindow fallaron la verificación oculta más veces que las base: 3 de 16 frente a 2 de 16. IC 95%: bootstrap sobre las tareas. Donde incluye el cero, el cambio no se distingue de ninguno en este conjunto de tareas. Una corrida cortada por el tope de turnos terminó en el límite antes de que el agente acabara; sus tokens no son comparables con los de una corrida terminada.
+Sonnet 5 (legado), medido en 0.2.2: ver [`bench/results/archive/`](bench/results/archive).
+
+La cifra de arriba, entre un 3% y un 6%, cuenta solo las corridas que pasaron su verificación oculta. En Haiku 4.5 eso da −5,8% sobre las 6 tareas en las que ambas condiciones tienen una corrida aprobada, frente a −3,3% sobre las 8. Opus 5.5 y Sonnet 5.5 pasaron todas las corridas. IC 95%: bootstrap sobre las tareas. Donde incluye el cero, el cambio no se distingue de ninguno en este conjunto de tareas. Una corrida cortada por el tope de turnos terminó en el límite antes de que el agente acabara; sus tokens no son comparables con los de una corrida terminada.
 <!-- RESULTS:END -->
 
 ## Por qué lo que se paga es el contexto
@@ -47,19 +50,19 @@ reenvía en cada turno posterior. El costo de una sesión se parece más a
 tokens ≈ tamaño del contexto × turnos
 ```
 
-que al largo de la respuesta. En las corridas base medidas acá, **entre el 87% y
-el 96% de los tokens facturados fueron lecturas de caché** — contexto reenviado,
-turno tras turno — frente a entre el 0,6% y el 1,9% de la salida del propio agente:
+que al largo de la respuesta. En las corridas base medidas acá, **entre el 90% y
+el 95% de los tokens facturados fueron lecturas de caché** — contexto reenviado,
+turno tras turno — frente a entre el 0,8% y el 1,4% de la salida del propio agente:
 
 <!-- CACHE:START -->
 | Modelo | Proporción de | Lecturas de caché | Escrituras de caché | Salida |
 | --- | --- | ---: | ---: | ---: |
-| Opus 5.5 | tokens | 92,0% | 6,6% | 1,3% |
-|  | costo | 18,8% | 54,3% | 26,9% |
-| Sonnet 5 | tokens | 87,1% | 11,0% | 1,9% |
-|  | costo | 21,6% | 54,4% | 24,0% |
-| Haiku 4.5 | tokens | 96,4% | 2,9% | 0,6% |
-|  | costo | 51,9% | 31,6% | 16,4% |
+| Opus 5.5 | tokens | 91,7% | 6,9% | 1,4% |
+|  | costo | 18,1% | 54,6% | 27,2% |
+| Sonnet 5.5 | tokens | 89,7% | 8,9% | 1,4% |
+|  | costo | 26,7% | 52,9% | 20,4% |
+| Haiku 4.5 | tokens | 95,5% | 3,7% | 0,8% |
+|  | costo | 45,7% | 35,5% | 18,7% |
 <!-- CACHE:END -->
 
 Con precios, las mismas corridas se ven distintas (las filas de costo): una
@@ -147,16 +150,16 @@ Sin dependencias, sin telemetría, Node 18+. Detalles y todas las opciones:
 ## Benchmark
 
 <!-- BENCH:START -->
-Tres modelos, 8 tareas, 112 corridas. Los gráficos y las tablas los genera
+Tres modelos, 8 tareas, 128 corridas. Los gráficos y las tablas los genera
 [`bench/report.mjs`](bench/report.mjs) a partir de los archivos crudos.
 
 ### Opus 5.5
 
 ![Cambio en tokens totales por tarea, Opus 5.5: a la izquierda del cero, menos tokens con ThinWindow; los bigotes cubren cada par de corridas](bench/results/chart-claude-opus-5-5.svg)
 
-### Sonnet 5
+### Sonnet 5.5
 
-![Cambio en tokens totales por tarea, Sonnet 5: a la izquierda del cero, menos tokens con ThinWindow; los bigotes cubren cada par de corridas](bench/results/chart-claude-sonnet-5.svg)
+![Cambio en tokens totales por tarea, Sonnet 5.5: a la izquierda del cero, menos tokens con ThinWindow; los bigotes cubren cada par de corridas](bench/results/chart-claude-sonnet-5-5.svg)
 
 ### Haiku 4.5
 
@@ -204,21 +207,12 @@ suscripción se paga en límites de uso, pero la proporción es la misma.
   el modelo, la versión de Claude Code, el commit de ThinWindow, los conteos de
   tokens crudos y la traza de herramientas. Ningún número de este README está
   escrito a mano.
-- Una tarea se volvió a medir después de un arreglo. En Sonnet 5, todas las
-  corridas con ThinWindow de commander-ci-config cortaron
-  `cat .github/workflows/*.yml` a 60 líneas y perdieron el archivo que pide la
-  tarea; ahora el hook deja enteras las concatenaciones cortas
-  ([#7](https://github.com/thinwindow/thinwindow/issues/7)). Las tres corridas
-  con ThinWindow de esa tarea se repitieron en 30e9c6b (+29,3% → +3,9%), y las
-  tres que reemplazan están en [`bench/results/archive/`](bench/results/archive).
-  Ninguna otra corrida registrada hace esa llamada, así que no se repitió ninguna
-  otra tarea.
 - Las reglas se ajustaron sobre esas mismas 8 tareas, en dos bibliotecas de
   parseo de argumentos de línea de comandos, en JavaScript y Python. Es una
   porción acotada del software que existe. Tu ahorro en otro trabajo va a ser
   distinto.
-- Las muestras son chicas. Los agentes varían mucho: la misma tarea tomó 4
-  turnos en una corrida y 9 en la siguiente (commander-extract-utils en Sonnet 5,
+- Las muestras son chicas. Los agentes varían mucho: la misma tarea tomó 7
+  turnos en una corrida y 13 en la siguiente (click-help-spec en Sonnet 5.5,
   sin ThinWindow), por eso las tablas muestran medianas y el rango por tarea, y
   no un único promedio de titular.
 - Correlo contra tu propia cuenta y tus propios límites:
@@ -239,19 +233,21 @@ mejorándolos y volver a publicar los archivos crudos cada vez.
 
 En los datos se ven dos cosas:
 
-- **No todas las tareas mejoran.** En Sonnet 5, tres de las ocho tareas todavía
-  salen más caras con ThinWindow que sin él. Solo con neutralizar esas
-  regresiones —sin ahorrar un token más en ningún otro lado— Sonnet pasaría de
-  −13,2% a cerca de −17,5%, y Opus de −15,8% a cerca de −17,7%. El margen de
+- **No todas las tareas mejoran.** En Sonnet 5.5, seis de las ocho tareas usan más
+  tokens con ThinWindow que sin él; en Opus 5.5 y Haiku 4.5, cinco. Solo con
+  neutralizar esas regresiones —sin ahorrar un token más en ningún otro lado—
+  Sonnet 5.5 pasaría de −2,6% a cerca de −13,1%, Opus 5.5 de −2,9% a cerca de
+  −7,4% y Haiku 4.5 de −3,3% a cerca de −10,2%. El margen de
   corto plazo está más en no empeorar las tareas cortas que en exprimir las
   largas. Lo que muestran las trazas de cada una está en
   [#7](https://github.com/thinwindow/thinwindow/issues/7).
 - **Los turnos son el factor todavía sin aprovechar.** Como el costo es aproximadamente
   contexto × turnos, un turno ahorrado vale tanto como una lectura grande
-  evitada. Opus usó un 12,9% menos de turnos acá y recortó el costo un 19,4%;
-  Sonnet usó los mismos turnos que sin ThinWindow y recortó el costo un 7,9%.
+  evitada. Sonnet 5.5 usó un 5,4% menos de turnos acá y recortó el costo un 6,5%;
+  Haiku 4.5 usó un 6,1% más de turnos y recortó el costo un 7,7%; Opus 5.5 usó
+  un 1,3% más de turnos y recortó el costo un 10,5%.
   Un intento previo de reglas explícitas de "usá menos turnos" empeoró los
-  resultados de Sonnet de forma medible y se revirtió, en lugar de mantenerse y
+  resultados de Sonnet 5 de forma medible y se revirtió, en lugar de mantenerse y
   excluirse en silencio: ese experimento revertido sigue en el historial.
 
 ## Qué hace ThinWindow con la salida de las herramientas
@@ -281,15 +277,15 @@ reparte la factura.
 | Modelo | Llamadas en las trazas base | Repetidas | Cambiadas por los hooks | Salida de las llamadas repetidas (caracteres) | Cambio |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Opus 5.5 | 106 | 52 | 2 | 83.849 → 83.856 | +0,0% |
-| Sonnet 5 | 134 | 66 | 2 | 115.021 → 115.028 | +0,0% |
+| Sonnet 5.5 | 0 | 0 | 0 | 0 → 0 | – |
 | Haiku 4.5 | 366 | 250 | 37 | 861.927 → 515.933 | −40,1% |
 
 Sin repetir: 183 llamadas que la traza cortó (guarda 140 caracteres de cada una), 33 que escriben archivos, corren un script o cambian el repositorio, y 22 cuyo archivo no se pudo identificar.
 
 El cambio en la factura es otra magnitud, medida en [Benchmark](#benchmark), y no del mismo tamaño:
-- Opus 5.5: los hooks cambian 2 de 106 llamadas y agrandan la salida repetida un 0,0%; en el benchmark actuaron en 1 de 16 corridas con ThinWindow, y el cambio medido en el costo es −19,4% (IC 95% −26,2% a −10,2%).
-- Sonnet 5: los hooks cambian 2 de 134 llamadas y agrandan la salida repetida un 0,0%; en el benchmark actuaron en 3 de 24 corridas con ThinWindow, y el cambio medido en el costo es −7,9% (IC 95% −18,4% a +2,5%).
-- Haiku 4.5: los hooks cambian 37 de 366 llamadas y recortan la salida repetida un 40,1%; en el benchmark actuaron en 9 de 16 corridas con ThinWindow, y el cambio medido en el costo es −20,2% (IC 95% −30,5% a −10,9%).
+- Opus 5.5: los hooks cambian 2 de 106 llamadas y agrandan la salida repetida un 0,0%; en el benchmark actuaron en 1 de 24 corridas con ThinWindow, y el cambio medido en el costo es −10,5% (IC 95% −16,5% a −3,0%).
+- Sonnet 5.5: los hooks cambian 0 de 0 llamadas y agrandan la salida repetida un 0,0%; en el benchmark actuaron en 3 de 24 corridas con ThinWindow, y el cambio medido en el costo es −6,5% (IC 95% −20,0% a +7,6%).
+- Haiku 4.5: los hooks cambian 37 de 366 llamadas y recortan la salida repetida un 40,1%; en el benchmark actuaron en 10 de 16 corridas con ThinWindow, y el cambio medido en el costo es −7,7% (IC 95% −21,8% a +3,5%).
 
 Donde los hooks casi no actúan, el cambio medido viene de las reglas, que cambian lo que hace el agente, o del ruido entre corridas, no de recortar la salida de las herramientas.
 <!-- TIER1:END -->
@@ -359,8 +355,8 @@ cuesta esa tarea de cualquier forma: fallaron tres de sus cuatro corridas, y
 todas tomaron 35 turnos o más.
 
 **¿Por qué no pedirle al agente que sea breve?** Ayuda, y las reglas lo piden:
-la salida es apenas entre el 0,6% y el 1,9% de los tokens, pero a cinco veces
-el precio de la entrada es entre el 16% y el 27% del costo (ver [Por qué lo que
+la salida es apenas entre el 0,8% y el 1,4% de los tokens, pero a cinco veces
+el precio de la entrada es entre el 19% y el 27% del costo (ver [Por qué lo que
 se paga es el contexto](#por-qué-lo-que-se-paga-es-el-contexto)). El resto es
 contexto: una respuesta larga se paga una vez, mientras que una lectura larga se
 escribe en la caché una vez y se vuelve a leer en cada turno que sigue.

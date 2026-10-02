@@ -11,348 +11,38 @@
     ]
   },
   "tasks": 8,
-  "runs": 112,
+  "runs": 128,
   "models": [
     {
       "id": "claude-opus-5-5",
       "family": "opus",
       "label": "Opus 5.5",
       "requested": [
-        "opus"
+        "claude-opus-5-5"
       ],
       "claudeVersions": [
-        "2.1.282"
+        "2.1.287"
       ],
       "thinwindow": [
-        "0.1.0 (a6ebe93)"
+        "0.3.0 (6546385)"
       ],
-      "date": "2026-09-25",
-      "runs": 32,
-      "reps": 2,
-      "resultFiles": [
-        "bench/results/opus-528598a.jsonl"
-      ],
-      "tokenMix": {
-        "input": 0.005860635516833008,
-        "cacheWrite": 6.642673002506017,
-        "cacheRead": 92.03406220421361,
-        "output": 1.3174041577635434
-      },
-      "costMix": {
-        "input": 0.023940572492077837,
-        "cacheWrite": 54.270358257529224,
-        "cacheRead": 18.79786016048845,
-        "output": 26.907841009490248
-      },
-      "tasks": [
-        {
-          "task": "click-choice-brackets",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 319925,
-            "tokenSpread": {
-              "min": 300618,
-              "max": 339232
-            },
-            "medianCost": 0.3564141,
-            "medianTurns": 12.5
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 277662.5,
-            "tokenSpread": {
-              "min": 260967,
-              "max": 294358
-            },
-            "medianCost": 0.23661379999999999,
-            "medianTurns": 11.5
-          },
-          "tokensDelta": -13.21012737360319,
-          "costDelta": -33.61267132809842
-        },
-        {
-          "task": "click-footer-year",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 118926.5,
-            "tokenSpread": {
-              "min": 118913,
-              "max": 118940
-            },
-            "medianCost": 0.1279976,
-            "medianTurns": 4.5
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 135697,
-            "tokenSpread": {
-              "min": 120716,
-              "max": 150678
-            },
-            "medianCost": 0.1330256,
-            "medianTurns": 5.5
-          },
-          "tokensDelta": 14.101566934198853,
-          "costDelta": 3.928198653724761
-        },
-        {
-          "task": "click-help-spec",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 443807,
-            "tokenSpread": {
-              "min": 412395,
-              "max": 475219
-            },
-            "medianCost": 0.3379464,
-            "medianTurns": 16
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 266005,
-            "tokenSpread": {
-              "min": 229777,
-              "max": 302233
-            },
-            "medianCost": 0.2460502,
-            "medianTurns": 13
-          },
-          "tokensDelta": -40.06291022899593,
-          "costDelta": -27.192537041376973
-        },
-        {
-          "task": "commander-ci-config",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 91734,
-            "tokenSpread": {
-              "min": 91691,
-              "max": 91777
-            },
-            "medianCost": 0.1250976,
-            "medianTurns": 3
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 107315.5,
-            "tokenSpread": {
-              "min": 91232,
-              "max": 123399
-            },
-            "medianCost": 0.1239334,
-            "medianTurns": 3.5
-          },
-          "tokensDelta": 16.985523361022086,
-          "costDelta": -0.9306333614713663
-        },
-        {
-          "task": "commander-command-clash",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 283705.5,
-            "tokenSpread": {
-              "min": 281497,
-              "max": 285914
-            },
-            "medianCost": 0.3158402,
-            "medianTurns": 13
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 275187.5,
-            "tokenSpread": {
-              "min": 272692,
-              "max": 277683
-            },
-            "medianCost": 0.2836044,
-            "medianTurns": 10.5
-          },
-          "tokensDelta": -3.002409188401353,
-          "costDelta": -10.206363851086731
-        },
-        {
-          "task": "commander-extract-utils",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 384954.5,
-            "tokenSpread": {
-              "min": 331164,
-              "max": 438745
-            },
-            "medianCost": 0.28005650000000004,
-            "medianTurns": 13.5
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 257555,
-            "tokenSpread": {
-              "min": 222643,
-              "max": 292467
-            },
-            "medianCost": 0.2028936,
-            "medianTurns": 8
-          },
-          "tokensDelta": -33.094690411464214,
-          "costDelta": -27.552618846554182
-        },
-        {
-          "task": "commander-negate-default-order",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 333858.5,
-            "tokenSpread": {
-              "min": 313525,
-              "max": 354192
-            },
-            "medianCost": 0.3763771,
-            "medianTurns": 11
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 339776.5,
-            "tokenSpread": {
-              "min": 300610,
-              "max": 378943
-            },
-            "medianCost": 0.3023481,
-            "medianTurns": 12
-          },
-          "tokensDelta": 1.772607257266177,
-          "costDelta": -19.66883745052502
-        },
-        {
-          "task": "commander-rename-display-width",
-          "baseline": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 121837.5,
-            "tokenSpread": {
-              "min": 121692,
-              "max": 121983
-            },
-            "medianCost": 0.13535919999999999,
-            "medianTurns": 4
-          },
-          "thinwindow": {
-            "runs": 2,
-            "successes": 2,
-            "errors": 0,
-            "medianTokens": 107355,
-            "tokenSpread": {
-              "min": 91603,
-              "max": 123107
-            },
-            "medianCost": 0.127283,
-            "medianTurns": 3.5
-          },
-          "tokensDelta": -11.886734379809171,
-          "costDelta": -5.9664950738479385
-        }
-      ],
-      "total": {
-        "pairedTasks": 8,
-        "baseline": {
-          "runs": 16,
-          "successes": 16,
-          "errors": 0,
-          "capped": 0,
-          "tokens": 2098748.5,
-          "cost": 2.0550887,
-          "turns": 77.5
-        },
-        "thinwindow": {
-          "runs": 16,
-          "successes": 16,
-          "errors": 0,
-          "capped": 0,
-          "tokens": 1766554,
-          "cost": 1.6557521000000002,
-          "turns": 67.5
-        },
-        "tokensDelta": -15.828218578834004,
-        "costDelta": -19.431599229755875,
-        "turnsDelta": -12.903225806451612,
-        "tokensCI": [
-          -28.34789208342992,
-          0.3619362474863193
-        ],
-        "costCI": [
-          -26.232560807199484,
-          -10.230558143516596
-        ],
-        "successful": {
-          "pairedTasks": 8,
-          "tokensDelta": -15.828218578834004,
-          "tokensCI": [
-            -28.34789208342992,
-            0.3619362474863193
-          ]
-        },
-        "regressingTasks": 3,
-        "tokensDeltaNoRegressions": -17.651686231103916
-      }
-    },
-    {
-      "id": "claude-sonnet-5",
-      "family": "sonnet",
-      "label": "Sonnet 5",
-      "requested": [
-        "sonnet"
-      ],
-      "claudeVersions": [
-        "2.1.282"
-      ],
-      "thinwindow": [
-        "0.2.0 (30e9c6b)",
-        "0.1.0 (528598a)"
-      ],
-      "date": "2026-09-25 to 2026-09-26",
+      "date": "2026-10-02",
       "runs": 48,
       "reps": 3,
       "resultFiles": [
-        "bench/results/sonnet-30e9c6b.jsonl",
-        "bench/results/sonnet-528598a.jsonl"
+        "bench/results/opus-5-5-6546385.jsonl"
       ],
       "tokenMix": {
-        "input": 0.008993488937450006,
-        "cacheWrite": 10.964682959963891,
-        "cacheRead": 87.0949019765566,
-        "output": 1.9314215745420582
+        "input": 0.005797944532030986,
+        "cacheWrite": 6.907816064075018,
+        "cacheRead": 91.70977680007253,
+        "output": 1.3766091913204126
       },
       "costMix": {
-        "input": 0.022313604826612897,
-        "cacheWrite": 54.40860700877257,
-        "cacheRead": 21.608979992457723,
-        "output": 23.96009939394309
+        "input": 0.02292587024931788,
+        "cacheWrite": 54.628909923587116,
+        "cacheRead": 18.131653656712924,
+        "output": 27.216510549450636
       },
       "tasks": [
         {
@@ -361,28 +51,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 203291,
+            "medianTokens": 304207,
             "tokenSpread": {
-              "min": 148736,
-              "max": 264660
+              "min": 281555,
+              "max": 307175
             },
-            "medianCost": 0.1507852,
-            "medianTurns": 10
+            "medianCost": 0.27272419999999997,
+            "medianTurns": 11
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 193810,
+            "medianTokens": 370167,
             "tokenSpread": {
-              "min": 141658,
-              "max": 232589
+              "min": 343332,
+              "max": 394682
             },
-            "medianCost": 0.1311186,
-            "medianTurns": 12
+            "medianCost": 0.2829488,
+            "medianTurns": 14
           },
-          "tokensDelta": -4.663757864342248,
-          "costDelta": -13.04279199815367
+          "tokensDelta": 21.682604279322963,
+          "costDelta": 3.749062239434575
         },
         {
           "task": "click-footer-year",
@@ -390,28 +80,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 72594,
+            "medianTokens": 122602,
             "tokenSpread": {
-              "min": 72477,
-              "max": 72800
+              "min": 90592,
+              "max": 185766
             },
-            "medianCost": 0.0619894,
-            "medianTurns": 4
+            "medianCost": 0.1337178,
+            "medianTurns": 5
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 72864,
+            "medianTokens": 122683,
             "tokenSpread": {
-              "min": 72364,
-              "max": 73702
+              "min": 72868,
+              "max": 184877
             },
-            "medianCost": 0.061027399999999996,
+            "medianCost": 0.12877740000000001,
             "medianTurns": 4
           },
-          "tokensDelta": 0.37193156459211507,
-          "costDelta": -1.5518782243415883
+          "tokensDelta": 0.06606743772532259,
+          "costDelta": -3.6946464868551407
         },
         {
           "task": "click-help-spec",
@@ -419,28 +109,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 186129,
+            "medianTokens": 412303,
             "tokenSpread": {
-              "min": 162997,
-              "max": 232031
+              "min": 355765,
+              "max": 451336
             },
-            "medianCost": 0.1380988,
-            "medianTurns": 8
+            "medianCost": 0.32785060000000005,
+            "medianTurns": 15
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 83271,
+            "medianTokens": 383522,
             "tokenSpread": {
-              "min": 79774,
-              "max": 106853
+              "min": 274733,
+              "max": 456162
             },
-            "medianCost": 0.0890862,
-            "medianTurns": 5
+            "medianCost": 0.289596,
+            "medianTurns": 14
           },
-          "tokensDelta": -55.261673355575965,
-          "costDelta": -35.490967336428696
+          "tokensDelta": -6.9805458606898325,
+          "costDelta": -11.668302574404324
         },
         {
           "task": "commander-ci-config",
@@ -448,28 +138,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 74640,
+            "medianTokens": 92948,
             "tokenSpread": {
-              "min": 74587,
-              "max": 75271
+              "min": 56416,
+              "max": 124118
             },
-            "medianCost": 0.0631416,
-            "medianTurns": 4
+            "medianCost": 0.12398319999999999,
+            "medianTurns": 3
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 77562,
+            "medianTokens": 93514,
             "tokenSpread": {
-              "min": 77370,
-              "max": 78090
+              "min": 56324,
+              "max": 126190
             },
-            "medianCost": 0.0659658,
-            "medianTurns": 4
+            "medianCost": 0.12129619999999999,
+            "medianTurns": 3
           },
-          "tokensDelta": 3.914790996784566,
-          "costDelta": 4.472803983427722
+          "tokensDelta": 0.6089426345913844,
+          "costDelta": -2.167229108459852
         },
         {
           "task": "commander-command-clash",
@@ -477,28 +167,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 180116,
+            "medianTokens": 329749,
             "tokenSpread": {
-              "min": 159338,
-              "max": 220445
+              "min": 289175,
+              "max": 381642
             },
-            "medianCost": 0.15642180000000003,
-            "medianTurns": 10
+            "medianCost": 0.3587720000000001,
+            "medianTurns": 13
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 137197,
+            "medianTokens": 239488,
             "tokenSpread": {
-              "min": 130210,
-              "max": 204417
+              "min": 238678,
+              "max": 291175
             },
-            "medianCost": 0.15013780000000002,
+            "medianCost": 0.3005292,
             "medianTurns": 9
           },
-          "tokensDelta": -23.828532723356062,
-          "costDelta": -4.0173428511882685
+          "tokensDelta": -27.37263797615762,
+          "costDelta": -16.233931298986565
         },
         {
           "task": "commander-extract-utils",
@@ -506,28 +196,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 141429,
+            "medianTokens": 240605,
             "tokenSpread": {
-              "min": 80438,
-              "max": 166730
+              "min": 234412,
+              "max": 299032
             },
-            "medianCost": 0.1041012,
-            "medianTurns": 9
+            "medianCost": 0.2490444,
+            "medianTurns": 10
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 189399,
+            "medianTokens": 266765,
             "tokenSpread": {
-              "min": 163741,
-              "max": 266223
+              "min": 262372,
+              "max": 307013
             },
-            "medianCost": 0.1200712,
-            "medianTurns": 12
+            "medianCost": 0.23406480000000002,
+            "medianTurns": 13
           },
-          "tokensDelta": 33.91807903612413,
-          "costDelta": 15.340841412010617
+          "tokensDelta": 10.87259200764739,
+          "costDelta": -6.014831090359784
         },
         {
           "task": "commander-negate-default-order",
@@ -535,28 +225,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 257572,
+            "medianTokens": 457043,
             "tokenSpread": {
-              "min": 202852,
-              "max": 327191
+              "min": 379818,
+              "max": 489584
             },
-            "medianCost": 0.16720660000000004,
-            "medianTurns": 13
+            "medianCost": 0.4479714000000001,
+            "medianTurns": 14
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 205317,
+            "medianTokens": 422792,
             "tokenSpread": {
-              "min": 151174,
-              "max": 277964
+              "min": 268619,
+              "max": 500582
             },
-            "medianCost": 0.1530488,
-            "medianTurns": 12
+            "medianCost": 0.34803579999999995,
+            "medianTurns": 15
           },
-          "tokensDelta": -20.28753125339711,
-          "costDelta": -8.467249498524593
+          "tokensDelta": -7.494043230068067,
+          "costDelta": -22.30847772871217
         },
         {
           "task": "commander-rename-display-width",
@@ -564,28 +254,28 @@
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 74482,
+            "medianTokens": 124295,
             "tokenSpread": {
-              "min": 54955,
-              "max": 74607
+              "min": 74475,
+              "max": 124484
             },
-            "medianCost": 0.0636658,
+            "medianCost": 0.13968919999999999,
             "medianTurns": 4
           },
           "thinwindow": {
             "runs": 3,
             "successes": 3,
             "errors": 0,
-            "medianTokens": 74258,
+            "medianTokens": 124922,
             "tokenSpread": {
-              "min": 54768,
-              "max": 76402
+              "min": 76467,
+              "max": 125470
             },
-            "medianCost": 0.063037,
+            "medianCost": 0.1319942,
             "medianTurns": 4
           },
-          "tokensDelta": -0.3007438038720765,
-          "costDelta": -0.9876574236089061
+          "tokensDelta": 0.5044450701959049,
+          "costDelta": -5.50865779172619
         }
       ],
       "total": {
@@ -595,40 +285,348 @@
           "successes": 24,
           "errors": 0,
           "capped": 0,
-          "tokens": 1190253,
-          "cost": 0.9054104000000002,
-          "turns": 62
+          "tokens": 2083752,
+          "cost": 2.0537528000000003,
+          "turns": 75
         },
         "thinwindow": {
           "runs": 24,
           "successes": 24,
           "errors": 0,
           "capped": 0,
-          "tokens": 1033678,
-          "cost": 0.8334928,
-          "turns": 62
+          "tokens": 2023853,
+          "cost": 1.8372424,
+          "turns": 76
         },
-        "tokensDelta": -13.154766255577597,
-        "costDelta": -7.943094093021255,
-        "turnsDelta": 0,
+        "tokensDelta": -2.8745743255435388,
+        "costDelta": -10.54218404473996,
+        "turnsDelta": 1.3333333333333335,
         "tokensCI": [
-          -30.410207519818208,
-          7.0331540438415825
+          -13.318991810942519,
+          9.328213698001045
         ],
         "costCI": [
-          -18.370572752297136,
-          2.483577807466192
+          -16.464560504294987,
+          -2.950560389080689
         ],
         "successful": {
           "pairedTasks": 8,
-          "tokensDelta": -13.154766255577597,
+          "tokensDelta": -2.8745743255435388,
           "tokensCI": [
-            -30.410207519818208,
-            7.0331540438415825
+            -13.318991810942519,
+            9.328213698001045
           ]
         },
-        "regressingTasks": 3,
-        "tokensDeltaNoRegressions": -17.45318012220931
+        "regressingTasks": 5,
+        "tokensDeltaNoRegressions": -7.356585620553694
+      }
+    },
+    {
+      "id": "claude-sonnet-5-5",
+      "family": "sonnet",
+      "label": "Sonnet 5.5",
+      "requested": [
+        "claude-sonnet-5-5"
+      ],
+      "claudeVersions": [
+        "2.1.287"
+      ],
+      "thinwindow": [
+        "0.3.0 (6546385)"
+      ],
+      "date": "2026-10-02",
+      "runs": 48,
+      "reps": 3,
+      "resultFiles": [
+        "bench/results/sonnet-5-5-6546385.jsonl"
+      ],
+      "tokenMix": {
+        "input": 0.007037716467997795,
+        "cacheWrite": 8.89722605300539,
+        "cacheRead": 89.72107873704039,
+        "output": 1.3746574934862312
+      },
+      "costMix": {
+        "input": 0.020916398156250262,
+        "cacheWrite": 52.885882361716654,
+        "cacheRead": 26.66549319521128,
+        "output": 20.42770804491581
+      },
+      "tasks": [
+        {
+          "task": "click-choice-brackets",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 189317,
+            "tokenSpread": {
+              "min": 101871,
+              "max": 267875
+            },
+            "medianCost": 0.13916599999999998,
+            "medianTurns": 6
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 126650,
+            "tokenSpread": {
+              "min": 97276,
+              "max": 225541
+            },
+            "medianCost": 0.0873018,
+            "medianTurns": 6
+          },
+          "tokensDelta": -33.10162320341015,
+          "costDelta": -37.2678671514594
+        },
+        {
+          "task": "click-footer-year",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 119869,
+            "tokenSpread": {
+              "min": 89508,
+              "max": 149193
+            },
+            "medianCost": 0.07038140000000001,
+            "medianTurns": 5
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 153405,
+            "tokenSpread": {
+              "min": 73545,
+              "max": 215163
+            },
+            "medianCost": 0.0821648,
+            "medianTurns": 6
+          },
+          "tokensDelta": 27.977208452560713,
+          "costDelta": 16.742207458220474
+        },
+        {
+          "task": "click-help-spec",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 241414,
+            "tokenSpread": {
+              "min": 149698,
+              "max": 282713
+            },
+            "medianCost": 0.1384918,
+            "medianTurns": 12
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 129310,
+            "tokenSpread": {
+              "min": 83014,
+              "max": 267873
+            },
+            "medianCost": 0.09976959999999999,
+            "medianTurns": 5
+          },
+          "tokensDelta": -46.436412138484094,
+          "costDelta": -27.959922536929994
+        },
+        {
+          "task": "commander-ci-config",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 123766,
+            "tokenSpread": {
+              "min": 74768,
+              "max": 155641
+            },
+            "medianCost": 0.0763318,
+            "medianTurns": 4
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 126375,
+            "tokenSpread": {
+              "min": 77399,
+              "max": 127049
+            },
+            "medianCost": 0.07804019999999999,
+            "medianTurns": 4
+          },
+          "tokensDelta": 2.108010277459076,
+          "costDelta": 2.2381235605605854
+        },
+        {
+          "task": "commander-command-clash",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 207649,
+            "tokenSpread": {
+              "min": 124995,
+              "max": 239294
+            },
+            "medianCost": 0.16316419999999998,
+            "medianTurns": 9
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 242342,
+            "tokenSpread": {
+              "min": 174102,
+              "max": 270852
+            },
+            "medianCost": 0.1592656,
+            "medianTurns": 11
+          },
+          "tokensDelta": 16.707520864535827,
+          "costDelta": -2.3893721784557975
+        },
+        {
+          "task": "commander-extract-utils",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 155583,
+            "tokenSpread": {
+              "min": 95530,
+              "max": 156215
+            },
+            "medianCost": 0.0899276,
+            "medianTurns": 6
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 193050,
+            "tokenSpread": {
+              "min": 162659,
+              "max": 298214
+            },
+            "medianCost": 0.10565959999999999,
+            "medianTurns": 8
+          },
+          "tokensDelta": 24.081679875050614,
+          "costDelta": 17.49407300984347
+        },
+        {
+          "task": "commander-negate-default-order",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 204060,
+            "tokenSpread": {
+              "min": 199300,
+              "max": 298887
+            },
+            "medianCost": 0.1386216,
+            "medianTurns": 11
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 234836,
+            "tokenSpread": {
+              "min": 171242,
+              "max": 273301
+            },
+            "medianCost": 0.14502700000000002,
+            "medianTurns": 10
+          },
+          "tokensDelta": 15.08183867489954,
+          "costDelta": 4.620780599848801
+        },
+        {
+          "task": "commander-rename-display-width",
+          "baseline": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 91432,
+            "tokenSpread": {
+              "min": 54788,
+              "max": 91524
+            },
+            "medianCost": 0.0667044,
+            "medianTurns": 3
+          },
+          "thinwindow": {
+            "runs": 3,
+            "successes": 3,
+            "errors": 0,
+            "medianTokens": 93054,
+            "tokenSpread": {
+              "min": 54626,
+              "max": 124938
+            },
+            "medianCost": 0.0680268,
+            "medianTurns": 3
+          },
+          "tokensDelta": 1.773995975150932,
+          "costDelta": 1.9824779174986977
+        }
+      ],
+      "total": {
+        "pairedTasks": 8,
+        "baseline": {
+          "runs": 24,
+          "successes": 24,
+          "errors": 0,
+          "capped": 0,
+          "tokens": 1333090,
+          "cost": 0.8827888,
+          "turns": 56
+        },
+        "thinwindow": {
+          "runs": 24,
+          "successes": 24,
+          "errors": 0,
+          "capped": 0,
+          "tokens": 1299022,
+          "cost": 0.8252554000000001,
+          "turns": 53
+        },
+        "tokensDelta": -2.5555663908663333,
+        "costDelta": -6.517232660858402,
+        "turnsDelta": -5.357142857142857,
+        "tokensCI": [
+          -23.055328658340745,
+          17.48944668672269
+        ],
+        "costCI": [
+          -19.971354702515704,
+          7.6376974421214765
+        ],
+        "successful": {
+          "pairedTasks": 8,
+          "tokensDelta": -2.5555663908663333,
+          "tokensCI": [
+            -23.055328658340745,
+            17.48944668672269
+          ]
+        },
+        "regressingTasks": 6,
+        "tokensDeltaNoRegressions": -13.110217614714685
       }
     },
     {
@@ -639,29 +637,28 @@
         "haiku"
       ],
       "claudeVersions": [
-        "2.1.282"
+        "2.1.287"
       ],
       "thinwindow": [
-        "0.1.0 (05cc89d)",
-        "0.1.0 (a6ebe93)"
+        "0.3.0 (6546385)"
       ],
-      "date": "2026-09-25",
+      "date": "2026-10-02",
       "runs": 32,
       "reps": 2,
       "resultFiles": [
-        "bench/results/haiku-528598a.jsonl"
+        "bench/results/haiku-6546385.jsonl"
       ],
       "tokenMix": {
-        "input": 0.016471733136297285,
-        "cacheWrite": 2.9382760547135467,
-        "cacheRead": 96.43621708807152,
-        "output": 0.6090351240786462
+        "input": 0.019393345219878448,
+        "cacheWrite": 3.7063947424056387,
+        "cacheRead": 95.49481748785159,
+        "output": 0.779394424522885
       },
       "costMix": {
-        "input": 0.08864434214514506,
-        "cacheWrite": 31.62527534360775,
-        "cacheRead": 51.89815153027752,
-        "output": 16.387928783969592
+        "input": 0.09288607056680807,
+        "cacheWrite": 35.50418349059785,
+        "cacheRead": 45.73805217910022,
+        "output": 18.664878259735126
       },
       "tasks": [
         {
@@ -670,28 +667,28 @@
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1512342,
+            "medianTokens": 1485272.5,
             "tokenSpread": {
-              "min": 1407400,
-              "max": 1617284
+              "min": 1390672,
+              "max": 1579873
             },
-            "medianCost": 0.2846226500000001,
-            "medianTurns": 37
+            "medianCost": 0.27188735,
+            "medianTurns": 41
           },
           "thinwindow": {
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1153612,
+            "medianTokens": 1347487.5,
             "tokenSpread": {
-              "min": 1050093,
-              "max": 1257131
+              "min": 1346937,
+              "max": 1348038
             },
-            "medianCost": 0.20883925000000003,
-            "medianTurns": 32.5
+            "medianCost": 0.24713694999999997,
+            "medianTurns": 40.5
           },
-          "tokensDelta": -23.720163825378123,
-          "costDelta": -26.6259203194124
+          "tokensDelta": -9.276748879414383,
+          "costDelta": -9.103181887645768
         },
         {
           "task": "click-footer-year",
@@ -699,28 +696,28 @@
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 259292.5,
+            "medianTokens": 155185.5,
             "tokenSpread": {
-              "min": 187383,
-              "max": 331202
+              "min": 141428,
+              "max": 168943
             },
-            "medianCost": 0.060310050000000004,
-            "medianTurns": 9
+            "medianCost": 0.0464083,
+            "medianTurns": 6.5
           },
           "thinwindow": {
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 208818.5,
+            "medianTokens": 209529.5,
             "tokenSpread": {
-              "min": 196756,
-              "max": 220881
+              "min": 119094,
+              "max": 299965
             },
-            "medianCost": 0.05531615,
-            "medianTurns": 7.5
+            "medianCost": 0.05744585000000001,
+            "medianTurns": 8.5
           },
-          "tokensDelta": -19.466047031826992,
-          "costDelta": -8.280377814311217
+          "tokensDelta": 35.01873564218306,
+          "costDelta": 23.783568887461957
         },
         {
           "task": "click-help-spec",
@@ -728,28 +725,28 @@
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1838322.5,
+            "medianTokens": 1322426.5,
             "tokenSpread": {
-              "min": 1674916,
-              "max": 2001729
+              "min": 1205377,
+              "max": 1439476
             },
-            "medianCost": 0.3170913000000001,
-            "medianTurns": 41
+            "medianCost": 0.2577332,
+            "medianTurns": 34
           },
           "thinwindow": {
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1627973.5,
+            "medianTokens": 1441163.5,
             "tokenSpread": {
-              "min": 1231374,
-              "max": 2024573
+              "min": 1400174,
+              "max": 1482153
             },
-            "medianCost": 0.29080740000000005,
-            "medianTurns": 38
+            "medianCost": 0.2662096,
+            "medianTurns": 39.5
           },
-          "tokensDelta": -11.442442770514967,
-          "costDelta": -8.289063749147333
+          "tokensDelta": 8.978722068863561,
+          "costDelta": 3.288827361007428
         },
         {
           "task": "commander-ci-config",
@@ -757,57 +754,57 @@
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 129150.5,
+            "medianTokens": 96145.5,
             "tokenSpread": {
-              "min": 96239,
-              "max": 162062
+              "min": 96091,
+              "max": 96200
             },
-            "medianCost": 0.04325,
+            "medianCost": 0.039905350000000006,
             "medianTurns": 5
           },
           "thinwindow": {
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 142427,
+            "medianTokens": 97400.5,
             "tokenSpread": {
-              "min": 120065,
-              "max": 164789
+              "min": 96747,
+              "max": 98054
             },
-            "medianCost": 0.045918150000000005,
+            "medianCost": 0.04053785,
             "medianTurns": 5
           },
-          "tokensDelta": 10.279867286615229,
-          "costDelta": 6.169132947976898
+          "tokensDelta": 1.3053133011945437,
+          "costDelta": 1.5850005074507405
         },
         {
           "task": "commander-command-clash",
           "baseline": {
             "runs": 2,
-            "successes": 1,
+            "successes": 0,
             "errors": 0,
-            "medianTokens": 1799842.5,
+            "medianTokens": 1686541.5,
             "tokenSpread": {
-              "min": 1488076,
-              "max": 2111609
+              "min": 1620918,
+              "max": 1752165
             },
-            "medianCost": 0.32883169999999995,
+            "medianCost": 0.32650375,
             "medianTurns": 41
           },
           "thinwindow": {
             "runs": 2,
-            "successes": 1,
+            "successes": 0,
             "errors": 0,
-            "medianTokens": 1649747.5,
+            "medianTokens": 1399051,
             "tokenSpread": {
-              "min": 1481144,
-              "max": 1818351
+              "min": 1279691,
+              "max": 1518411
             },
-            "medianCost": 0.29542975000000005,
-            "medianTurns": 41
+            "medianCost": 0.27804175,
+            "medianTurns": 38.5
           },
-          "tokensDelta": -8.33934080343141,
-          "costDelta": -10.157764595080069
+          "tokensDelta": -17.046156290847275,
+          "costDelta": -14.842708544695125
         },
         {
           "task": "commander-extract-utils",
@@ -815,28 +812,28 @@
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1286850.5,
+            "medianTokens": 826626,
             "tokenSpread": {
-              "min": 1091193,
-              "max": 1482508
+              "min": 677458,
+              "max": 975794
             },
-            "medianCost": 0.26886045000000003,
-            "medianTurns": 20
+            "medianCost": 0.20908759999999998,
+            "medianTurns": 14.5
           },
           "thinwindow": {
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 662048,
+            "medianTokens": 415898.5,
             "tokenSpread": {
-              "min": 580784,
-              "max": 743312
+              "min": 412608,
+              "max": 419189
             },
-            "medianCost": 0.14798789999999998,
-            "medianTurns": 18
+            "medianCost": 0.10658210000000001,
+            "medianTurns": 14.5
           },
-          "tokensDelta": -48.552842773888656,
-          "costDelta": -44.95735613028991
+          "tokensDelta": -49.68722251659154,
+          "costDelta": -49.025145441432194
         },
         {
           "task": "commander-negate-default-order",
@@ -844,100 +841,100 @@
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1959260.5,
+            "medianTokens": 1503527.5,
             "tokenSpread": {
-              "min": 1820751,
-              "max": 2097770
+              "min": 1335979,
+              "max": 1671076
             },
-            "medianCost": 0.3722453499999999,
-            "medianTurns": 39.5
+            "medianCost": 0.30910309999999996,
+            "medianTurns": 36.5
           },
           "thinwindow": {
             "runs": 2,
             "successes": 2,
             "errors": 0,
-            "medianTokens": 1777260,
+            "medianTokens": 1564268.5,
             "tokenSpread": {
-              "min": 1452576,
-              "max": 2101944
+              "min": 1504372,
+              "max": 1624165
             },
-            "medianCost": 0.33586565,
-            "medianTurns": 37.5
+            "medianCost": 0.32260940000000005,
+            "medianTurns": 38
           },
-          "tokensDelta": -9.289244589986884,
-          "costDelta": -9.773043504774447
+          "tokensDelta": 4.039899503002107,
+          "costDelta": 4.36951295538611
         },
         {
           "task": "commander-rename-display-width",
           "baseline": {
             "runs": 2,
-            "successes": 1,
+            "successes": 0,
             "errors": 0,
-            "medianTokens": 2312739,
+            "medianTokens": 1133276.5,
             "tokenSpread": {
-              "min": 2256181,
-              "max": 2369297
+              "min": 941088,
+              "max": 1325465
             },
-            "medianCost": 0.38696185,
-            "medianTurns": 38
+            "medianCost": 0.25329895,
+            "medianTurns": 34
           },
           "thinwindow": {
             "runs": 2,
             "successes": 0,
             "errors": 0,
-            "medianTokens": 1320101,
+            "medianTokens": 1463095.5,
             "tokenSpread": {
-              "min": 724310,
-              "max": 1915892
+              "min": 1350516,
+              "max": 1575675
             },
-            "medianCost": 0.26616515,
+            "medianCost": 0.26394555,
             "medianTurns": 41
           },
-          "tokensDelta": -42.92045059991638,
-          "costDelta": -31.21669487573516
+          "tokensDelta": 29.10313590725653,
+          "costDelta": 4.203175733653831
         }
       ],
       "total": {
         "pairedTasks": 8,
         "baseline": {
           "runs": 16,
-          "successes": 14,
+          "successes": 12,
           "errors": 0,
-          "capped": 7,
-          "tokens": 11097800,
-          "cost": 2.06217335,
-          "turns": 230.5
+          "capped": 5,
+          "tokens": 8209001.5,
+          "cost": 1.7139276,
+          "turns": 212.5
         },
         "thinwindow": {
           "runs": 16,
-          "successes": 13,
+          "successes": 12,
           "errors": 0,
-          "capped": 3,
-          "tokens": 8541987.5,
-          "cost": 1.6463294,
-          "turns": 220.5
+          "capped": 5,
+          "tokens": 7937894.5,
+          "cost": 1.58250905,
+          "turns": 225.5
         },
-        "tokensDelta": -23.029902322982934,
-        "costDelta": -20.165324607652416,
-        "turnsDelta": -4.3383947939262475,
+        "tokensDelta": -3.302557564400494,
+        "costDelta": -7.667683862492209,
+        "turnsDelta": 6.11764705882353,
         "tokensCI": [
-          -35.99808204974998,
-          -10.844777578920214
+          -19.083931073016334,
+          12.239879612045506
         ],
         "costCI": [
-          -30.5237718739356,
-          -10.856433987719308
+          -21.804466258907546,
+          3.4783788678353615
         ],
         "successful": {
-          "pairedTasks": 7,
-          "tokensDelta": -18.757500897977895,
+          "pairedTasks": 6,
+          "tokensDelta": -5.816010904063668,
           "tokensCI": [
-            -31.763547559858388,
-            -10.691915352809549
+            -27.18192379284757,
+            8.960861244502345
           ]
         },
-        "regressingTasks": 1,
-        "tokensDeltaNoRegressions": -23.149534141902
+        "regressingTasks": 5,
+        "tokensDeltaNoRegressions": -10.183979135586709
       }
     }
   ]

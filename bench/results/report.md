@@ -2,60 +2,60 @@
 
 ## claude-haiku-4-5
 
-Model `claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.282 · thinwindow 0.1.0 (05cc89d), 0.1.0 (a6ebe93) · 32 runs, up to 2 per task and condition · 2026-09-25
+Model `claude-haiku-4-5` (requested as `haiku`) · Claude Code 2.1.287 · thinwindow 0.3.0 (6546385) · 32 runs, up to 2 per task and condition · 2026-10-02
 
 | Task | Tokens baseline (min–max) | Tokens thinwindow (min–max) | Δ tokens | Cost baseline | Cost thinwindow | Δ cost | Turns baseline | Turns thinwindow | Success baseline | Success thinwindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| click-choice-brackets | 1.51M (1.41M–1.62M) | 1.15M (1.05M–1.26M) | −23.7% | $0.28 | $0.21 | −26.6% | 37 | 32.5 | 2/2 | 2/2 |
-| click-footer-year | 259k (187k–331k) | 209k (197k–221k) | −19.5% | $0.06 | $0.06 | −8.3% | 9 | 7.5 | 2/2 | 2/2 |
-| click-help-spec | 1.84M (1.67M–2.00M) | 1.63M (1.23M–2.02M) | −11.4% | $0.32 | $0.29 | −8.3% | 41 | 38 | 2/2 | 2/2 |
-| commander-ci-config | 129k (96k–162k) | 142k (120k–165k) | +10.3% | $0.04 | $0.05 | +6.2% | 5 | 5 | 2/2 | 2/2 |
-| commander-command-clash | 1.80M (1.49M–2.11M) | 1.65M (1.48M–1.82M) | −8.3% | $0.33 | $0.30 | −10.2% | 41 | 41 | 1/2 | 1/2 |
-| commander-extract-utils | 1.29M (1.09M–1.48M) | 662k (581k–743k) | −48.6% | $0.27 | $0.15 | −45.0% | 20 | 18 | 2/2 | 2/2 |
-| commander-negate-default-order | 1.96M (1.82M–2.10M) | 1.78M (1.45M–2.10M) | −9.3% | $0.37 | $0.34 | −9.8% | 39.5 | 37.5 | 2/2 | 2/2 |
-| commander-rename-display-width | 2.31M (2.26M–2.37M) | 1.32M (724k–1.92M) | −42.9% | $0.39 | $0.27 | −31.2% | 38 | 41 | 1/2 | 0/2 |
-| **Total** | **11.10M** | **8.54M** | **−23.0%** | **$2.06** | **$1.65** | **−20.2%** | 230.5 | 220.5 | **14/16** | **13/16** |
+| click-choice-brackets | 1.49M (1.39M–1.58M) | 1.35M (1.35M–1.35M) | −9.3% | $0.27 | $0.25 | −9.1% | 41 | 40.5 | 2/2 | 2/2 |
+| click-footer-year | 155k (141k–169k) | 210k (119k–300k) | +35.0% | $0.05 | $0.06 | +23.8% | 6.5 | 8.5 | 2/2 | 2/2 |
+| click-help-spec | 1.32M (1.21M–1.44M) | 1.44M (1.40M–1.48M) | +9.0% | $0.26 | $0.27 | +3.3% | 34 | 39.5 | 2/2 | 2/2 |
+| commander-ci-config | 96k (96k–96k) | 97k (97k–98k) | +1.3% | $0.04 | $0.04 | +1.6% | 5 | 5 | 2/2 | 2/2 |
+| commander-command-clash | 1.69M (1.62M–1.75M) | 1.40M (1.28M–1.52M) | −17.0% | $0.33 | $0.28 | −14.8% | 41 | 38.5 | 0/2 | 0/2 |
+| commander-extract-utils | 827k (677k–976k) | 416k (413k–419k) | −49.7% | $0.21 | $0.11 | −49.0% | 14.5 | 14.5 | 2/2 | 2/2 |
+| commander-negate-default-order | 1.50M (1.34M–1.67M) | 1.56M (1.50M–1.62M) | +4.0% | $0.31 | $0.32 | +4.4% | 36.5 | 38 | 2/2 | 2/2 |
+| commander-rename-display-width | 1.13M (941k–1.33M) | 1.46M (1.35M–1.58M) | +29.1% | $0.25 | $0.26 | +4.2% | 34 | 41 | 0/2 | 0/2 |
+| **Total** | **8.21M** | **7.94M** | **−3.3%** | **$1.71** | **$1.58** | **−7.7%** | 212.5 | 225.5 | **12/16** | **12/16** |
 
-Total tokens −23.0% (95% CI −36.0% to −10.8%); cost −20.2% (95% CI −30.5% to −10.9%).
+Total tokens −3.3% (95% CI −19.1% to +12.2%); cost −7.7% (95% CI −21.8% to +3.5%).
 
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.
 
 ## claude-opus-5-5
 
-Model `claude-opus-5-5` (requested as `opus`) · Claude Code 2.1.282 · thinwindow 0.1.0 (a6ebe93) · 32 runs, up to 2 per task and condition · 2026-09-25
+Model `claude-opus-5-5` · Claude Code 2.1.287 · thinwindow 0.3.0 (6546385) · 48 runs, up to 3 per task and condition · 2026-10-02
 
 | Task | Tokens baseline (min–max) | Tokens thinwindow (min–max) | Δ tokens | Cost baseline | Cost thinwindow | Δ cost | Turns baseline | Turns thinwindow | Success baseline | Success thinwindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| click-choice-brackets | 320k (301k–339k) | 278k (261k–294k) | −13.2% | $0.36 | $0.24 | −33.6% | 12.5 | 11.5 | 2/2 | 2/2 |
-| click-footer-year | 119k (119k–119k) | 136k (121k–151k) | +14.1% | $0.13 | $0.13 | +3.9% | 4.5 | 5.5 | 2/2 | 2/2 |
-| click-help-spec | 444k (412k–475k) | 266k (230k–302k) | −40.1% | $0.34 | $0.25 | −27.2% | 16 | 13 | 2/2 | 2/2 |
-| commander-ci-config | 92k (92k–92k) | 107k (91k–123k) | +17.0% | $0.13 | $0.12 | −0.9% | 3 | 3.5 | 2/2 | 2/2 |
-| commander-command-clash | 284k (281k–286k) | 275k (273k–278k) | −3.0% | $0.32 | $0.28 | −10.2% | 13 | 10.5 | 2/2 | 2/2 |
-| commander-extract-utils | 385k (331k–439k) | 258k (223k–292k) | −33.1% | $0.28 | $0.20 | −27.6% | 13.5 | 8 | 2/2 | 2/2 |
-| commander-negate-default-order | 334k (314k–354k) | 340k (301k–379k) | +1.8% | $0.38 | $0.30 | −19.7% | 11 | 12 | 2/2 | 2/2 |
-| commander-rename-display-width | 122k (122k–122k) | 107k (92k–123k) | −11.9% | $0.14 | $0.13 | −6.0% | 4 | 3.5 | 2/2 | 2/2 |
-| **Total** | **2.10M** | **1.77M** | **−15.8%** | **$2.06** | **$1.66** | **−19.4%** | 77.5 | 67.5 | **16/16** | **16/16** |
+| click-choice-brackets | 304k (282k–307k) | 370k (343k–395k) | +21.7% | $0.27 | $0.28 | +3.7% | 11 | 14 | 3/3 | 3/3 |
+| click-footer-year | 123k (91k–186k) | 123k (73k–185k) | +0.1% | $0.13 | $0.13 | −3.7% | 5 | 4 | 3/3 | 3/3 |
+| click-help-spec | 412k (356k–451k) | 384k (275k–456k) | −7.0% | $0.33 | $0.29 | −11.7% | 15 | 14 | 3/3 | 3/3 |
+| commander-ci-config | 93k (56k–124k) | 94k (56k–126k) | +0.6% | $0.12 | $0.12 | −2.2% | 3 | 3 | 3/3 | 3/3 |
+| commander-command-clash | 330k (289k–382k) | 239k (239k–291k) | −27.4% | $0.36 | $0.30 | −16.2% | 13 | 9 | 3/3 | 3/3 |
+| commander-extract-utils | 241k (234k–299k) | 267k (262k–307k) | +10.9% | $0.25 | $0.23 | −6.0% | 10 | 13 | 3/3 | 3/3 |
+| commander-negate-default-order | 457k (380k–490k) | 423k (269k–501k) | −7.5% | $0.45 | $0.35 | −22.3% | 14 | 15 | 3/3 | 3/3 |
+| commander-rename-display-width | 124k (74k–124k) | 125k (76k–125k) | +0.5% | $0.14 | $0.13 | −5.5% | 4 | 4 | 3/3 | 3/3 |
+| **Total** | **2.08M** | **2.02M** | **−2.9%** | **$2.05** | **$1.84** | **−10.5%** | 75 | 76 | **24/24** | **24/24** |
 
-Total tokens −15.8% (95% CI −28.3% to +0.4%); cost −19.4% (95% CI −26.2% to −10.2%).
+Total tokens −2.9% (95% CI −13.3% to +9.3%); cost −10.5% (95% CI −16.5% to −3.0%).
 
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.
 
-## claude-sonnet-5
+## claude-sonnet-5-5
 
-Model `claude-sonnet-5` (requested as `sonnet`) · Claude Code 2.1.282 · thinwindow 0.2.0 (30e9c6b), 0.1.0 (528598a) · 48 runs, up to 3 per task and condition · 2026-09-25 to 2026-09-26
+Model `claude-sonnet-5-5` · Claude Code 2.1.287 · thinwindow 0.3.0 (6546385) · 48 runs, up to 3 per task and condition · 2026-10-02
 
 | Task | Tokens baseline (min–max) | Tokens thinwindow (min–max) | Δ tokens | Cost baseline | Cost thinwindow | Δ cost | Turns baseline | Turns thinwindow | Success baseline | Success thinwindow |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| click-choice-brackets | 203k (149k–265k) | 194k (142k–233k) | −4.7% | $0.15 | $0.13 | −13.0% | 10 | 12 | 3/3 | 3/3 |
-| click-footer-year | 73k (72k–73k) | 73k (72k–74k) | +0.4% | $0.06 | $0.06 | −1.6% | 4 | 4 | 3/3 | 3/3 |
-| click-help-spec | 186k (163k–232k) | 83k (80k–107k) | −55.3% | $0.14 | $0.09 | −35.5% | 8 | 5 | 3/3 | 3/3 |
-| commander-ci-config | 75k (75k–75k) | 78k (77k–78k) | +3.9% | $0.06 | $0.07 | +4.5% | 4 | 4 | 3/3 | 3/3 |
-| commander-command-clash | 180k (159k–220k) | 137k (130k–204k) | −23.8% | $0.16 | $0.15 | −4.0% | 10 | 9 | 3/3 | 3/3 |
-| commander-extract-utils | 141k (80k–167k) | 189k (164k–266k) | +33.9% | $0.10 | $0.12 | +15.3% | 9 | 12 | 3/3 | 3/3 |
-| commander-negate-default-order | 258k (203k–327k) | 205k (151k–278k) | −20.3% | $0.17 | $0.15 | −8.5% | 13 | 12 | 3/3 | 3/3 |
-| commander-rename-display-width | 74k (55k–75k) | 74k (55k–76k) | −0.3% | $0.06 | $0.06 | −1.0% | 4 | 4 | 3/3 | 3/3 |
-| **Total** | **1.19M** | **1.03M** | **−13.2%** | **$0.91** | **$0.83** | **−7.9%** | 62 | 62 | **24/24** | **24/24** |
+| click-choice-brackets | 189k (102k–268k) | 127k (97k–226k) | −33.1% | $0.14 | $0.09 | −37.3% | 6 | 6 | 3/3 | 3/3 |
+| click-footer-year | 120k (90k–149k) | 153k (74k–215k) | +28.0% | $0.07 | $0.08 | +16.7% | 5 | 6 | 3/3 | 3/3 |
+| click-help-spec | 241k (150k–283k) | 129k (83k–268k) | −46.4% | $0.14 | $0.10 | −28.0% | 12 | 5 | 3/3 | 3/3 |
+| commander-ci-config | 124k (75k–156k) | 126k (77k–127k) | +2.1% | $0.08 | $0.08 | +2.2% | 4 | 4 | 3/3 | 3/3 |
+| commander-command-clash | 208k (125k–239k) | 242k (174k–271k) | +16.7% | $0.16 | $0.16 | −2.4% | 9 | 11 | 3/3 | 3/3 |
+| commander-extract-utils | 156k (96k–156k) | 193k (163k–298k) | +24.1% | $0.09 | $0.11 | +17.5% | 6 | 8 | 3/3 | 3/3 |
+| commander-negate-default-order | 204k (199k–299k) | 235k (171k–273k) | +15.1% | $0.14 | $0.15 | +4.6% | 11 | 10 | 3/3 | 3/3 |
+| commander-rename-display-width | 91k (55k–92k) | 93k (55k–125k) | +1.8% | $0.07 | $0.07 | +2.0% | 3 | 3 | 3/3 | 3/3 |
+| **Total** | **1.33M** | **1.30M** | **−2.6%** | **$0.88** | **$0.83** | **−6.5%** | 56 | 53 | **24/24** | **24/24** |
 
-Total tokens −13.2% (95% CI −30.4% to +7.0%); cost −7.9% (95% CI −18.4% to +2.5%).
+Total tokens −2.6% (95% CI −23.1% to +17.5%); cost −6.5% (95% CI −20.0% to +7.6%).
 
 Tokens are input + cache-creation + cache-read + output, summed over every model the run used. Per task: medians over all runs, failures included; min–max in parentheses. Total: sum of the per-task medians over the 8 tasks that have both conditions; success counts every run. Δ = (thinwindow − baseline) / baseline. Cost is Claude Code's own estimate (`total_cost_usd`), not a bill. Turns is Claude Code's `num_turns`: the top-level agent loop only. A run that delegates to a subagent (the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. The thinwindow rules and thresholds were tuned on these same tasks.
