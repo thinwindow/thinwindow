@@ -312,6 +312,54 @@ Two things are visible in the data above:
   turns" rules made Sonnet 5 measurably worse and was reverted rather than kept
   and quietly excluded — that reverted experiment is still in the history.
 
+## Differences between v0.2.2 and v0.3.0
+
+ThinWindow's measured effect shrank on all three models between 0.2.2 and 0.3.0,
+and much of that change came from outside the plugin. Three things changed at
+once:
+
+1. **Claude Code**: 2.1.282 for 0.2.2, 2.1.287 for 0.3.0.
+2. **The model**: Sonnet 5 was replaced by Sonnet 5.5; Opus 5.5 and Haiku 4.5
+   stayed the same.
+3. **The environment of the benchmark account**: on one of the two accounts used
+   for 0.3.0, Claude Code sessions start with tools, skills and plugins synced
+   from the account, the ones the Claude apps use. The benchmark's isolation
+   flags don't remove them, and each turn carries about 10k more tokens than on
+   the other account. Both conditions of each task ran on the same mix of
+   accounts, so the comparison stays paired, but the percentage gets diluted.
+
+A new way of measuring that tells these effects apart is tracked in
+[#28](https://github.com/thinwindow/thinwindow/issues/28).
+
+### What it did to the numbers (v0.2.2 vs v0.3.0)
+
+| Model | Tokens, 0.2.2 | Tokens, 0.3.0 | Cost, 0.2.2 | Cost, 0.3.0 |
+| --- | ---: | ---: | ---: | ---: |
+| Opus 5.5 | −15.8% | −2.9% | −19.4% | −10.5% |
+| Sonnet 5 → Sonnet 5.5 | −13.2% | −2.6% | −7.9% | −6.5% |
+| Haiku 4.5 | −23.0% | −3.3% | −20.2% | −7.7% |
+
+Change with ThinWindow against the baseline; sum of per-task medians. The
+intervals are in [Benchmark](#benchmark); every raw run is in
+[`bench/results/`](bench/results) and
+[`bench/results/archive/`](bench/results/archive).
+
+What the baselines (ThinWindow off) show:
+
+- **Sonnet 5.5 improved a lot on its own.** On the account without the synced
+  extras (16 runs, one per task and condition), the Sonnet 5.5 baseline used
+  0.90M tokens, against 1.19M for Sonnet 5 in 0.2.2: about a quarter less, at a
+  similar size per turn (17.5k against 18.5k tokens). With less to remove,
+  ThinWindow's effect on those runs was −0.2%. On the account with the extras
+  (32 runs, about 27.5k tokens per turn) it was +4.5%.
+- **Haiku 4.5**'s baseline went from 11.10M to 8.21M tokens. The 0.2.2 runs
+  carried about 43.5k tokens per turn and the 0.3.0 runs, all on the account
+  without the extras, about 36.9k, so the environment changed too, and the drop
+  can't be put down to Claude Code alone.
+- **Opus 5.5**'s baseline didn't change (2.10M against 2.08M tokens, both at
+  about 27k per turn). Its smaller effect in 0.3.0 isn't explained by a leaner
+  baseline.
+
 ## What ThinWindow does to tool output
 
 These figures measure the size of tool output, not cost. They come from a

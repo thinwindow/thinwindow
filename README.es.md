@@ -264,6 +264,56 @@ En los datos se ven dos cosas:
   resultados de Sonnet 5 de forma medible y se revirtió, en lugar de mantenerse y
   excluirse en silencio: ese experimento revertido sigue en el historial.
 
+## Diferencias entre v0.2.2 y v0.3.0
+
+Entre 0.2.2 y 0.3.0, el efecto medido de ThinWindow se achicó en los tres
+modelos, y buena parte de ese cambio vino de fuera del plugin. Cambiaron tres
+cosas a la vez:
+
+1. **Claude Code**: 2.1.282 en 0.2.2 y 2.1.287 en 0.3.0.
+2. **El modelo**: Sonnet 5 fue reemplazado por Sonnet 5.5; Opus 5.5 y Haiku 4.5
+   no cambiaron.
+3. **El entorno de la cuenta del benchmark**: en una de las dos cuentas usadas
+   para 0.3.0, las sesiones de Claude Code arrancan con herramientas, skills y
+   plugins sincronizados desde la cuenta, los mismos que usan las apps de
+   Claude. Las opciones de aislamiento del benchmark no los quitan, y cada turno
+   carga unos 10k tokens más que en la otra cuenta. Las dos condiciones de cada
+   tarea corrieron con la misma mezcla de cuentas, así que la comparación sigue
+   siendo pareja, pero el porcentaje se diluye.
+
+Una nueva forma de medir que separe estos efectos se sigue en
+[#28](https://github.com/thinwindow/thinwindow/issues/28).
+
+### Cómo cambiaron los números (v0.2.2 frente a v0.3.0)
+
+| Modelo | Tokens, 0.2.2 | Tokens, 0.3.0 | Costo, 0.2.2 | Costo, 0.3.0 |
+| --- | ---: | ---: | ---: | ---: |
+| Opus 5.5 | −15,8% | −2,9% | −19,4% | −10,5% |
+| Sonnet 5 → Sonnet 5.5 | −13,2% | −2,6% | −7,9% | −6,5% |
+| Haiku 4.5 | −23,0% | −3,3% | −20,2% | −7,7% |
+
+Cambio con ThinWindow frente a la línea base; suma de las medianas por tarea.
+Los intervalos están en [Benchmark](#benchmark); cada corrida cruda, en
+[`bench/results/`](bench/results) y
+[`bench/results/archive/`](bench/results/archive).
+
+Lo que muestran las corridas base (sin ThinWindow):
+
+- **Sonnet 5.5 mejoró mucho por sí solo.** En la cuenta sin los extras
+  sincronizados (16 corridas, una por tarea y condición), la base de Sonnet 5.5
+  usó 0,90M tokens, frente a 1,19M de Sonnet 5 en 0.2.2: cerca de un cuarto
+  menos, con un tamaño por turno parecido (17,5k frente a 18,5k tokens). Con
+  menos para recortar, el efecto de ThinWindow en esas corridas fue de −0,2%. En
+  la cuenta con los extras (32 corridas, unos 27,5k tokens por turno) fue de
+  +4,5%.
+- La base de **Haiku 4.5** pasó de 11,10M a 8,21M tokens. Las corridas de 0.2.2
+  cargaban unos 43,5k tokens por turno y las de 0.3.0, todas en la cuenta sin
+  los extras, unos 36,9k: el entorno también cambió, y la baja no puede
+  atribuirse solo a Claude Code.
+- La base de **Opus 5.5** no cambió (2,10M frente a 2,08M tokens, ambas con unos
+  27k por turno). Su efecto menor en 0.3.0 no se explica por una base más
+  liviana.
+
 ## Qué hace ThinWindow con la salida de las herramientas
 
 Estas cifras miden el tamaño de la salida de las herramientas, no el costo.
