@@ -106,7 +106,9 @@ Desligue quando quiser com `THINWINDOW=off`, ou com `"enabled": false` no
    - A releitura de um arquivo sem alterações que já está no contexto é recusada.
    - Instalações, builds, testes e linters passam pelo `thinwindow-run`: o log
      completo vai para um arquivo temporário e o agente vê o código de saída, o
-     final do log e as linhas de erro.
+     final do log e as linhas de erro. Quando não haveria nada a cortar (10
+     linhas ou menos se termina bem, 40 se falha), a saída volta como está, com
+     o código de saída se o comando falhou.
    - `cat` de arquivos enormes, lockfiles ou arquivos minificados, `git log` sem
      `-n`, `ls -R`, `tree` sem `-L` e `find` sem limite recebem uma alternativa
      mais barata. O `Grep` por conteúdo recebe `head_limit: 100`.
@@ -273,16 +275,16 @@ como a conta se divide.
 <!-- TIER1:START -->
 | Modelo | Chamadas nos rastros base | Repetidas | Alteradas pelos hooks | Saída das chamadas repetidas (caracteres) | Mudança |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 106 | 52 | 2 | 83.853 → 84.720 | +1,0% |
-| Sonnet 5 | 134 | 66 | 3 | 114.982 → 115.879 | +0,8% |
-| Haiku 4.5 | 366 | 250 | 41 | 861.988 → 524.951 | −39,1% |
+| Opus 5.5 | 106 | 52 | 2 | 83.849 → 83.856 | +0,0% |
+| Sonnet 5 | 134 | 66 | 2 | 115.021 → 115.028 | +0,0% |
+| Haiku 4.5 | 366 | 250 | 37 | 861.927 → 515.933 | −40,1% |
 
 Não repetidas: 183 chamadas que o rastro cortou (ele guarda 140 caracteres de cada), 33 que escrevem arquivos, rodam um script ou mudam o repositório, e 22 cujo arquivo não pôde ser identificado.
 
 A mudança na conta é outra grandeza, medida em [Benchmark](#benchmark), e não do mesmo tamanho:
-- Opus 5.5: os hooks alteram 2 de 106 chamadas e aumentam a saída repetida em 1,0%; no benchmark agiram em 1 de 16 execuções com ThinWindow, e a mudança medida no custo é −19,4% (IC 95% −26,2% a −10,2%).
-- Sonnet 5: os hooks alteram 3 de 134 chamadas e aumentam a saída repetida em 0,8%; no benchmark agiram em 3 de 24 execuções com ThinWindow, e a mudança medida no custo é −7,9% (IC 95% −18,4% a +2,5%).
-- Haiku 4.5: os hooks alteram 41 de 366 chamadas e reduzem a saída repetida em 39,1%; no benchmark agiram em 9 de 16 execuções com ThinWindow, e a mudança medida no custo é −20,2% (IC 95% −30,5% a −10,9%).
+- Opus 5.5: os hooks alteram 2 de 106 chamadas e aumentam a saída repetida em 0,0%; no benchmark agiram em 1 de 16 execuções com ThinWindow, e a mudança medida no custo é −19,4% (IC 95% −26,2% a −10,2%).
+- Sonnet 5: os hooks alteram 2 de 134 chamadas e aumentam a saída repetida em 0,0%; no benchmark agiram em 3 de 24 execuções com ThinWindow, e a mudança medida no custo é −7,9% (IC 95% −18,4% a +2,5%).
+- Haiku 4.5: os hooks alteram 37 de 366 chamadas e reduzem a saída repetida em 40,1%; no benchmark agiram em 9 de 16 execuções com ThinWindow, e a mudança medida no custo é −20,2% (IC 95% −30,5% a −10,9%).
 
 Onde os hooks quase não agem, a mudança medida vem das regras, que mudam o que o agente faz, ou do ruído entre execuções, não de cortar a saída das ferramentas.
 <!-- TIER1:END -->

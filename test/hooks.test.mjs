@@ -112,7 +112,8 @@ test('rewrite mode returns updatedInput without a permission decision', () => {
   const out = r.json.hookSpecificOutput;
   assert.deepEqual(out.updatedInput, { command: `${RUN} npm test`, description: 'Run tests' });
   assert.equal(out.permissionDecision, undefined);
-  assert.match(out.additionalContext, /thinwindow-run/);
+  // thinwindow-run's own output explains itself; no note is added.
+  assert.equal(out.additionalContext, undefined);
 });
 
 test('a direct thinwindow-run call is pointed at the runner, even in soft-block mode', () => {

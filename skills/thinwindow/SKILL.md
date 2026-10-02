@@ -42,7 +42,9 @@ to a log file in the OS temp dir, and prints only:
   matching error, fail, warn, panic or exception,
 - the path of the full log.
 
-It exits with the command's own exit code. Open the log only when the summary
+When nothing would be cut (at most 10 lines on success, 40 on failure), it
+prints the output as it is, plus the exit code if the command failed. It exits
+with the command's own exit code. Open the log only when the summary
 is not enough, and then grep it or read a range.
 
 ```sh

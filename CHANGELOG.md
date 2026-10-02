@@ -62,6 +62,13 @@ percentage. The plugin behaves as in 0.2.1.
   The dry-run estimate used the 5-minute rate.
 - The FAQ and the site said output is about 1% of the bill. That is its share
   of tokens; priced, it is 16–27% of the cost of the baseline runs.
+- `thinwindow-run` prints a short output as it is: when nothing would be cut
+  (at most 10 lines on success, 40 on failure) there is no command echo, line
+  count or log path, only the exit code if the command failed. It used to wrap
+  every output in a summary, and the hook added a note, which made short
+  output longer.
+- `git diff <file>` keeps its diff. The guard counted a path only after `--`,
+  so a diff the agent asked for by name came back as `--stat`.
 
 ## [0.2.1] - 2026-09-26
 

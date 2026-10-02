@@ -34,8 +34,10 @@ const USAGE = `usage: thinwindow-run <cmd> [args...]
 Runs the command, keeps its full output in a log file in the OS temp dir, and
 prints the exit code, the duration and the log path, plus the last
 ${SUCCESS_TAIL_LINES} lines on success, or on failure the last ${TAIL_LINES} lines and up to ${MATCH_LINES}
-earlier lines matching error/fail/warn/panic/exception. Exits with the
-command's exit code.`;
+earlier lines matching error/fail/warn/panic/exception. When nothing would be
+cut (at most ${SUCCESS_TAIL_LINES} lines on success, ${TAIL_LINES} on failure), it prints the output as
+it is, plus the exit code if the command failed. Exits with the command's exit
+code.`;
 
 function isOff(env) {
   const v = String(env.THINWINDOW || '').toLowerCase();
@@ -150,11 +152,17 @@ function formatDuration(ms) {
 }
 
 export function formatSummary({ display, code, signal, durationMs, summary, logPath }) {
-  const out = [];
+  const ok = code === 0 && !signal;
   const status = signal ? `killed by ${signal} (exit ${code})` : `exit ${code}`;
+  // Nothing was cut: the output comes back as it is, with the exit code if the
+  // command failed. A header and a log path would only make it longer.
+  if (summary.lines <= (ok ? SUCCESS_TAIL_LINES : TAIL_LINES)) {
+    const body = summary.lines ? `${summary.tail.join('\n')}\n` : '';
+    return ok ? body : `${body}${status}\n`;
+  }
+  const out = [];
   out.push(`$ ${display}`);
   out.push(`${status} · ${formatDuration(durationMs)} · ${summary.lines} ${summary.lines === 1 ? 'line' : 'lines'} of output`);
-  const ok = code === 0 && !signal;
   const tail = ok ? summary.tail.slice(-SUCCESS_TAIL_LINES) : summary.tail;
   if (summary.lines > 0) {
     out.push(tail.length < summary.lines ? `--- last ${tail.length} lines ---` : '--- output ---');
