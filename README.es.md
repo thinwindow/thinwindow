@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Adónde van los tokens</b></a> (en inglés) · <a href="#benchmark">Benchmark y datos crudos</a> · <a href="#instalación">Instalación</a>
+  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Adónde van los tokens</b></a> (en inglés) · <a href="#benchmark">Benchmark y datos crudos</a> · <a href="#instalación">Instalación</a> · <a href="https://www.youtube.com/watch?v=ks1_B5Uq5Gc">Video de instalación</a>
 </p>
 
 <p align="center">
@@ -77,6 +77,18 @@ con las corridas que no terminan: [Where the tokens go](docs/WHERE-THE-TOKENS-GO
 (en inglés).
 
 ## Instalación
+
+**Desde el directorio de plugins** (Claude Code, Cowork y las apps de Claude):
+en la app de escritorio de Claude, Customize → Plugins → Discover → ThinWindow;
+en Claude Code, `/plugin` → Discover → ThinWindow, o:
+
+```
+claude plugin install thinwindow@anthropic-plugin-directory
+```
+
+[Mirá la instalación desde la app de escritorio de Claude](https://www.youtube.com/watch?v=ks1_B5Uq5Gc). En las apps
+de Claude los plugins no ejecutan hooks, así que ahí ThinWindow funciona solo
+como Agent Skill; el benchmark se midió en Claude Code.
 
 **Claude Code** (reglas + hooks, la versión completa):
 

@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Where the tokens go</b></a> · <a href="#benchmark">Benchmark and raw data</a> · <a href="#install">Install</a>
+  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Where the tokens go</b></a> · <a href="#benchmark">Benchmark and raw data</a> · <a href="#install">Install</a> · <a href="https://www.youtube.com/watch?v=ks1_B5Uq5Gc">Install video</a>
 </p>
 
 <p align="center">
@@ -75,6 +75,18 @@ How the bill splits by kind of token, what the agent calls, and what happens
 to runs that don't finish: [Where the tokens go](docs/WHERE-THE-TOKENS-GO.md).
 
 ## Install
+
+**From the plugin directory** (Claude Code, Cowork and the Claude apps): in
+the Claude desktop app, Customize → Plugins → Discover → ThinWindow; in Claude
+Code, `/plugin` → Discover → ThinWindow, or:
+
+```
+claude plugin install thinwindow@anthropic-plugin-directory
+```
+
+[Watch it installed from the Claude desktop app](https://www.youtube.com/watch?v=ks1_B5Uq5Gc). In the Claude apps
+plugins don't run hooks, so ThinWindow works there as an Agent Skill only; the
+benchmark was measured in Claude Code.
 
 **Claude Code** (rules + hooks, the full version):
 
