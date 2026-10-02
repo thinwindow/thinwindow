@@ -2,8 +2,9 @@
 // Builds the `directory` branch: only the files the plugin directory needs,
 // taken from HEAD, in a worktree next to this checkout. The directory's
 // scanner reads everything on the branch it tracks, so bench/, the website,
-// images and CLAUDE.md stay out. Relative links in the Markdown files point
-// at main on GitHub, since their targets are not on this branch.
+// images and CLAUDE.md stay out. Relative links and images in the Markdown
+// files point on GitHub at the commit the branch is built from, since their
+// targets are not on this branch and main can lag behind that commit.
 //
 //   node scripts/build-directory.mjs [--dir <worktree>] [--no-validate]
 //
@@ -24,14 +25,14 @@ export const PATHS = ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 
 export const LIMITS = { files: 512, bytes: 256 * 1024 };
 const IMAGE = /\.(svg|png|jpe?g|gif|webp|ico)$/i;
 
-// A relative link target in `file` (a repo path) -> its URL on main. Images
-// resolve at `ref`, so a build can pin them to the commit it packages.
+// A relative link target in `file` (a repo path) -> its URL at `ref` on
+// GitHub, so a build can pin links and images to the commit it packages.
 export function absoluteUrl(target, file, isDir = () => false, ref = 'main') {
   if (/^([a-z][a-z0-9+.-]*:|#|\/\/)/i.test(target)) return target;
   const [path, hash] = target.split(/(?=#)/);
   const p = posix.normalize(posix.join(posix.dirname(file), path.replace(/^\//, '')));
   if (IMAGE.test(p)) return `${RAW}/${ref}/${p}${hash || ''}`;
-  return `${REPO}/${isDir(p) ? 'tree' : 'blob'}/main/${p}${hash || ''}`;
+  return `${REPO}/${isDir(p) ? 'tree' : 'blob'}/${ref}/${p}${hash || ''}`;
 }
 
 // Markdown links and images, and href/src attributes of inline HTML.
@@ -84,7 +85,7 @@ function ensureWorktree(dir) {
 
 export function build({ dir, validate = true, log = console.log }) {
   const head = git(['rev-parse', '--short', 'HEAD']).stdout.trim();
-  // Images pinned to this commit: main can lag behind the version being packaged.
+  // Links and images pinned to this commit: main can lag behind the version being packaged.
   const sha = git(['rev-parse', 'HEAD']).stdout.trim();
   ensureWorktree(dir);
   const wt = (args, opts) => git(args, { cwd: dir, ...opts });
