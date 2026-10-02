@@ -6,6 +6,22 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+
+- The benchmark measures Sonnet 5.5, which the `sonnet` alias now resolves to
+  (#21). Each run is filed under the model its `modelUsage` shows did the
+  work, not under what the alias maps to, and records its effort level as
+  Claude Code reports it, or `default`. Sonnet 5's runs move to
+  `bench/results/archive/` and the results table names them as legacy.
+- The trace keeps the last 200 characters of each tool result
+  (`traceTails`), so a repeated attempt can be read from the result files
+  (#7).
+- `scripts/build-directory.mjs` builds the `directory` branch the plugin
+  directory tracks: only the plugin's files, with the README's links pointing
+  at `main`.
+- The manifest names a support page (the issues) and a privacy page (what
+  ThinWindow reads, writes and sends).
+
 ### Changed
 
 - The plugin ships no `bin/`. Cowork and the Claude apps refuse a plugin with
@@ -16,6 +32,21 @@ project uses [Semantic Versioning](https://semver.org).
   the agent sees are unchanged.
 - Permission rules: `Bash(thinwindow-run *)` no longer matches. Allow
   `Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)` instead.
+- The hooks read three environment variables by name (`THINWINDOW`,
+  `THINWINDOW_DEBUG`, `CLAUDE_PROJECT_DIR`) instead of passing the whole
+  environment around. Behaviour is unchanged.
+- The README's tagline links to the page that backs it (#20).
+- CI actions updated (#22–#26).
+
+### Fixed
+
+- `thinwindow-run` prints a short output as it is: when nothing would be cut
+  (at most 10 lines on success, 40 on failure) there is no command echo, line
+  count or log path, only the exit code if the command failed. It used to wrap
+  every output in a summary, and the hook added a note, which made short
+  output longer.
+- `git diff <file>` keeps its diff. The guard counted a path only after `--`,
+  so a diff the agent asked for by name came back as `--stat`.
 
 ## [0.2.2] - 2026-09-27
 
@@ -62,13 +93,6 @@ percentage. The plugin behaves as in 0.2.1.
   The dry-run estimate used the 5-minute rate.
 - The FAQ and the site said output is about 1% of the bill. That is its share
   of tokens; priced, it is 16–27% of the cost of the baseline runs.
-- `thinwindow-run` prints a short output as it is: when nothing would be cut
-  (at most 10 lines on success, 40 on failure) there is no command echo, line
-  count or log path, only the exit code if the command failed. It used to wrap
-  every output in a summary, and the hook added a note, which made short
-  output longer.
-- `git diff <file>` keeps its diff. The guard counted a path only after `--`,
-  so a diff the agent asked for by name came back as `--stat`.
 
 ## [0.2.1] - 2026-09-26
 
