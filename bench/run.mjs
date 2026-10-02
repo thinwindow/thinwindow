@@ -13,7 +13,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { delimiter, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseInit, parseResult, parseTrace } from './lib/claude.mjs';
+import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseInit, parseResult, parseTrace, parseTraceTails } from './lib/claude.mjs';
 import { ROOT_DIR } from './lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from './lib/pricing.mjs';
 import { runProcess, runSync, tail, which } from './lib/proc.mjs';
@@ -284,6 +284,7 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     // Claude Code reports it, or as the env override, or as "default".
     record.effort = parseInit(res.stdout)?.effort ?? agentEnv.CLAUDE_CODE_EFFORT_LEVEL ?? 'default';
     record.trace = parseTrace(res.stdout);
+    record.traceTails = parseTraceTails(res.stdout);
     record.exitCode = res.code;
     record.timedOut = res.timedOut;
     record.wallMs = res.durationMs;
