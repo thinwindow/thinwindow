@@ -117,6 +117,9 @@ test('the report skill is user-invoked and runs the bundled script', () => {
   const m = /^!`node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"]+)" \$ARGUMENTS`$/m.exec(skill);
   assert.ok(m, 'injects the script output with !`...`');
   assert.ok(existsSync(join(ROOT, m[1])), m[1]);
+  // Outside auto mode an injected command that isn't allowed aborts the skill,
+  // so the skill pre-approves exactly that command, with or without --json.
+  assert.ok(skill.includes(`\n  - Bash(node "\${CLAUDE_PLUGIN_ROOT}/${m[1]}" *)\n`), 'allowed-tools pre-approves the injected command');
 });
 
 test('sync-rules replaces only the marked block', () => {
