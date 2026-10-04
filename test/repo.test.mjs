@@ -151,7 +151,7 @@ test('labels.json defines every label the templates and the stale workflow use',
 });
 
 test('the hooks read only the environment variables they name', () => {
-  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR']);
+  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR', 'CLAUDE_PLUGIN_DATA']);
   for (const dir of ['hooks', 'hooks/lib']) {
     for (const f of readdirSync(join(ROOT, dir)).filter((n) => n.endsWith('.mjs'))) {
       const reads = readFileSync(join(ROOT, dir, f), 'utf8').match(/process\.env(\.\w+)?/g) || [];

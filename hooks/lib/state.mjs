@@ -15,9 +15,10 @@ export function stateDir(base = tmpdir()) {
   return join(base, 'thinwindow', 'state');
 }
 
+export const safeId = (id) => String(id || 'no-session').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 128);
+
 export function statePath(sessionId, base) {
-  const safe = String(sessionId || 'no-session').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 128);
-  return join(stateDir(base), `${safe}.json`);
+  return join(stateDir(base), `${safeId(sessionId)}.json`);
 }
 
 function emptyState() {
@@ -34,7 +35,7 @@ export function loadState(path) {
   return emptyState();
 }
 
-function saveState(path, state) {
+export function saveState(path, state) {
   const tmp = `${path}.${process.pid}.tmp`;
   writeFileSync(tmp, JSON.stringify(state));
   renameSync(tmp, path);
@@ -110,7 +111,11 @@ export function resetState(sessionId, { base } = {}) {
 
 // Best-effort cleanup of state files from sessions older than a week.
 export function pruneStates({ base, now = Date.now() } = {}) {
-  const dir = stateDir(base);
+  pruneFiles(stateDir(base), { now });
+}
+
+// Removes the files in `dir` not modified for a week.
+export function pruneFiles(dir, { now = Date.now() } = {}) {
   let names = [];
   try {
     names = readdirSync(dir);

@@ -38,6 +38,7 @@ export const DEFAULTS = Object.freeze({
   enabled: true,
   maxReadLines: 400,
   rewrite: true,
+  briefs: true,
   noisyCommands: [],
   allowlist: Object.freeze({ paths: Object.freeze([]), commands: Object.freeze([]) }),
 });
@@ -62,6 +63,7 @@ function merge(acc, raw) {
   const out = { ...acc, allowlist: { ...acc.allowlist } };
   if (typeof raw.enabled === 'boolean') out.enabled = raw.enabled;
   if (typeof raw.rewrite === 'boolean') out.rewrite = raw.rewrite;
+  if (typeof raw.briefs === 'boolean') out.briefs = raw.briefs;
   if (Number.isInteger(raw.maxReadLines) && raw.maxReadLines > 0) out.maxReadLines = raw.maxReadLines;
   out.noisyCommands = [...acc.noisyCommands, ...stringList(raw.noisyCommands)];
   if (raw.allowlist && typeof raw.allowlist === 'object') {

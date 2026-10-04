@@ -98,6 +98,10 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
     `"rewrite": false`, a soft block that suggests `thinwindow-run <cmd>`.
 - **PreToolUse `Grep`**: a content search with no `head_limit` gets
   `head_limit: 100`.
+- **Stop**: update the session brief (#33) from what the transcript gained
+  since the last Stop, plus `git status` after a turn that could write files.
+  Prints nothing. Claude Code runs Stop hooks synchronously; `async` applies
+  to tool events only.
 - **`thinwindow-run`** (`skills/thinwindow/scripts/thinwindow-run.mjs`): the
   plugin ships no `bin/`, which Cowork and the Claude apps refuse, so the Bash
   hook runs it as `node '<path>'` and points a direct `thinwindow-run` call at
