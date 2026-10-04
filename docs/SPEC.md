@@ -233,17 +233,19 @@ Each feature belongs to one moment of a session. Every 0.3.0 mechanism stays.
 3. **Between sessions: resume without paying twice.**
    - Brief (#33): a Stop hook keeps a brief of the session up to date, built
      from the transcript without calling a model: the goal (the first prompt,
-     truncated), recent requests, files edited, commands with their exit
-     codes, the last message. Store it under `${CLAUDE_PLUGIN_DATA}`. An
+     truncated), recent requests, files edited (from `git status`, because
+     agents often edit through Bash), commands with their exit codes, the last
+     message. Store it under `${CLAUDE_PLUGIN_DATA}`. An
      optional, user-invoked `/thinwindow:brief` asks the model, while the
      cache is still warm, for a richer brief: decisions and why, what did not
      work, the exact next step.
    - Cold-resume notice (#34): on UserPromptSubmit, when the session was idle
      longer than the cache lifetime and its context is over a threshold, show
      the estimated re-write (tokens, and list-price US$ for the model in use)
-     and the choice: continue, or `/clear` and `/thinwindow:resume`. If
-     measurement shows `/compact` is as good, recommend `/compact` instead.
-     Never act on the user's behalf.
+     and the choice: continue, or `/clear` and `/thinwindow:resume`. The
+     default threshold is 100k tokens of context. Don't recommend `/compact`:
+     in #32 it cost more than both other options. Never act on the user's
+     behalf.
    - Fresh start: `/thinwindow:resume` injects a brief of at most 150 tokens.
      Mark it as historical reference to check against `git status`, limit it
      to the same project, expire it after 48 hours, and note the commits made
@@ -286,6 +288,9 @@ keeps a validation against no plugin and moves the weight elsewhere (#28,
   aggregates. Only the effect on task success needs runs, measured once.
 - A few targeted runs, with go/kill criteria written first, only where a
   decision depends on how the model reacts.
+- Price resumed runs from token usage, never from `total_cost_usd`: for a
+  resumed session, Claude Code's figure includes what the session had already
+  cost (#32).
 - One validation per release (#38), in a single environment, against no
   plugin: the existing tasks plus resume chains. Its intervals include
   run-to-run variation and state the smallest effect they can detect.
@@ -297,9 +302,9 @@ only holds on the bench doesn't ship.
 ### Risks
 
 - **Users don't want to start fresh.** The most expensive cold resumes are
-  often in sessions kept alive on purpose. The maintainer's self-check and the
-  resume experiment (#32) come before any build. The notice offers a choice
-  and never acts on its own.
+  often in sessions kept alive on purpose. The resume experiment (#32) ran
+  before any build, and the lifecycle features get a kill check after two
+  weeks of use. The notice offers a choice and never acts on its own.
 - **Platform absorption.** Claude Code may add its own resume handling, or
   change the cache lifetime or pricing. Apply subtractive maintenance, and
   recompute per-event claims from current prices.
@@ -319,11 +324,16 @@ only holds on the bench doesn't ship.
 
 Don't build a gated feature before its gate decides.
 
-- G1: `/thinwindow:report` data from at least 3 users besides the maintainer,
-  plus the maintainer's self-check. The lifecycle features go, shrink to the
-  notice only, or stop.
+- G1: the maintainer's own `/thinwindow:report` data, recorded as one user.
+  thinwindow is a solo project; summaries shared in #43 are added if they
+  arrive. The lifecycle features go, shrink to the notice only, or stop.
+  Decided 2026-10-04: go.
 - G2: the resume experiment (#32). Build the brief and the notice, recommend
-  `/compact`, or stop.
+  `/compact`, or stop. Decided 2026-10-04: no pre-written outcome matched, and
+  the maintainer chose go with conditions (#30):
+  - a notice that never acts, shown only above the threshold;
+  - a brief that lists edited files from `git status`;
+  - a kill check after two weeks of use.
 - G3: the setup-cost probe (#35). Ship the opt-in minimal-tools agent, or only
   the one-line notice.
 - G4: the validation (#38). It decides which claims the release makes, if any.
