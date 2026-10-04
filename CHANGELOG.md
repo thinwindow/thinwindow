@@ -22,6 +22,13 @@ manifest's description differs.
   transcripts, as aggregate numbers. `--json` prints a summary you can choose
   to share. The skill is user-invoked only, so it adds nothing to the skill
   listing.
+- `/thinwindow:resume`: after `/clear`, start from a brief of at most ~150
+  tokens of your last session in this project instead of re-paying its whole
+  context. A Stop hook keeps the brief at every turn without calling a model;
+  it is stored in the plugin's data folder, deleted after 7 days, and turned
+  off with `"briefs": false`.
+- `/thinwindow:brief`: Claude writes a handoff of the session while the cache
+  is still warm, kept in the brief.
 
 ## [0.3.0] - 2026-10-02
 

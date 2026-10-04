@@ -10,6 +10,7 @@ directory. Values in the project file override the home file; lists
   "enabled": true,
   "maxReadLines": 400,
   "rewrite": true,
+  "briefs": true,
   "noisyCommands": ["^just (build|test)\\b"],
   "allowlist": {
     "paths": ["docs/**", "*.lock"],
@@ -23,6 +24,7 @@ directory. Values in the project file override the home file; lists
 | `enabled` | `true` | `false` turns every hook off for that project (or everywhere, in `~/.thinwindow.json`). |
 | `maxReadLines` | `400` | A whole-file `Read` (no `offset`/`limit`) of a file with more lines than this is denied, and so is `cat` of such a file. |
 | `rewrite` | `true` | Runs uncapped noisy commands through `thinwindow-run` automatically (via the hook's `updatedInput`), so the agent gets a summary without spending a turn on a denial. The rewritten command still goes through your normal permission rules. `false` denies them instead, with a soft block. |
+| `briefs` | `true` | `false` stops the Stop hook from writing session briefs for `/thinwindow:resume`. Briefs already written are deleted after 7 days. |
 | `noisyCommands` | see below | Extra regular expressions for noisy commands. They are added to the built-in list. |
 | `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files thinwindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
 | `allowlist.commands` | `[]` | Regular expressions for Bash commands thinwindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
@@ -107,11 +109,21 @@ thinwindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any
 reason, the tool call proceeds.
 
+**Stop** (the end of every turn) updates the session's brief for
+`/thinwindow:resume`. It reads only what the transcript gained since the last
+turn (at most 4 MB per turn), runs `git status` after a turn that used Bash,
+Edit or Write, and prints nothing. Claude Code waits for Stop hooks before
+the turn ends, so this one skips its work when the transcript hasn't grown.
+
 ## State and logs
 
 - Read tracking lives in one JSON file per session in
   `<os temp dir>/thinwindow/state/`. Files older than a week are removed at
   the start of a new session.
 - `thinwindow-run` logs go to `<os temp dir>/thinwindow/logs/` and are removed
-  after a week. Nothing is written inside your repository, and nothing is
+  after a week.
+- Session briefs live in `<plugin data dir>/briefs/<project hash>/<session id>.json`
+  (`~/.claude/plugins/data/` holds the plugin data dir), and are removed after
+  a week, at the start of a new session. `/thinwindow:resume` reads the newest
+  one under 48 hours old for the current project. Nothing is written inside your repository, and nothing is
   sent anywhere.
