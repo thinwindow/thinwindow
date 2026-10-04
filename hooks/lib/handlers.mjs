@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
 import { HOOK_ENV, debug } from './hook-io.mjs';
 import { checkBash, resolveRunner } from './bash-guard.mjs';
+import { pruneBriefs } from './brief.mjs';
 import { checkGrepTool } from './grep-guard.mjs';
 import { checkRead } from './read-guard.mjs';
 import { pruneStates, resetState, updateState } from './state.mjs';
@@ -31,6 +32,7 @@ export function handleSessionStart(input, { env = HOOK_ENV, home, stateBase } = 
     debug(`SessionStart(${input.source}): read-tracking state reset`, env);
   } else if (input.source === 'startup') {
     pruneStates({ base: stateBase });
+    if (env.CLAUDE_PLUGIN_DATA) pruneBriefs(env.CLAUDE_PLUGIN_DATA);
   }
   const rules = readFileSync(RULES_PATH, 'utf8').trim();
   return { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: rules } };
@@ -96,3 +98,4 @@ export function handlePreToolUse(input, { env = HOOK_ENV, home, stateBase, now =
   }
   return null;
 }
+
