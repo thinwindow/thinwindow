@@ -16,6 +16,13 @@ project uses [Semantic Versioning](https://semver.org).
 The hooks, the skill and the rules are the same at all three; only the
 manifest's description differs.
 
+### Added
+
+- `/thinwindow:report`: where your sessions' context cost went, from your own
+  transcripts, as aggregate numbers. `--json` prints a summary you can choose
+  to share. The skill is user-invoked only, so it adds nothing to the skill
+  listing.
+
 ## [0.3.0] - 2026-10-02
 
 ### Measured

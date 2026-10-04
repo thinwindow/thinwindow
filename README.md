@@ -156,6 +156,51 @@ No dependencies, no telemetry, Node 18+. Details and every option:
   `thinwindow-run`. Both are deleted after 7 days.
 - **Sends:** nothing. There is no network code.
 
+`/thinwindow:report` also reads your Claude Code transcripts, only when you
+run it. See below.
+
+### `/thinwindow:report`: where your context went
+
+Type `/thinwindow:report` in Claude Code with the plugin installed. It reads
+the transcripts of your own sessions on this machine and prints, on one
+screen:
+
+- how much context each request re-sends, on average and in your longest
+  sessions;
+- how often a session was re-written after the prompt cache expired (idle
+  over 60 minutes), at what context size, and what those re-writes cost at
+  list price;
+- what a session's first request carries, and its largest parts: skill
+  listing, deferred tools, MCP instructions, CLAUDE.md files;
+- whose tool output is re-sent most (Bash, Read, MCP tools...), and in what
+  sizes;
+- what ThinWindow did in the last 7 days.
+
+The amounts are what is at stake, not what ThinWindow saved. US$ figures
+price each request at its own model's Anthropic API list price; on a
+subscription, read them as a relative size.
+
+- **Reads:** `~/.claude/projects/**/*.jsonl` (`$CLAUDE_CONFIG_DIR/projects`
+  if you set it), one line at a time, and ThinWindow's own counts in the temp
+  directory. It writes nothing.
+- **Prints:** aggregate numbers, with its own labels.
+- **Never prints:** prompts, file contents, commands, paths, project names,
+  session ids, or the names of your tools, models or MCP servers. A test
+  checks this.
+- **Sends:** nothing. Through the slash command, the printed numbers become
+  part of your conversation, like any command output. To keep them out, run
+  the script yourself: `! node <plugin dir>/skills/thinwindow/scripts/thinwindow-report.mjs`.
+  With only the Agent Skill installed, the script is in that skill's
+  `scripts/` folder.
+
+If Claude Code changes its transcript format, the report says "format not
+recognized" instead of printing wrong numbers.
+
+**Share your numbers, if you want to.** `/thinwindow:report --json` prints a
+short summary: shares, token sizes and counts, with no US$ amounts and no
+names. Pasting it in [#31](https://github.com/thinwindow/thinwindow/issues/31)
+helps decide what ThinWindow builds next. Nothing is collected automatically.
+
 ## Benchmark
 
 <!-- BENCH:START -->
