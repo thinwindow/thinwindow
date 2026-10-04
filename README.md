@@ -198,7 +198,7 @@ recognized" instead of printing wrong numbers.
 
 **Share your numbers, if you want to.** `/thinwindow:report --json` prints a
 short summary: shares, token sizes and counts, with no US$ amounts and no
-names. Pasting it in [#31](https://github.com/thinwindow/thinwindow/issues/31)
+names. Pasting it in [#43](https://github.com/thinwindow/thinwindow/issues/43)
 helps decide what ThinWindow builds next. Nothing is collected automatically.
 
 ## Benchmark
