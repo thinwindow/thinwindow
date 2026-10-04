@@ -184,6 +184,150 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
 
 Out of scope for v0.1: an npm package, anything hosted, telemetry.
 
+## Direction (0.4.0)
+
+0.4.0 widens thinwindow's scope from the single tool call to the whole
+session. The analysis behind it and the work list are in
+[#30](https://github.com/thinwindow/thinwindow/issues/30). Where this section
+and the v0.1 sections above disagree, this section applies to 0.4.0 work.
+
+### Cost model
+
+A session's context is paid on every request, and once more, in full, when the
+session resumes after its cache entry expired. For a session of n requests:
+
+```
+cost ≈ Σᵢ [ (P + Cᵢ)·r + Nᵢ·w + Oᵢ·o ]  +  Σ_cold (P + C)·w
+```
+
+- P: the fixed prefix (system prompt, tool schemas, skill and agent listings,
+  MCP instructions, CLAUDE.md). Cᵢ: the conversation before request i.
+- Nᵢ: content written to the cache at request i. Oᵢ: output, thinking included.
+- r, w, o: cache-read, cache-write and output prices. Σ_cold: requests sent
+  after the cache entry expired. Claude Code writes 1-hour entries.
+
+Beyond single tool calls, work on three levers: P × n, the lifetime of C, and O.
+
+### Four moments
+
+Each feature belongs to one moment of a session. Every 0.3.0 mechanism stays.
+
+1. **Start: show what every request carries.**
+   - After the first response of a session, a Stop hook reads that request's
+     usage and attachment records from `transcript_path`. If the prefix is
+     over a threshold, show one line, at most once a day per project: the
+     total and its largest contributors (skill listing, deferred tools, MCP
+     instructions, CLAUDE.md), with a pointer to `/context`.
+   - Only if measurement supports it (#35): an opt-in `thinwindow:minimal`
+     agent. Its body is empty, so Claude Code keeps its default system prompt,
+     and its `disallowedTools` come from measured tool usage. The user enables
+     it; thinwindow never sets it and never edits configuration.
+2. **During: keep the window thin.**
+   - Keep the PreToolUse guards, `thinwindow-run` and the SessionStart rules
+     described above.
+   - Rules v2 (#36): fewer rules, each kept only if recorded traces show it
+     changes behaviour. Output discipline: no narration between tool calls,
+     short endings, `file:line` instead of pasted code, Edit instead of a
+     full-file Write. Output costs the most per token, and every later request
+     re-reads it.
+3. **Between sessions: resume without paying twice.**
+   - Brief (#33): a Stop hook keeps a brief of the session up to date, built
+     from the transcript without calling a model: the goal (the first prompt,
+     truncated), recent requests, files edited, commands with their exit
+     codes, the last message. Store it under `${CLAUDE_PLUGIN_DATA}`. An
+     optional, user-invoked `/thinwindow:brief` asks the model, while the
+     cache is still warm, for a richer brief: decisions and why, what did not
+     work, the exact next step.
+   - Cold-resume notice (#34): on UserPromptSubmit, when the session was idle
+     longer than the cache lifetime and its context is over a threshold, show
+     the estimated re-write (tokens, and list-price US$ for the model in use)
+     and the choice: continue, or `/clear` and `/thinwindow:resume`. If
+     measurement shows `/compact` is as good, recommend `/compact` instead.
+     Never act on the user's behalf.
+   - Fresh start: `/thinwindow:resume` injects a brief of at most 150 tokens.
+     Mark it as historical reference to check against `git status`, limit it
+     to the same project, expire it after 48 hours, and note the commits made
+     since it was written.
+4. **After: show where the sessions' context cost went.**
+   - `/thinwindow:report` (#31), a user-invoked skill, runs a local script
+     over the user's own transcripts and prints aggregate numbers: context
+     re-sent per request, cache re-writes after idle gaps, prefix size and its
+     largest contributors, the main sources of tool output, and what
+     thinwindow did. An optional `--json` summary is for the user to share by
+     choice. Nothing is sent anywhere.
+
+User-invoked skills set `disable-model-invocation: true`, so they add nothing
+to the skill listing paid on every request.
+
+### Principles (0.4.0)
+
+The principles above still apply. 0.4.0 adds:
+
+- Fail open on prompts too: a thinwindow error never blocks a tool call or a
+  prompt.
+- Local only: no telemetry, no network calls from hooks.
+- Nothing always-on unless it pays for itself on every request.
+- No automatic configuration changes. thinwindow recommends; the user decides.
+- Subtractive maintenance: when Claude Code does something natively, remove
+  thinwindow's version and say so in the CHANGELOG.
+- Write each new feature's go/kill criterion before building or measuring it.
+
+### Measurement (0.4.0)
+
+0.3.0's published results keep the method they were published with. 0.4.0
+keeps a validation against no plugin and moves the weight elsewhere (#28,
+#37):
+
+- Replay of recorded sessions, at no model cost: how much is at stake, and
+  what a mechanism would have changed. Run it on the benchmark's transcripts
+  and, voluntarily, on users' own sessions.
+- Per-event arithmetic: derive claims such as the cost of a cold resume
+  against a fresh start from token counts and current prices, not from noisy
+  aggregates. Only the effect on task success needs runs, measured once.
+- A few targeted runs, with go/kill criteria written first, only where a
+  decision depends on how the model reacts.
+- One validation per release (#38), in a single environment, against no
+  plugin: the existing tasks plus resume chains. Its intervals include
+  run-to-run variation and state the smallest effect they can detect.
+
+Compare conditions only within one environment (Claude Code version, model,
+account). Replay any cache-related change on real sessions too: a result that
+only holds on the bench doesn't ship.
+
+### Risks
+
+- **Users don't want to start fresh.** The most expensive cold resumes are
+  often in sessions kept alive on purpose. The maintainer's self-check and the
+  resume experiment (#32) come before any build. The notice offers a choice
+  and never acts on its own.
+- **Platform absorption.** Claude Code may add its own resume handling, or
+  change the cache lifetime or pricing. Apply subtractive maintenance, and
+  recompute per-event claims from current prices.
+- **Undocumented transcript format.** `transcript_path` is a documented hook
+  input; the file's content is not a stable API. Parse it within bounds, test
+  it with fixtures, fail open, and check versions in the report.
+- **Crowded space.** Native memory (CLAUDE.md, auto-memory), usage tools and
+  other session plugins overlap. Keep the angle narrow: cheap continuity with
+  no always-on injection, and cost measured per event.
+- **Model-dependent effects fade.** A model that already writes concisely
+  shrinks the rules' effect. The lifecycle features depend on cache economics,
+  not on model behaviour. Re-check the rules per model with the replay.
+- **Maintenance load.** One maintainer. Keep few files and zero dependencies,
+  and remove a feature when the platform covers it.
+
+### Decision gates
+
+Don't build a gated feature before its gate decides.
+
+- G1: `/thinwindow:report` data from at least 3 users besides the maintainer,
+  plus the maintainer's self-check. The lifecycle features go, shrink to the
+  notice only, or stop.
+- G2: the resume experiment (#32). Build the brief and the notice, recommend
+  `/compact`, or stop.
+- G3: the setup-cost probe (#35). Ship the opt-in minimal-tools agent, or only
+  the one-line notice.
+- G4: the validation (#38). It decides which claims the release makes, if any.
+
 ## Hard constraints for whoever builds this
 
 - Don't make the repo public, publish packages, or post anywhere. Ivan does that.
