@@ -45,6 +45,9 @@ const COMPACT_EST_USD = 0.03;
 
 // --- The brief (#33 reuses this format) ---
 
+// A path inside cwd as a relative, forward-slash path; others unchanged.
+const relPath = (cwd, file) => (cwd && file.startsWith(cwd) ? relative(cwd, file).replace(/\\/g, '/') : file);
+
 const clip = (s, n) => {
   const t = String(s ?? '').replace(/\s+/g, ' ').trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
@@ -81,7 +84,7 @@ export function buildBrief(records, { cwd = '' } = {}) {
       if (rec.type === 'assistant' && b.type === 'tool_use') {
         const file = b.input?.file_path || b.input?.notebook_path;
         if (/^(Edit|MultiEdit|Write|NotebookEdit)$/.test(b.name) && file) {
-          const rel = cwd && file.startsWith(cwd) ? relative(cwd, file) : file;
+          const rel = relPath(cwd, file);
           if (!edited.includes(rel)) edited.push(rel);
         }
         if (b.name === 'Bash' && b.input?.command) commands.set(b.id, { cmd: String(b.input.command).split('\n')[0], exit: null });
@@ -147,7 +150,7 @@ export function readPaths(stdout, cwd = '') {
     for (const b of e?.type === 'assistant' && Array.isArray(e.message?.content) ? e.message.content : []) {
       if (b.type === 'tool_use' && b.name === 'Read' && b.input?.file_path) {
         const f = b.input.file_path;
-        out.add(cwd && f.startsWith(cwd) ? relative(cwd, f) : f);
+        out.add(relPath(cwd, f));
       }
     }
   }
