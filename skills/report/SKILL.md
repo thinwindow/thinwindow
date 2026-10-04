@@ -2,6 +2,8 @@
 name: report
 description: See where your Claude Code sessions' context cost went, from the transcripts on this machine. Aggregate numbers only. Add --json for a short summary you can choose to share.
 disable-model-invocation: true
+allowed-tools:
+  - Bash(node "${CLAUDE_PLUGIN_ROOT}/skills/thinwindow/scripts/thinwindow-report.mjs" *)
 metadata:
   internal: true
 ---
