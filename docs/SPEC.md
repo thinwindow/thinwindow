@@ -102,6 +102,12 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
   since the last Stop, plus `git status` after a turn that could write files.
   Prints nothing. Claude Code runs Stop hooks synchronously; `async` applies
   to tool events only.
+- **UserPromptSubmit**: the cold-resume notice (#34). When the session's last
+  request (read from the transcript's last 256 KB) is over an hour old and its
+  context is at least `coldResumeMinTokens` (100k), hold the prompt once with
+  what continuing re-writes and what a fresh start re-writes. Sending again
+  continues. Never hold a command, a prompt Claude Code writes itself, or a
+  prompt in a session no person attends (`-p`, SDK, background).
 - **`thinwindow-run`** (`skills/thinwindow/scripts/thinwindow-run.mjs`): the
   plugin ships no `bin/`, which Cowork and the Claude apps refuse, so the Bash
   hook runs it as `node '<path>'` and points a direct `thinwindow-run` call at
