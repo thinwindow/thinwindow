@@ -148,15 +148,18 @@ No dependencies, no telemetry, Node 18+. Details and every option:
   command or a search pattern); the line count and an outline of files the
   agent is about to read or print; its settings from `.thinwindow.json` in the
   project and in your home directory; and the environment variables
-  `THINWINDOW`, `THINWINDOW_DEBUG`, `CLAUDE_PROJECT_DIR` and
-  `CLAUDE_PLUGIN_DATA`. At the end of each turn, it reads the part of the
+  `THINWINDOW`, `THINWINDOW_DEBUG`, `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_DATA`
+  and `CLAUDE_CODE_SESSION_ATTENDED`. Before each prompt you send, it reads the
+  last 256 KB of the session's transcript (and the first 256 KB when a
+  cold-resume notice is due). At the end of each turn, it reads the part of the
   session's transcript written since the last turn, and runs `git status` in
   the session's folder after a turn that could have changed files. It reads no
   credentials.
 - **Writes:** to your operating system's temp directory: one small JSON file
-  per session (which files and ranges were read, recent refusals, and counts
-  of what the hooks did) and the full log of each command run through
-  `thinwindow-run`. And to the plugin's data folder in Claude Code
+  per session (which files and ranges were read, recent refusals, when a
+  cold-resume notice was last shown, and counts of what the hooks did) and
+  the full log of each command run through `thinwindow-run`. And to the
+  plugin's data folder in Claude Code
   (`~/.claude/plugins/data/`): one small session brief per session, in a
   folder per project. A brief holds **excerpts of your prompts and of
   Claude's replies**: the first prompt (up to 200 characters), the last three
@@ -182,6 +185,13 @@ with their exit codes, and the last reply. The brief is marked as reference to
 check against `git status`, notes the commits made since, and expires after 48
 hours. The hooks keep it up to date at the end of every turn without calling a
 model, and a session that never uses it gains no tokens.
+
+When you send a prompt to a session that has been idle for over an hour with
+at least 100k tokens of context, ThinWindow holds it once and shows what
+continuing re-writes (tokens, and US$ at the model's list price) next to a
+fresh start from the brief. Send it again to continue. Commands are never held,
+and neither are prompts in `-p`, SDK or background sessions.
+`"coldResumeNotice": false` turns the notice off.
 
 Before stepping away, `/thinwindow:brief` has Claude write a short handoff
 (where it stopped, decisions, what didn't work, the next step) while the cache

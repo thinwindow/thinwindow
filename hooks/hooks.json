@@ -1,5 +1,5 @@
 {
-  "description": "thinwindow: inject the reading rules at session start, guard wasteful Read and Bash calls, and keep a session brief at every Stop for /thinwindow:resume. Schema: https://code.claude.com/docs/en/hooks#configuration and https://code.claude.com/docs/en/plugins-reference#hooks",
+  "description": "thinwindow: inject the reading rules at session start, guard wasteful Read and Bash calls, keep a session brief at every Stop for /thinwindow:resume, and hold the first prompt to a large session whose prompt cache expired, once, with what continuing costs. Schema: https://code.claude.com/docs/en/hooks#configuration and https://code.claude.com/docs/en/plugins-reference#hooks",
   "hooks": {
     "SessionStart": [
       {
@@ -9,6 +9,18 @@
             "type": "command",
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.mjs"],
             "timeout": 10
           }
         ]
