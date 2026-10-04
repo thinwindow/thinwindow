@@ -6,6 +6,16 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+0.3.0 was measured, packaged and tagged at three different commits:
+
+- measured: `6546385`, the commit every 0.3.0 benchmark run used;
+- packaged: `f6d074a`, from which `scripts/build-directory.mjs` built the
+  `directory` branch at `a7cb8ce`, the commit the plugin directory installs;
+- tagged: `v0.3.0`, at `b874cf1`.
+
+The hooks, the skill and the rules are the same at all three; only the
+manifest's description differs.
+
 ## [0.3.0] - 2026-10-02
 
 ### Measured
