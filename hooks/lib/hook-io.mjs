@@ -10,12 +10,14 @@
 const STDIN_TIMEOUT_MS = 5000;
 
 // The only environment variables the hooks read: the off switch, the debug
-// switch and the project dir Claude Code sets. Nothing else from the
-// environment is read or passed around.
+// switch, and the project dir and plugin data dir Claude Code sets
+// (https://code.claude.com/docs/en/plugins-reference#environment-variables).
+// Nothing else from the environment is read or passed around.
 export const HOOK_ENV = {
   THINWINDOW: process.env.THINWINDOW,
   THINWINDOW_DEBUG: process.env.THINWINDOW_DEBUG,
   CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
+  CLAUDE_PLUGIN_DATA: process.env.CLAUDE_PLUGIN_DATA,
 };
 
 export function debugEnabled(env = HOOK_ENV) {
@@ -42,8 +44,10 @@ async function readStdin() {
 // Runs `handler(input)` and writes its return value as JSON. A handler that
 // returns null/undefined prints nothing. Any error (bad JSON, a bug, a
 // timeout) exits 0 without output: thinwindow never blocks a tool call
-// because of its own failure.
-export async function runHook(name, handler) {
+// because of its own failure. `redact` logs an error's type and stack frames
+// but not its message, which can quote the input (a Stop's input carries the
+// last reply).
+export async function runHook(name, handler, { redact = false } = {}) {
   const bail = setTimeout(() => {
     debug(`${name}: timed out, allowing`);
     process.exit(0);
@@ -55,7 +59,8 @@ export async function runHook(name, handler) {
     const output = await handler(input);
     if (output) process.stdout.write(JSON.stringify(output));
   } catch (err) {
-    debug(`${name}: error, allowing: ${err && err.stack ? err.stack : err}`);
+    const detail = redact ? [err?.name, err?.code, ...String(err?.stack || '').split('\n').slice(1)].filter(Boolean).join('\n') : err && err.stack ? err.stack : err;
+    debug(`${name}: error, allowing: ${detail}`);
   }
   process.exitCode = 0;
 }

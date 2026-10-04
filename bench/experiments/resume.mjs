@@ -24,6 +24,7 @@ import { homedir, platform, release } from 'node:os';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+import { BRIEF_MAX_CHARS, buildBrief, relPath } from '../../hooks/lib/brief.mjs';
 import { buildClaudeArgs, claudeEnv, claudeVersion, parseInit, parseResult, parseTrace } from '../lib/claude.mjs';
 import { RESULTS_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../lib/paths.mjs';
 import { priceOf, resolveModel } from '../lib/pricing.mjs';
@@ -39,75 +40,12 @@ export const CHAINS = [
   ['commander-extract-utils', 'commander-rename-display-width'],
 ];
 export const ARMS = ['continue', 'compact', 'brief'];
-export const BRIEF_MAX_CHARS = 1200; // ~300 tokens at 4 chars per token
 const EXPERIMENTS_DIR = join(RESULTS_DIR, 'experiments');
 const COMPACT_EST_USD = 0.03;
 
-// --- The brief (#33 reuses this format) ---
+// --- The brief: hooks/lib/brief.mjs, shared with the Stop hook (#33) ---
 
-// A path inside cwd as a relative, forward-slash path; others unchanged.
-const relPath = (cwd, file) => (cwd && file.startsWith(cwd) ? relative(cwd, file).replace(/\\/g, '/') : file);
-
-const clip = (s, n) => {
-  const t = String(s ?? '').replace(/\s+/g, ' ').trim();
-  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
-};
-
-function promptText(rec) {
-  if (rec.type !== 'user' || rec.isMeta || rec.isCompactSummary) return null;
-  const c = rec.message?.content;
-  if (typeof c === 'string') return c.startsWith('<') ? null : c;
-  if (!Array.isArray(c) || c.some((b) => b.type === 'tool_result')) return null;
-  const text = c.filter((b) => b.type === 'text').map((b) => b.text).join(' ');
-  return text && !text.startsWith('<') ? text : null;
-}
-
-function resultText(block) {
-  const c = block.content;
-  return typeof c === 'string' ? c : Array.isArray(c) ? c.map((p) => p.text || '').join(' ') : '';
-}
-
-// A ≤ 300-token brief of a session, built from its transcript records without
-// calling a model. Fields: goal, recent requests, files edited, commands with
-// exit codes, last message.
-export function buildBrief(records, { cwd = '' } = {}) {
-  const prompts = [];
-  const edited = [];
-  const commands = new Map(); // tool_use id -> { cmd, exit }
-  let last = '';
-  for (const rec of records) {
-    const p = promptText(rec);
-    if (p) prompts.push(p);
-    const content = Array.isArray(rec.message?.content) ? rec.message.content : [];
-    for (const b of content) {
-      if (rec.type === 'assistant' && b.type === 'text' && b.text.trim()) last = b.text;
-      if (rec.type === 'assistant' && b.type === 'tool_use') {
-        const file = b.input?.file_path || b.input?.notebook_path;
-        if (/^(Edit|MultiEdit|Write|NotebookEdit)$/.test(b.name) && file) {
-          const rel = relPath(cwd, file);
-          if (!edited.includes(rel)) edited.push(rel);
-        }
-        if (b.name === 'Bash' && b.input?.command) commands.set(b.id, { cmd: String(b.input.command).split('\n')[0], exit: null });
-      }
-      if (rec.type === 'user' && b.type === 'tool_result' && commands.has(b.tool_use_id)) {
-        const m = /Exit code (\d+)/.exec(resultText(b));
-        commands.get(b.tool_use_id).exit = b.is_error ? (m ? Number(m[1]) : 1) : 0;
-      }
-    }
-  }
-  const cmds = [...commands.values()].slice(-4).map((c) => `\`${clip(c.cmd, 70)}\` → ${c.exit === null ? '?' : `exit ${c.exit}`}`);
-  const files = edited.length > 8 ? [...edited.slice(0, 8), `+${edited.length - 8} more`] : edited;
-  const lines = [
-    'Brief of an earlier session in this repository, for reference only: check it against `git status` and the files before relying on it.',
-    `Goal: ${clip(prompts[0], 200) || 'unknown'}`,
-    `Recent requests: ${prompts.slice(1).slice(-3).map((p) => clip(p, 80)).join(' | ') || 'none'}`,
-    `Files edited: ${files.join(', ') || 'none'}`,
-    `Commands: ${cmds.join('; ') || 'none'}`,
-  ];
-  const head = lines.join('\n');
-  const room = BRIEF_MAX_CHARS - head.length - '\nLast message: '.length;
-  return `${head}\nLast message: ${clip(last, Math.max(40, room)) || 'none'}`.slice(0, BRIEF_MAX_CHARS);
-}
+export { BRIEF_MAX_CHARS, buildBrief };
 
 // --- Usage and costs ---
 
