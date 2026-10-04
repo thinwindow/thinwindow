@@ -1,7 +1,7 @@
 // The same checks CI runs through scripts/check.mjs, plus unit tests for
 // the validators themselves.
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -103,6 +103,23 @@ test('validateSkill and parseFrontmatter', () => {
   assert.ok(validateSkill('---\nname: a\n---\n', 'a').length > 0);
   assert.ok(validateSkill('---\nname: a\ndescription: x\nmodel: opus\n---\n', 'a').length > 0);
   assert.ok(validateSkill('no frontmatter', 'a').length > 0);
+  // Claude Code-only fields only in skills hidden from `npx skills`.
+  assert.ok(validateSkill('---\nname: a\ndescription: x\ndisable-model-invocation: true\n---\n', 'a').length > 0);
+  assert.deepEqual(validateSkill('---\nname: a\ndescription: x\ndisable-model-invocation: true\nmetadata:\n  internal: true\n---\n', 'a'), []);
+  assert.ok(validateSkill('---\nname: a\ndescription: x\nmodel: opus\nmetadata:\n  internal: true\n---\n', 'a').length > 0);
+});
+
+test('the report skill is user-invoked and runs the bundled script', () => {
+  const skill = readFileSync(join(ROOT, 'skills', 'report', 'SKILL.md'), 'utf8');
+  assert.deepEqual(validateSkill(skill, 'report'), []);
+  // Out of the skill listing paid on every request.
+  assert.equal(parseFrontmatter(skill)['disable-model-invocation'], 'true');
+  const m = /^!`node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"]+)" \$ARGUMENTS`$/m.exec(skill);
+  assert.ok(m, 'injects the script output with !`...`');
+  assert.ok(existsSync(join(ROOT, m[1])), m[1]);
+  // Outside auto mode an injected command that isn't allowed aborts the skill,
+  // so the skill pre-approves exactly that command, with or without --json.
+  assert.ok(skill.includes(`\n  - Bash(node "\${CLAUDE_PLUGIN_ROOT}/${m[1]}" *)\n`), 'allowed-tools pre-approves the injected command');
 });
 
 test('sync-rules replaces only the marked block', () => {
