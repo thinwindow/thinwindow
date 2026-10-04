@@ -69,12 +69,15 @@ const SETUP_LABEL = {
 };
 const TOOL_LABEL = { bash: 'Bash', read: 'Read', mcp: 'MCP tools', search: 'Grep and Glob', web: 'web', agent: 'sub-agents', other: 'other tools' };
 const SIZE_LABEL = { under2k: 'under 2k chars', to8k: '2-8k', to32k: '8-32k', over32k: 'over 32k' };
-// ThinWindow's own per-session counts (hooks/lib/handlers.mjs), by key.
+// ThinWindow's own per-session counts (hooks/lib/handlers.mjs and
+// hooks/lib/cold-resume.mjs), by key.
 const ACTION_LABEL = {
   'Read.deny': 'reads cut or refused',
   'Bash.rewrite': 'commands rewritten',
   'Bash.deny': 'commands refused',
   'Grep.rewrite': 'searches capped',
+  'ColdResume.notice': 'cold-resume notices',
+  'ColdResume.continue': 'sent again after a notice',
 };
 
 export function resolveModel(model) {

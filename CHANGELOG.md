@@ -29,6 +29,14 @@ manifest's description differs.
   off with `"briefs": false`.
 - `/thinwindow:brief`: Claude writes a handoff of the session while the cache
   is still warm, kept in the brief.
+- Cold-resume notice: when you come back to a session idle for over an hour
+  with at least 100k tokens of context, ThinWindow holds your first prompt
+  once and shows what continuing re-writes (tokens, and US$ at the model's
+  list price) next to a fresh start with `/clear` and `/thinwindow:resume`.
+  Send it again to continue. Commands and prompts in `-p`, SDK or background
+  sessions are never held. `"coldResumeNotice": false` turns it off, and
+  `"coldResumeMinTokens"` sets the threshold. `/thinwindow:report` counts the
+  notices and the prompts sent again after one.
 
 ## [0.3.0] - 2026-10-02
 
