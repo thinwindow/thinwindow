@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "thinwindow",
   "displayName": "ThinWindow",
-  "version": "0.3.0",
+  "version": "0.4.0-dev",
   "description": "Less in the window. Less on the bill. ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens.",
   "author": {
     "name": "Iván Luna",
