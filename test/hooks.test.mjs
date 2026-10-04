@@ -28,6 +28,8 @@ function runHook(script, input, env = {}) {
       TEMP: tmp,
       TMP: tmp,
       CLAUDE_PROJECT_DIR: proj.root,
+      // Never the developer's real plugin data: SessionStart prunes briefs there.
+      CLAUDE_PLUGIN_DATA: '',
       THINWINDOW: '',
       THINWINDOW_DEBUG: '',
       ...env,

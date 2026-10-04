@@ -69,7 +69,7 @@ function runStop(input, env = {}) {
   const r = spawnSync(process.execPath, [STOP], {
     input: typeof input === 'string' ? input : JSON.stringify(input),
     encoding: 'utf8',
-    env: { ...process.env, HOME: home, USERPROFILE: home, THINWINDOW: '', THINWINDOW_DEBUG: '', ...env },
+    env: { ...process.env, HOME: home, USERPROFILE: home, CLAUDE_PLUGIN_DATA: '', THINWINDOW: '', THINWINDOW_DEBUG: '', ...env },
   });
   return r;
 }
