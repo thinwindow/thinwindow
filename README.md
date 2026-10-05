@@ -152,12 +152,14 @@ No dependencies, no telemetry, Node 18+. Details and every option:
   and `CLAUDE_CODE_SESSION_ATTENDED`. Before each prompt you send, it reads the
   last 256 KB of the session's transcript (and the first 256 KB when a
   cold-resume notice is due). At the end of each turn, it reads the part of the
-  session's transcript written since the last turn, and runs `git status` in
+  session's transcript written since the last turn, the first 256 KB of it
+  while a setup-cost notice may be due, and runs `git status` in
   the session's folder after a turn that could have changed files. It reads no
   credentials.
 - **Writes:** to your operating system's temp directory: one small JSON file
   per session (which files and ranges were read, recent refusals, when a
-  cold-resume notice was last shown, and counts of what the hooks did) and
+  cold-resume notice was last shown, and counts of what the hooks did), one
+  tiny file per project with when the setup-cost notice was last shown, and
   the full log of each command run through `thinwindow-run`. And to the
   plugin's data folder in Claude Code
   (`~/.claude/plugins/data/`): one small session brief per session, in a
@@ -238,6 +240,45 @@ recognized" instead of printing wrong numbers.
 short summary: shares, token sizes and counts, with no US$ amounts and no
 names. Pasting it in [#43](https://github.com/thinwindow/thinwindow/issues/43)
 helps decide what ThinWindow builds next. Nothing is collected automatically.
+
+### `thinwindow-minimal`: an opt-in profile with fewer tools
+
+Every request re-sends the definitions of every tool, and the skill and agent
+listings. Once a week per project, when a session's first request is at least
+40k tokens, ThinWindow shows you one line with that size and its largest
+parts, pointing to `/context`. This profile is one way to trim it, if you
+choose to. It isn't installed with the plugin: copy
+[`profiles/thinwindow-minimal.md`](profiles/thinwindow-minimal.md) to
+`~/.claude/agents/` (or to a project's `.claude/agents/`), for example:
+
+```bash
+curl -fsSL --create-dirs -o ~/.claude/agents/thinwindow-minimal.md https://raw.githubusercontent.com/thinwindow/thinwindow/main/profiles/thinwindow-minimal.md
+```
+
+Then start a session with it:
+
+```bash
+claude --agent thinwindow-minimal
+```
+
+Or, for every session in a project, `"agent": "thinwindow-minimal"` in that
+project's `.claude/settings.json`. ThinWindow never sets it for you.
+
+It keeps Claude Code's own system prompt and your MCP tools. It removes the
+built-in tools that the maintainer's sessions used in under 0.5% of tool
+calls: subagents and agent teams, `/loop` and scheduling, background-task
+tools (background Bash commands still run), worktrees, notebooks,
+multiple-choice questions, plan mode entered by Claude (Shift+Tab still works),
+and the Skill tool. Without the Skill tool the skill listing goes too; skills
+you type, such as `/thinwindow:report`, still run. The full list and its
+effect on a first request are in the
+[probe results](bench/results/experiments/setup.md).
+
+Use it for focused coding sessions. Skip it when you want subagents, `/loop`
+or scheduled tasks, or skills Claude starts on its own. Once copied, Claude
+Code lists it among your subagents, as one line, in sessions that don't run
+it; delete the file to remove it. The copy doesn't update itself when Claude
+Code adds tools.
 
 ## Benchmark
 

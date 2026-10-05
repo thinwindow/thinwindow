@@ -37,6 +37,20 @@ manifest's description differs.
   sessions are never held. `"coldResumeNotice": false` turns it off, and
   `"coldResumeMinTokens"` sets the threshold. `/thinwindow:report` counts the
   notices and the prompts sent again after one.
+- Setup-cost notice: after a reply, when a session's first request is at
+  least 40k tokens, ThinWindow shows you one line with what every request in
+  the session starts at and its largest parts (skill listing, deferred tools,
+  MCP instructions, CLAUDE.md files), pointing to `/context`. At most once a
+  week per project, never in `-p`, SDK or background sessions, and never sent
+  to Claude. `"setupNotice": false` turns it off, and
+  `"setupNoticeMinTokens"` sets the threshold.
+- `profiles/thinwindow-minimal.md`, an opt-in agent profile you copy to
+  `~/.claude/agents/`: `claude --agent thinwindow-minimal` keeps Claude
+  Code's system prompt and your MCP tools, and removes the built-in tools the
+  maintainer's sessions used in under 0.5% of tool calls, the Skill tool's
+  listing with them. Typed skill commands still run. It isn't part of the
+  plugin, so it costs nothing to sessions that don't use it. Probe:
+  `bench/results/experiments/setup.md`.
 
 ## [0.3.0] - 2026-10-02
 
