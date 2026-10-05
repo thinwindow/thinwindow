@@ -191,7 +191,7 @@
           <li><strong>Fails open.</strong> If a hook errors for any reason, the tool call proceeds. ThinWindow must never block someone's work because of its own bug.</li>
           <li><strong>Can't get stuck.</strong> Repeating a refused <code>Read</code>, or a refused noisy or unbounded command, within ten minutes lets it through. The commands that are always refused (such as <code>cat</code> of a lockfile) come with a cheaper replacement that works.</li>
           <li><strong>Never approves anything.</strong> ThinWindow never returns an <code>allow</code> decision, so it can't approve a call your permission settings would have prompted for. A rewritten command still goes through your normal permission rules.</li>
-          <li><strong>Its own footprint is budgeted.</strong> The always-loaded rules must stay under 2,000 characters (about 500 tokens); CI fails otherwise. The current rules are 1,439 characters.</li>
+          <li><strong>Its own footprint is budgeted.</strong> The always-loaded rules must stay under 2,000 characters (about 500 tokens); CI fails otherwise. The current rules are 1,347 characters.</li>
           <li><strong>Never phones home.</strong> No telemetry, no analytics, no update or license checks.</li>
           <li><strong>Easy to turn off.</strong> <code>THINWINDOW=off</code>, or <code>"enabled": false</code> in the config file.</li>
         </ul>
@@ -202,7 +202,7 @@
         <p>This is the complete text loaded into the agent's context, from <code>rules/thinwindow.md</code>. The same block is copied into the Agent Skill and the <code>AGENTS.md</code> snippet by <code>scripts/sync-rules.mjs</code>, and CI checks that the copies stay in sync.</p>
 <pre><code># thinwindow: spend fewer tokens
 
-Everything you read stays in context and is re-sent on every later turn, so most of the cost is reading. Read only what the task needs, then write and say only what it needs.
+Everything you read or write stays in context and is re-sent on every later turn. Read, write and say only what the task needs.
 
 Read less
 - Locate before reading: grep or glob for the symbol, then read only the range around it.
@@ -212,11 +212,10 @@ Read less
 - Don't send a subagent to explore what one grep answers.
 
 Print less
-- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, or `thinwindow-run &lt;cmd&gt;` for installs, builds and tests.
-- Summaries first: `git diff --stat`, `git log -n 10 --oneline`.
+- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, `git diff --stat`, `git log -n 10 --oneline`, or `thinwindow-run &lt;cmd&gt;` for installs, builds and tests.
 
 Write less
-- Before adding code, check that it needs to exist, that the codebase doesn't have it already, and that the standard library or platform doesn't do it. Then make the smallest change that works.
+- Before adding code, check that it needs to exist and that the codebase, standard library or platform doesn't already do it. Then make the smallest change that works.
 - Never cut validation, error handling, security or tests to save lines.
 - Don't add comments or docstrings that restate the code.
 

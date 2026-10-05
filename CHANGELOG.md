@@ -52,6 +52,17 @@ manifest's description differs.
   plugin, so it costs nothing to sessions that don't use it. Probe:
   `bench/results/experiments/setup.md`.
 
+### Changed
+
+- The rules say the same in fewer words: 1,347 characters, down from 1,439,
+  with no rule removed. `bench/compliance.mjs` checked each rule against the
+  recorded benchmark runs.
+  - `git diff --stat` and `git log -n 10 --oneline` are now examples of
+    capped command output.
+  - The first "Write less" rule keeps its three checks in fewer words.
+  - The opening line says that what the agent writes is re-sent too.
+  - "Read less" and "Say less" are unchanged.
+
 ## [0.3.0] - 2026-10-02
 
 ### Measured
