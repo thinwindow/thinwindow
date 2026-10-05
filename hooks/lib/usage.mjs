@@ -79,3 +79,24 @@ export function firstRequest(text) {
   }
   return null;
 }
+
+// The attachments written before the session's first request, as their JSON
+// characters by attachment type: the setup that request carried (skill
+// listing, deferred tools, MCP instructions...). Null until a request is in
+// `text`, since the transcript can lag the turn.
+export function firstAttachments(text) {
+  const chars = {};
+  for (const line of text.split('\n')) {
+    if (requestIn(line)) return chars;
+    if (!line.includes('"attachment"')) continue;
+    let rec;
+    try {
+      rec = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const type = rec?.attachment?.type;
+    if (rec.type === 'attachment' && rec.isSidechain !== true && typeof type === 'string') chars[type] = (chars[type] || 0) + JSON.stringify(rec.attachment).length;
+  }
+  return null;
+}
