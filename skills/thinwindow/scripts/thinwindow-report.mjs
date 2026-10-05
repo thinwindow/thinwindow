@@ -50,8 +50,9 @@ const MAX_UNRECOGNIZED = 0.05;
 // The newest Claude Code release whose transcripts the fixtures were checked against.
 export const CHECKED_UP_TO = [2, 1];
 
-// Labels for first-request attachments, by attachment type.
-const SETUP = {
+// Labels for first-request attachments, by attachment type. The setup-cost
+// notice (hooks/lib/setup-notice.mjs) uses them too, so both agree.
+export const SETUP = {
   skill_listing: 'skillListing',
   deferred_tools_delta: 'deferredTools',
   deferred_tools_record: 'deferredTools',
@@ -60,7 +61,7 @@ const SETUP = {
   nested_memory: 'claudeMd',
   agent_listing_delta: 'agentListing',
 };
-const SETUP_LABEL = {
+export const SETUP_LABEL = {
   skillListing: 'skill listing',
   deferredTools: 'deferred tools',
   mcpInstructions: 'MCP instructions',
@@ -70,7 +71,7 @@ const SETUP_LABEL = {
 const TOOL_LABEL = { bash: 'Bash', read: 'Read', mcp: 'MCP tools', search: 'Grep and Glob', web: 'web', agent: 'sub-agents', other: 'other tools' };
 const SIZE_LABEL = { under2k: 'under 2k chars', to8k: '2-8k', to32k: '8-32k', over32k: 'over 32k' };
 // ThinWindow's own per-session counts (hooks/lib/handlers.mjs and
-// hooks/lib/cold-resume.mjs), by key.
+// hooks/lib/cold-resume.mjs, hooks/lib/setup-notice.mjs), by key.
 const ACTION_LABEL = {
   'Read.deny': 'reads cut or refused',
   'Bash.rewrite': 'commands rewritten',
@@ -78,6 +79,7 @@ const ACTION_LABEL = {
   'Grep.rewrite': 'searches capped',
   'ColdResume.notice': 'cold-resume notices',
   'ColdResume.continue': 'sent again after a notice',
+  'Setup.notice': 'setup-cost notices',
 };
 
 export function resolveModel(model) {
