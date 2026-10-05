@@ -26,13 +26,15 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { claudeEnv, claudeVersion, parseInit, parseResult } from '../lib/claude.mjs';
+import { claudeEnv, claudeVersion, firstUsage, parseInit, parseResult } from '../lib/claude.mjs';
 import { RESULTS_DIR } from '../lib/paths.mjs';
 import { priceOf, resolveModel } from '../lib/pricing.mjs';
 import { runProcess } from '../lib/proc.mjs';
 import { appendResult, localDate, readResultFile } from '../lib/results.mjs';
 import { SETUP, SETUP_LABEL } from '../../skills/thinwindow/scripts/thinwindow-report.mjs';
-import { sessionRecords } from './resume.mjs';
+import { sessionRecords } from '../lib/transcripts.mjs';
+
+export { firstUsage };
 
 export const PROMPT = 'Reply with OK.';
 // Built-in tools used in at least 0.5% of the maintainer's main-thread tool
@@ -84,23 +86,6 @@ export function variantArgs(variant, { disallowed = [], pluginDir = null } = {})
 export function probeArgs(variant, { model, ...opts }) {
   const prompt = variant === 'agent-skill' ? `/thinwindow:${SKILL}` : PROMPT;
   return ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--model', model, '--max-turns', '1', '--max-budget-usd', MAX_RUN_USD, ...variantArgs(variant, opts)];
-}
-
-// The first API request's usage in a stream-json run.
-export function firstUsage(stdout) {
-  for (const line of String(stdout || '').split('\n')) {
-    let e;
-    try {
-      e = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    const u = e?.type === 'assistant' && e.message?.usage;
-    if (!u) continue;
-    const r = { input: u.input_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0, output: u.output_tokens || 0 };
-    if (r.input + r.cacheRead + r.cacheWrite > 0) return { ...r, context: r.input + r.cacheRead + r.cacheWrite };
-  }
-  return null;
 }
 
 // Attachments before the first request, in tokens (JSON chars / 4), by type:

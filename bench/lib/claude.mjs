@@ -1,6 +1,9 @@
 // How the runner calls Claude Code, and how it reads the result.
 // CLI flags: https://code.claude.com/docs/en/cli-reference
 // JSON output: https://code.claude.com/docs/en/headless#get-structured-output
+import { createHash } from 'node:crypto';
+import { homedir, platform, release } from 'node:os';
+import { basename, join } from 'node:path';
 import { BENCH_DIR, ROOT_DIR } from './paths.mjs';
 import { runSync } from './proc.mjs';
 
@@ -62,6 +65,12 @@ export function buildClaudeArgs({
   pluginDir = ROOT_DIR,
   benchDir = BENCH_DIR,
   bare = false,
+  // 0.4.0 harness (#37), the same for both conditions. `persist` keeps the
+  // session (kept transcripts, chains).
+  persist = false,
+  tools = null,
+  disallowedTools = null,
+  agent = null,
 }) {
   if (!CONDITIONS.includes(condition)) throw new Error(`unknown condition ${condition}`);
   const args = [
@@ -85,8 +94,11 @@ export function buildClaudeArgs({
     '--setting-sources',
     'project,local',
     '--strict-mcp-config',
-    '--no-session-persistence',
   ];
+  if (!persist) args.push('--no-session-persistence');
+  if (tools !== null) args.push('--tools', tools);
+  if (disallowedTools !== null) args.push('--disallowedTools', disallowedTools);
+  if (agent !== null) args.push('--agent', agent);
   if (bare) args.push('--bare');
   if (condition === 'thinwindow') args.push('--plugin-dir', pluginDir);
   return args;
@@ -239,6 +251,68 @@ export function parseTraceTails(stdout, { maxSteps = 80, chars = 200 } = {}) {
     }
   }
   return tails;
+}
+
+// The first API request's usage in a stream-json run.
+export function firstUsage(stdout) {
+  for (const line of String(stdout || '').split('\n')) {
+    let e;
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const u = e?.type === 'assistant' && e.message?.usage;
+    if (!u) continue;
+    const r = { input: u.input_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0, output: u.output_tokens || 0 };
+    if (r.input + r.cacheRead + r.cacheWrite > 0) return { ...r, context: r.input + r.cacheRead + r.cacheWrite };
+  }
+  return null;
+}
+
+export function configDir(env = process.env) {
+  return env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
+}
+
+export const shortHash = (s) => createHash('sha256').update(String(s)).digest('hex').slice(0, 12);
+
+// The machine and profile a run used. `account` is a label the operator
+// passes (--account), stored hashed: two profiles can share an account, and
+// one profile can be logged into another later.
+export function hostFingerprint({ account = null, env = process.env } = {}) {
+  return {
+    profile: env.CLAUDE_CONFIG_DIR ? basename(env.CLAUDE_CONFIG_DIR) : 'default',
+    account: account ? shortHash(account) : null,
+    os: `${platform()} ${release()}`,
+    node: process.version,
+  };
+}
+
+const names = (list) => (Array.isArray(list) ? list.map((x) => (typeof x === 'string' ? x : x?.name)).filter(Boolean) : []);
+const OWN_SKILL = 'thinwindow:';
+
+// What can change between two runs' environments, from the stream: tool,
+// skill and agent counts from the init event (names hashed: account tools and
+// skills say which account ran), and the first request's tokens. ThinWindow's
+// own skills are counted apart, so both conditions can share a fingerprint.
+// A first request that reads nothing from the prompt cache started cold.
+export function runFingerprint(stdout) {
+  const found = parseInit(stdout);
+  const init = found || {};
+  const tools = names(init.tools).sort();
+  const skills = names(Array.isArray(init.skills) ? init.skills : init.slash_commands);
+  const other = skills.filter((s) => !s.startsWith(OWN_SKILL)).sort();
+  const first = firstUsage(stdout);
+  return {
+    toolCount: found ? tools.length : null,
+    toolsHash: tools.length ? shortHash(tools.join('\n')) : null,
+    skillCount: found ? other.length : null,
+    skillsHash: other.length ? shortHash(other.join('\n')) : null,
+    pluginSkillCount: skills.length - other.length,
+    agentCount: Array.isArray(init.agents) ? init.agents.length : null,
+    firstRequest: first,
+    cacheState: first ? (first.cacheRead > 0 ? 'warm' : 'cold') : null,
+  };
 }
 
 export function claudeVersion(cmd = 'claude', prefixArgs = []) {
