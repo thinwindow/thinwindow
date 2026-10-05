@@ -44,12 +44,18 @@ async function readStdin() {
   return data;
 }
 
+// An error for the debug log. `redact` keeps its type and stack frames but not
+// its message, which can quote the input (a Stop's input carries the last
+// reply).
+export function errorDetail(err, redact) {
+  if (redact) return [err?.name, err?.code, ...String(err?.stack || '').split('\n').slice(1)].filter(Boolean).join('\n');
+  return err && err.stack ? err.stack : err;
+}
+
 // Runs `handler(input)` and writes its return value as JSON. A handler that
 // returns null/undefined prints nothing. Any error (bad JSON, a bug, a
 // timeout) exits 0 without output: thinwindow never blocks a tool call
-// because of its own failure. `redact` logs an error's type and stack frames
-// but not its message, which can quote the input (a Stop's input carries the
-// last reply).
+// because of its own failure. `redact`: see errorDetail.
 export async function runHook(name, handler, { redact = false } = {}) {
   const bail = setTimeout(() => {
     debug(`${name}: timed out, allowing`);
@@ -62,8 +68,7 @@ export async function runHook(name, handler, { redact = false } = {}) {
     const output = await handler(input);
     if (output) process.stdout.write(JSON.stringify(output));
   } catch (err) {
-    const detail = redact ? [err?.name, err?.code, ...String(err?.stack || '').split('\n').slice(1)].filter(Boolean).join('\n') : err && err.stack ? err.stack : err;
-    debug(`${name}: error, allowing: ${detail}`);
+    debug(`${name}: error, allowing: ${errorDetail(err, redact)}`);
   }
   process.exitCode = 0;
 }

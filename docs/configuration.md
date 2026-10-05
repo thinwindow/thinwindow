@@ -29,6 +29,8 @@ directory. Values in the project file override the home file; lists
 | `briefs` | `true` | `false` stops the Stop hook from writing session briefs for `/thinwindow:resume`. Briefs already written are deleted after 7 days. |
 | `coldResumeNotice` | `true` | `false` turns off the cold-resume notice (see UserPromptSubmit below). |
 | `coldResumeMinTokens` | `100000` | The smallest context, in tokens, for which the cold-resume notice holds a prompt. |
+| `setupNotice` | `true` | `false` turns off the setup-cost notice (see Stop below). |
+| `setupNoticeMinTokens` | `40000` | The smallest first request, in tokens, for which the setup-cost notice shows. |
 | `noisyCommands` | see below | Extra regular expressions for noisy commands. They are added to the built-in list. |
 | `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files thinwindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
 | `allowlist.commands` | `[]` | Regular expressions for Bash commands thinwindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
@@ -119,6 +121,24 @@ turn (at most 4 MB per turn), runs `git status` after a turn that used Bash,
 Edit or Write, and prints nothing. Claude Code waits for Stop hooks before
 the turn ends, so this one skips its work when the transcript hasn't grown.
 
+Stop also shows the setup-cost notice. Every request re-sends the session's
+setup (system prompt, tools, skill listing, MCP instructions, CLAUDE.md
+files), so a session's first request shows what each later one starts at.
+
+- It reads the first 256 KB of the transcript for the first request: its
+  context, and the attachments written before it, sized as in
+  `/thinwindow:report` (JSON characters / 4).
+- When that context is at least `setupNoticeMinTokens`, it shows you one
+  line, as a `systemMessage`, which Claude never sees:
+
+  ```text
+  ThinWindow: each request in this session starts at 54k tokens (skill listing 5.3k, deferred tools 2.5k, MCP instructions 1.6k). Run /context to see what you could turn off.
+  ```
+
+- At most once a week per project, and only in sessions a person attends
+  (`CLAUDE_CODE_SESSION_ATTENDED=1`, as above). If the transcript doesn't have
+  the first request yet, a later turn checks again.
+
 **UserPromptSubmit** (before each prompt) is the cold-resume notice. Claude
 Code caches a conversation for an hour at most, so a prompt sent after an hour
 without a request re-writes the whole context at the cache-write price.
@@ -146,8 +166,10 @@ without a request re-writes the whole context at the cache-write price.
 
 - Read tracking lives in one JSON file per session in
   `<os temp dir>/thinwindow/state/`, with the time of the last request a
-  cold-resume notice was shown for. Files older than a week are removed at
-  the start of a new session.
+  cold-resume notice was shown for. The same folder holds one
+  `setup-<project hash>.mark` file per project, with when the setup-cost
+  notice was last shown. Files older than a week are removed at the start of
+  a new session.
 - `thinwindow-run` logs go to `<os temp dir>/thinwindow/logs/` and are removed
   after a week.
 - Session briefs live in `<plugin data dir>/briefs/<project hash>/<session id>.json`

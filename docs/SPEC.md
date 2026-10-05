@@ -101,7 +101,11 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
 - **Stop**: update the session brief (#33) from what the transcript gained
   since the last Stop, plus `git status` after a turn that could write files.
   Prints nothing. Claude Code runs Stop hooks synchronously; `async` applies
-  to tool events only.
+  to tool events only. Then the setup-cost notice (#35): when the session's
+  first request (from the transcript's first 256 KB) is at least
+  `setupNoticeMinTokens` (40k), a `systemMessage` with its size and three
+  largest setup parts, at most once a week per project, only in attended
+  sessions.
 - **UserPromptSubmit**: the cold-resume notice (#34). When the session's last
   request (read from the transcript's last 256 KB) is over an hour old and its
   context is at least `coldResumeMinTokens` (100k), hold the prompt once with
@@ -225,13 +229,14 @@ Each feature belongs to one moment of a session. Every 0.3.0 mechanism stays.
 1. **Start: show what every request carries.**
    - After the first response of a session, a Stop hook reads that request's
      usage and attachment records from `transcript_path`. If the prefix is
-     over a threshold, show one line, at most once a day per project: the
+     over a threshold, show one line, at most once a week per project: the
      total and its largest contributors (skill listing, deferred tools, MCP
      instructions, CLAUDE.md), with a pointer to `/context`.
    - Only if measurement supports it (#35): an opt-in `thinwindow:minimal`
      agent. Its body is empty, so Claude Code keeps its default system prompt,
      and its `disallowedTools` come from measured tool usage. The user enables
-     it; thinwindow never sets it and never edits configuration.
+     it; thinwindow never sets it and never edits configuration. G3 said go:
+     `profiles/thinwindow-minimal.md`, copied in by the user (see G3).
 2. **During: keep the window thin.**
    - Keep the PreToolUse guards, `thinwindow-run` and the SessionStart rules
      described above.
@@ -345,7 +350,11 @@ Don't build a gated feature before its gate decides.
   - a brief that lists edited files from `git status`;
   - a kill check after two weeks of use.
 - G3: the setup-cost probe (#35). Ship the opt-in minimal-tools agent, or only
-  the one-line notice.
+  the one-line notice. Run 2026-10-05: go
+  ([results](../bench/results/experiments/setup.md)).
+  `profiles/thinwindow-minimal.md` ships as a file users copy in, not in the
+  plugin's `agents/`: a plugin agent is listed, with its tool list, in every
+  session that has the Agent tool. #38 validates it or it is dropped.
 - G4: the validation (#38). It decides which claims the release makes, if any.
 
 ## Hard constraints for whoever builds this
