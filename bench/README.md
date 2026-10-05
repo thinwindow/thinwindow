@@ -141,6 +141,17 @@ so change its shape deliberately and bump its `schema` field when you do.
   If it isn't met, improve thinwindow. Don't lower the bar or drop tasks.
 - `total_cost_usd` is Claude Code's client-side estimate, not a bill.
 
+## Rule compliance
+
+`node bench/compliance.mjs` prints how often the recorded runs followed each
+rule, by model, release and condition: reads that asked for a line range,
+installs, builds and tests run capped, tool calls per turn, output tokens
+and more. It needs no new runs. It reads `bench/results/*.jsonl` and
+`archive/` (not `experiments/`), counts a run found in two files once, and
+groups runs by the commit each one records, not by file name. The thinwindow
+condition is the rules and the hooks together, so the table can't tell them
+apart.
+
 ## Adding a task
 
 1. Pick a public, permissively licensed repo and pin a full commit SHA.
