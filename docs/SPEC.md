@@ -240,10 +240,14 @@ Each feature belongs to one moment of a session. Every 0.3.0 mechanism stays.
 2. **During: keep the window thin.**
    - Keep the PreToolUse guards, `thinwindow-run` and the SessionStart rules
      described above.
-   - Rules v2 (#36): fewer rules, each kept only if recorded traces show it
-     changes behaviour. Output discipline: no narration between tool calls,
-     short endings, `file:line` instead of pasted code, Edit instead of a
-     full-file Write. Output costs the most per token, and every later request
+   - Rules v2 (#36): the same rules in fewer words. `bench/compliance.mjs`
+     checked each one against the recorded runs, and none was dropped. A rule
+     that changes nothing on the bench may still help agents that get the
+     rules without Claude Code's own instructions or the hooks, and dropping
+     one saves almost nothing. Output discipline: no narration between tool
+     calls, short endings, `file:line` instead of pasted code. Edit over a
+     full-file Write is left to Claude Code's Write tool, which already asks
+     for it. Output costs the most per token, and every later request
      re-reads it.
 3. **Between sessions: resume without paying twice.**
    - Brief (#33): a Stop hook keeps a brief of the session up to date, built

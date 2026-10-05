@@ -11,7 +11,8 @@ import { BENCH_DIR, FIXTURES_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../bench/lib/p
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from '../bench/lib/pricing.mjs';
 import { readResultFile, resultsPath } from '../bench/lib/results.mjs';
 import { bootstrapDelta, median, pctDelta } from '../bench/lib/stats.mjs';
-import { inlineChars, mechanisms, notReplayable, readChars } from '../bench/input-size.mjs';
+import { inlineChars, mechanisms, notReplayable, parseStep, readChars } from '../bench/input-size.mjs';
+import { compliance, lastLine, loadRuns, noisy, reads } from '../bench/compliance.mjs';
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
@@ -563,4 +564,20 @@ test('input-size replays only calls that leave the clone alone', () => {
   assert.equal(inlineChars(40000, 0), 2120);
   assert.equal(inlineChars(40000, 1), 10000);
   assert.deepEqual(mechanisms('thinwindow ran `npm test` through thinwindow-run, so the output is a summary'), ['command run through thinwindow-run']);
+});
+
+test('compliance counts each run once, groups it by its own commit, and reads the trace', () => {
+  const [a, b] = [tempDir(), tempDir()];
+  const run = (o) => JSON.stringify({ sessionId: 's1', task: 't', condition: 'baseline', modelResolved: 'claude-haiku-4-5', thinwindowCommit: 'ce45cd1', numTurns: 2, outputTokens: 100, success: true, trace: [], ...o });
+  // A file named after one commit holds another commit's runs, and repeats a run.
+  writeFileSync(join(a, 'haiku-528598a.jsonl'), `${run({})}\n${run({ sessionId: 's2', condition: 'thinwindow', thinwindowCommit: 'a6ebe93' })}\n`);
+  writeFileSync(join(b, 'haiku-ce45cd1.jsonl'), `${run({})}\n`);
+  const runs = loadRuns([a, b]);
+  assert.equal(runs.length, 2);
+  assert.deepEqual(compliance(runs).map((g) => [g.release, g.n.baseline, g.n.thinwindow]), [['0.2.2', 0, 1], ['ce45cd1', 1, 0]]);
+  const steps = (...calls) => calls.map(parseStep);
+  assert.deepEqual(reads(steps('Read [1+20] /c/a.js', 'Read /c/b.js', 'Bash cat a.js | head -n 5', "Bash sed -n '1,20p' a.js", 'Bash cat b.js', 'Bash cat > c.js <<EOF x EOF')), [true, false, true, true, false]);
+  assert.deepEqual(noisy(steps('Bash npm test 2>&1 | tail -n 20', 'Bash npx jest', 'Bash thinwindow-run npm test', 'Bash pytest -q', 'Bash ls')), [true, false, true, true]);
+  assert.equal(lastLine('x" 654 assert y 655 return 0 656'), 656);
+  assert.equal(lastLine('no line numbers 42 here'), null);
 });
