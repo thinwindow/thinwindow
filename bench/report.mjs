@@ -73,6 +73,7 @@ export function chainRuns(rows) {
         thinwindowDirty: b.thinwindowDirty,
         startedAt: a.startedAt,
         sessionId: b.sessionId,
+        pluginSkillCount: a.pluginSkillCount,
         firstRequest: a.firstRequest,
         cacheState: a.cacheState,
         totalTokens: runs.every(Array.isArray) ? tokensOf(a.requests) + tokensOf(b.requests) : null,

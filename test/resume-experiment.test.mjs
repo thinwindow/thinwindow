@@ -65,20 +65,21 @@ test('runs keep their session and can resume a fork', () => {
 });
 
 // A's run cost $1. A resumed session's reported cost includes it; the brief
-// arm's doesn't. Each B row's own cold cost is `cold`, half of it penalty.
+// and fresh arms' don't. Each B row's own cold cost is `cold`, half of it penalty.
 const A = { phase: 'A', chain: 1, rep: 1, costUsd: 1 };
 const row = (arm, cold, ok = true) => {
   const own = cold / 2;
-  const invocations = arm === 'brief' ? [{ costUsd: own }] : arm === 'compact' ? [{ costUsd: 1 + own / 2 }, { costUsd: 1 + own }] : [{ costUsd: 1 + own }];
+  const invocations = arm === 'brief' || arm === 'fresh' ? [{ costUsd: own }] : arm === 'compact' ? [{ costUsd: 1 + own / 2 }, { costUsd: 1 + own }] : [{ costUsd: 1 + own }];
   return { phase: 'B', chain: 1, rep: 1, arm, invocations, bPass: ok, aPass: true, coldPenaltyUsd: cold / 2, numTurns: 3, reReads: [] };
 };
 
 test("a resumed session's carried cost is not counted again", () => {
-  const [cont, compact, brief] = costed([A, row('continue', 1), row('compact', 0.8), row('brief', 0.6)]);
+  const [cont, compact, brief, fresh] = costed([A, row('continue', 1), row('compact', 0.8), row('brief', 0.6), row('fresh', 0.6)]);
   const near = (x, y) => assert.ok(Math.abs(x - y) < 1e-9, `${x} vs ${y}`);
   near(cont.warmUsd, 0.5);
   near(compact.warmUsd, 0.4);
   near(brief.warmUsd, 0.3);
+  near(fresh.warmUsd, 0.3);
   near(cont.coldUsd, 1);
 });
 

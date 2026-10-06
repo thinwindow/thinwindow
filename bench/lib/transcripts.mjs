@@ -6,12 +6,13 @@
 // and size: that covers the copy of the system prompt, the skill, tool and
 // agent listings, the environment and session context, and the account's
 // organization. Then paths and names that say whose machine ran it are
-// replaced: the clone, the temp dir, the Claude config dir, $HOME and the
-// user name.
+// replaced: the clone, the temp dir, the Claude config dir, this checkout
+// (the plugin's own skills name their folder), $HOME and the user name.
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
 import { configDir } from './claude.mjs';
+import { ROOT_DIR } from './paths.mjs';
 
 const COMMON = ['type', 'uuid', 'parentUuid', 'isSidechain', 'isMeta', 'timestamp', 'sessionId', 'version', 'cwd'];
 export const KEEP_FIELDS = {
@@ -64,13 +65,14 @@ const realpath = (p) => {
 // Replaces what says whose machine ran it, longest path first. The user name
 // is replaced as a whole word (it shows in `ls -l`), and only when it is long
 // enough not to clobber ordinary words.
-export function scrubber({ clone = null, home = homedir(), config = configDir(), user = userInfo().username, tmp = tmpdir() } = {}) {
+export function scrubber({ clone = null, home = homedir(), config = configDir(), plugin = ROOT_DIR, user = userInfo().username, tmp = tmpdir() } = {}) {
   const pairs = [
     [clone && realpath(clone), '<clone>'],
     [clone, '<clone>'],
     [realpath(tmp), '<tmp>'],
     [tmp, '<tmp>'],
     [config, '<config>'],
+    [plugin, '<plugin>'],
     [home, '~'],
   ]
     .filter(([from]) => from && from.length > 1)
