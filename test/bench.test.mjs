@@ -228,9 +228,11 @@ if (args[0] === '--version') { console.log('0.0.1 (Fake Claude)'); process.exit(
 writeFileSync('args.json', JSON.stringify({ args, THINWINDOW: process.env.THINWINDOW ?? null }));
 const prompt = args[args.indexOf('-p') + 1];
 if (!prompt.includes('fail')) writeFileSync('done.txt', 'ok');
-console.log(JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5-5', effort: 'medium' }));
+const skills = args.includes('--plugin-dir') ? ['review', 'thinwindow:resume'] : ['review'];
+console.log(JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5-5', effort: 'medium', tools: ['Read', 'Bash'], skills, agents: ['general-purpose'] }));
+console.log(JSON.stringify({ type: 'assistant', message: { id: 'm1', usage: { input_tokens: 10, cache_read_input_tokens: 0, cache_creation_input_tokens: 100, output_tokens: 5 } } }));
 console.log(JSON.stringify({
-  type: 'result', subtype: 'success', is_error: false, duration_ms: 50, num_turns: 3, total_cost_usd: 0.4,
+  type: 'result', subtype: 'success', is_error: false, duration_ms: 50, num_turns: 3, total_cost_usd: 0.4, result: 'Done in ' + process.cwd(),
   usage: { input_tokens: 10, cache_creation_input_tokens: 100, cache_read_input_tokens: 1000, output_tokens: 5 },
   modelUsage: { 'claude-haiku-4-5-20251001': { inputTokens: 10, cacheCreationInputTokens: 100, cacheReadInputTokens: 1000, outputTokens: 5 } },
 }));
@@ -274,6 +276,15 @@ test('runBench end to end with a fake claude and a local repo', { skip: process.
   assert.equal(solved.modelResolved, 'claude-haiku-4-5');
   assert.equal(solved.effort, 'medium');
   assert.equal(solved.thinwindowVersion, JSON.parse(readFileSync(join(ROOT_DIR, '.claude-plugin', 'plugin.json'), 'utf8')).version);
+  // The environment fingerprint (#37): ThinWindow's skills counted apart.
+  const twin = onDisk.find((r) => r.task === 'solve' && r.condition === 'baseline');
+  for (const k of ['toolCount', 'toolsHash', 'skillCount', 'skillsHash', 'agentCount', 'profile', 'os']) assert.deepEqual(solved[k], twin[k], k);
+  assert.equal(solved.toolCount, 2);
+  assert.equal(solved.pluginSkillCount, 1);
+  assert.equal(twin.pluginSkillCount, 0);
+  assert.equal(solved.cacheState, 'cold');
+  assert.equal(solved.firstRequest.context, 110);
+  assert.equal(solved.finalMessage, 'Done in <clone>');
   const argsSkin = JSON.parse(readFileSync(join(solved.workdir, 'args.json'), 'utf8'));
   assert.ok(argsSkin.args.includes('--plugin-dir'));
   assert.equal(argsSkin.THINWINDOW, null);

@@ -18,20 +18,21 @@
 // reports a resumed session's cost cumulatively (A's cost included), so the
 // analysis subtracts what was carried. Records keep
 // usage, tool-call traces and check results, never raw transcripts (those
-// carry account details). See bench/results/experiments/resume.md.
-import { existsSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
-import { homedir, platform, release } from 'node:os';
-import { join, relative } from 'node:path';
+// carry account details; run.mjs --chains --keep-transcripts keeps scrubbed
+// ones). See bench/results/experiments/resume.md.
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { BRIEF_MAX_CHARS, buildBrief, relPath } from '../../hooks/lib/brief.mjs';
-import { buildClaudeArgs, claudeEnv, claudeVersion, parseInit, parseResult, parseTrace } from '../lib/claude.mjs';
+import { BRIEF_MAX_CHARS, buildBrief, latestBrief, relPath } from '../../hooks/lib/brief.mjs';
+import { buildClaudeArgs, claudeEnv, claudeVersion, configDir, hostFingerprint, parseInit, parseResult, parseTrace, runFingerprint } from '../lib/claude.mjs';
 import { RESULTS_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../lib/paths.mjs';
 import { priceOf, resolveModel } from '../lib/pricing.mjs';
 import { runProcess, runSync } from '../lib/proc.mjs';
 import { appendResult, localDate, readResultFile, readResults } from '../lib/results.mjs';
 import { median } from '../lib/stats.mjs';
 import { loadTask } from '../lib/tasks.mjs';
+import { isPublicRepo, keepTranscript, scrubber, sessionRecords } from '../lib/transcripts.mjs';
 import { cloneAt, makeWorkdir, removeWorkdir, runSetup, runVerify } from '../lib/workspace.mjs';
 
 export const CHAINS = [
@@ -45,7 +46,7 @@ const COMPACT_EST_USD = 0.03;
 
 // --- The brief: hooks/lib/brief.mjs, shared with the Stop hook (#33) ---
 
-export { BRIEF_MAX_CHARS, buildBrief };
+export { BRIEF_MAX_CHARS, buildBrief, sessionRecords };
 
 // --- Usage and costs ---
 
@@ -97,35 +98,14 @@ export function readPaths(stdout, cwd = '') {
 
 // --- Running ---
 
-// The benchmark's baseline arguments, with the session kept.
-export function experimentArgs({ prompt, model, resume = null, fork = false }) {
-  const args = buildClaudeArgs({ prompt, model, condition: 'baseline' }).filter((a) => a !== '--no-session-persistence');
+// The benchmark's arguments, with the session kept: the baseline here, and
+// either condition with the harness's tool settings when run.mjs --chains
+// runs a chain (#37).
+export function experimentArgs({ prompt, model, resume = null, fork = false, condition = 'baseline', maxTurns, tools = null, disallowedTools = null, agent = null }) {
+  const args = buildClaudeArgs({ prompt, model, condition, maxTurns, tools, disallowedTools, agent, persist: true });
   if (resume) args.push('--resume', resume);
   if (fork) args.push('--fork-session');
   return args;
-}
-
-function configDir() {
-  return process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
-}
-
-// A session's transcript records, found by id under the profile's projects/.
-export function sessionRecords(sessionId, root = join(configDir(), 'projects')) {
-  for (const dir of existsSync(root) ? readdirSync(root) : []) {
-    const file = join(root, dir, `${sessionId}.jsonl`);
-    if (!existsSync(file)) continue;
-    return readFileSync(file, 'utf8')
-      .split('\n')
-      .filter(Boolean)
-      .flatMap((l) => {
-        try {
-          return [JSON.parse(l)];
-        } catch {
-          return [];
-        }
-      });
-  }
-  return [];
 }
 
 function git(dir, args) {
@@ -163,11 +143,14 @@ export class Budget {
   }
 }
 
-async function claude(prompt, { dir, model, resume, fork, timeoutMs, budget, carried = 0 }) {
+// `run`: the harness's options (claude executable, tool settings), or none.
+async function claude(prompt, { dir, model, resume, fork, timeoutMs, budget, carried = 0, condition = 'baseline', run = {} }) {
   if (!budget.ok()) return { skipped: true };
-  const res = await runProcess('claude', experimentArgs({ prompt, model, resume, fork }), {
+  const { cmd, prefixArgs } = run.claude || { cmd: 'claude', prefixArgs: [] };
+  const args = experimentArgs({ prompt, model, resume, fork, condition, maxTurns: run.maxTurns, tools: run.tools ?? null, disallowedTools: run.disallowedTools ?? null, agent: run.agent ?? null });
+  const res = await runProcess(cmd, [...prefixArgs, ...args], {
     cwd: dir,
-    env: claudeEnv('baseline'),
+    env: claudeEnv(condition),
     timeoutMs,
   });
   const parsed = parseResult(res.stdout);
@@ -193,19 +176,39 @@ function rotate(list, k) {
   return list.map((_, i) => list[(i + k) % list.length]);
 }
 
+// Where ThinWindow keeps its data under the bench (--plugin-dir).
+const pluginData = () => join(configDir(), 'plugins', 'data', 'thinwindow-inline');
+
+// What every row of a harness run adds: the environment, the final message
+// (for the manual review in #38) and, for public repos, the kept transcript.
+function harnessFields(run, stdout, parsed, { dir, out, repo }) {
+  if (!run.harness) return {};
+  return {
+    sessionId: parsed?.sessionId ?? null,
+    ...runFingerprint(stdout),
+    finalMessage: parsed?.resultText ? scrubber({ clone: dir })(parsed.resultText).slice(0, 8000) : null,
+    transcript: run.keepTranscripts && isPublicRepo(repo) ? keepTranscript(parsed?.sessionId, { outDir: dirname(out), clone: dir }) : null,
+  };
+}
+
 // One chain and repetition: A once, then B in every arm from A's end state.
-export async function runJob({ chain, rep, model, budget, env, out, log }) {
-  const [taskA, taskB] = CHAINS[chain - 1].map((id) => loadTask(id));
+// The harness (run.mjs --chains) runs one condition per job: A and B both
+// under it, with one arm, `continue` for the baseline and `fresh` for
+// ThinWindow: the user who accepts the fresh start, a new session with
+// `/thinwindow:resume <B>` (no notice fires in -p, so the bench plays the user).
+export async function runJob({ chain, rep, model, budget, env, out, log, condition = 'baseline', arms = ARMS, run = {}, tasks = CHAINS[chain - 1].map((id) => loadTask(id)) }) {
+  const [taskA, taskB] = tasks;
   const price = priceOf(model);
   const dir = realpathSync(makeWorkdir(`resume-c${chain}-r${rep}`));
   let diffFile = null;
-  const base = { v: 1, experiment: 'resume', chain, rep, taskA: taskA.id, taskB: taskB.id, model, modelResolved: resolveModel(model), ...env };
+  const base = { v: 1, experiment: 'resume', chain, rep, taskA: taskA.id, taskB: taskB.id, model, modelResolved: resolveModel(model), ...env, condition };
+  const call = (prompt, opts) => claude(prompt, { dir, model, budget, condition, run, ...opts });
   try {
     cloneAt(taskA.repo, taskA.commit, dir);
-    const setup = await runSetup(taskA, dir);
+    const setup = taskA.setup ? await runSetup(taskA, dir) : { success: true };
     if (!setup.success) throw new Error(`setup failed: ${setup.tail}`);
 
-    const a = await claude(taskA.prompt, { dir, model, timeoutMs: taskA.timeout * 1000, budget });
+    const a = await call(taskA.prompt, { timeoutMs: taskA.timeout * 1000 });
     if (a.skipped) return log(`c${chain} r${rep}: skipped, budget reached\n`);
     const aVerify = await runVerify(taskA, dir);
     const aSession = a.parsed?.sessionId;
@@ -220,6 +223,7 @@ export async function runJob({ chain, rep, model, budget, env, out, log }) {
       aPass: aVerify.success,
       reads: aReads,
       trace: parseTrace(a.res.stdout),
+      ...harnessFields(run, a.res.stdout, a.parsed, { dir, out, repo: taskA.repo }),
     });
     log(`c${chain} r${rep} A: ${aVerify.success ? 'pass' : 'FAIL'} $${(a.parsed?.costUsd ?? 0).toFixed(3)}\n`);
     if (!aSession) throw new Error('A returned no session id');
@@ -230,29 +234,34 @@ export async function runJob({ chain, rep, model, budget, env, out, log }) {
     const diff = saveDiff(dir);
     diffFile = `${dir}-A.diff`;
     writeFileSync(diffFile, diff);
-    const brief = buildBrief(sessionRecords(aSession), { cwd: dir });
+    const brief = arms.includes('brief') ? buildBrief(sessionRecords(aSession), { cwd: dir }) : null;
+    // In -p, Stop doesn't fire on error_max_turns: A's brief can be missing.
+    const briefFound = arms.includes('fresh') ? latestBrief(pluginData(), dir) !== null : null;
 
-    for (const arm of rotate(ARMS, chain + rep)) {
+    for (const arm of rotate(arms, chain + rep)) {
       restore(dir, diffFile, diff);
       const timeoutMs = taskB.timeout * 1000;
       const invocations = [];
       let b;
       let coldReads = 0;
       if (arm === 'continue') {
-        b = await claude(taskB.prompt, { dir, model, resume: aSession, fork: true, timeoutMs, budget, carried: aCost });
+        b = await call(taskB.prompt, { resume: aSession, fork: true, timeoutMs, carried: aCost });
         coldReads = b.requests?.[0]?.cacheRead ?? 0;
       } else if (arm === 'compact') {
-        const c = await claude('/compact', { dir, model, resume: aSession, fork: true, timeoutMs, budget, carried: aCost });
+        const c = await call('/compact', { resume: aSession, fork: true, timeoutMs, carried: aCost });
         if (!c.skipped) {
           invocations.push({ kind: 'compact', ...usageOf(c) });
           // /compact can make more than one request; a cold cache re-writes
           // at most A's context, so its cache reads are capped there.
           coldReads = Math.min(c.parsed?.cacheReadTokens ?? 0, aContext);
           const cSession = c.parsed?.sessionId;
-          b = cSession ? await claude(taskB.prompt, { dir, model, resume: cSession, timeoutMs, budget, carried: c.parsed?.costUsd ?? 0 }) : { skipped: true, error: 'compact returned no session id' };
+          b = cSession ? await call(taskB.prompt, { resume: cSession, timeoutMs, carried: c.parsed?.costUsd ?? 0 }) : { skipped: true, error: 'compact returned no session id' };
         } else b = c;
+      } else if (arm === 'fresh') {
+        b = await call(`/thinwindow:resume ${taskB.prompt}`, { timeoutMs });
+        coldReads = b.requests?.[0]?.cacheRead ?? 0;
       } else {
-        b = await claude(`${brief}\n\nNew request:\n${taskB.prompt}`, { dir, model, timeoutMs, budget });
+        b = await call(`${brief}\n\nNew request:\n${taskB.prompt}`, { timeoutMs });
         coldReads = b.requests?.[0]?.cacheRead ?? 0;
       }
       if (b.skipped) {
@@ -284,7 +293,9 @@ export async function runJob({ chain, rep, model, budget, env, out, log }) {
         reads: bReads,
         briefChars: arm === 'brief' ? brief.length : null,
         brief: arm === 'brief' ? brief : null,
+        ...(arm === 'fresh' ? { briefFound } : {}),
         trace: parseTrace(b.res.stdout),
+        ...harnessFields(run, b.res.stdout, b.parsed, { dir, out, repo: taskB.repo }),
       });
       log(`c${chain} r${rep} ${arm}: B ${bVerify.success ? 'pass' : 'FAIL'}, A ${aAfter.success ? 'pass' : 'FAIL'}, $${warm.toFixed(3)} warm, $${(warm + penalty).toFixed(3)} cold\n`);
     }
@@ -309,9 +320,7 @@ function fingerprint(model) {
     claudeVersion: claudeVersion(),
     thinwindowCommit: rev.status === 0 ? rev.stdout.trim() : null,
     condition: 'baseline',
-    profile: process.env.CLAUDE_CONFIG_DIR ? 'CLAUDE_CONFIG_DIR' : 'default',
-    os: `${platform()} ${release()}`,
-    node: process.version,
+    ...hostFingerprint(),
     model,
   };
 }
@@ -411,10 +420,10 @@ const passBoth = (r) => r.bPass && r.aPass;
 // Claude Code's total_cost_usd for a resumed session includes what the
 // session had already cost (A's run, and the /compact call for the compacted
 // session). The B phase's own cost: the last invocation's reported cost minus
-// A's, except in the brief arm, which starts fresh.
+// A's, except in the brief and fresh arms, which start a new session.
 export function ownWarmUsd(row, aCost) {
   const last = row.invocations.at(-1)?.costUsd ?? 0;
-  return row.arm === 'brief' ? last : last - aCost;
+  return row.arm === 'brief' || row.arm === 'fresh' ? last : last - aCost;
 }
 
 // B rows with their own warm and cold costs.
