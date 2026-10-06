@@ -46,7 +46,7 @@ const USAGE = `usage: node bench/run.mjs --condition baseline|thinwindow --reps 
   --seed <n>          seed of the random condition order per pair (default: random, recorded)
   --tools <list>      claude --tools (built-in tools available)
   --disallowed-tools <list>  claude --disallowedTools
-  --agent <name>      claude --agent (a user agent must be in $CLAUDE_CONFIG_DIR/agents/)
+  --agent <name>      claude --agent (not a user agent: the bench doesn't load them; use --disallowed-tools)
   --account <label>   account label, recorded hashed
   --keep-transcripts  keep each run's session, scrubbed, in <results dir>/transcripts/ (public repos only)
   --chains <ids>      run #32's chains (A, then B in the same clone) instead of single tasks:
@@ -517,10 +517,10 @@ async function main() {
     process.exitCode = 2;
     return;
   }
-  // A user agent that isn't there would be ignored, not reported (#38's
-  // minimal-tools profile is copied in by hand).
-  if (options.agent && !options.agent.includes(':') && !existsSync(join(configDir(), 'agents', `${options.agent}.md`))) {
-    console.error(`error: no agent "${options.agent}" in ${join(configDir(), 'agents')}; copy it first, e.g. cp profiles/${options.agent}.md "${join(configDir(), 'agents')}/"`);
+  // --setting-sources project,local leaves user agents out, so a copied-in
+  // agent is never loaded and every run fails with "not found" (#38).
+  if (options.agent && existsSync(join(configDir(), 'agents', `${options.agent}.md`))) {
+    console.error(`error: "${options.agent}" is a user agent, and the bench's --setting-sources project,local doesn't load user agents; pass its tools with --disallowed-tools instead`);
     process.exitCode = 2;
     return;
   }
