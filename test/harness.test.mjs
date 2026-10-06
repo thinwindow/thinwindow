@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { test } from 'node:test';
 import { Budget, experimentArgs, runJob } from '../bench/experiments/resume.mjs';
 import { buildClaudeArgs, hostFingerprint, runFingerprint } from '../bench/lib/claude.mjs';
@@ -97,8 +97,8 @@ test('planRuns: a seeded random order per pair, reproducible; alternating withou
 
 test('0.4.0 rows live in their own folder, and a run found twice counts once', () => {
   assert.equal(versionDir('0.4.0-dev'), join(RESULTS_DIR, '0.4.0'));
-  assert.equal(defaultOut({ model: 'm' }, '0.4.0-dev'), join(RESULTS_DIR, '0.4.0', `${defaultOut({ model: 'm' }, '0.4.0').split('/').pop()}`));
-  assert.match(defaultOut({ model: 'm', chains: [1] }, '0.4.0-dev'), /0\.4\.0\/\d{4}-\d\d-\d\d-m-chains\.jsonl$/);
+  assert.equal(defaultOut({ model: 'm' }, '0.4.0-dev'), join(RESULTS_DIR, '0.4.0', basename(defaultOut({ model: 'm' }, '0.4.0'))));
+  assert.match(defaultOut({ model: 'm', chains: [1] }, '0.4.0-dev'), /0\.4\.0[\\/]\d{4}-\d\d-\d\d-m-chains\.jsonl$/);
   assert.equal(defaultOut({ model: 'm', out: '/x.jsonl' }), '/x.jsonl');
   assert.deepEqual(dedupeRuns([{ sessionId: 'a' }, { sessionId: 'b' }, { sessionId: 'a' }, {}, {}]).length, 4);
   assert.ok(since('0.4.0-dev') && since('0.4.0') && since('0.10.1') && since('1.0.0'));
