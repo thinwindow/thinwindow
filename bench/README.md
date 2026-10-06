@@ -4,6 +4,26 @@ Measures whether thinwindow makes Claude Code use fewer tokens on real tasks
 without lowering the success rate. Every number thinwindow publishes comes
 from the raw results in `bench/results/`.
 
+## Four instruments (#28)
+
+From 0.4.0, the benchmark is one of four instruments, cheapest first. Each
+answers one question.
+
+| Instrument | Question | Cost | When |
+| --- | --- | --- | --- |
+| Unit tests (`node --test`) | Does the mechanism do what it says? | $0 | Every commit |
+| Replay of recorded sessions: the bench's kept transcripts, and volunteers' own sessions run locally with aggregate output (`/thinwindow:report`) | How much money is at stake, and what would a mechanism have changed? | $0 | Before building; every PR that touches a mechanism |
+| A few targeted runs (`bench/experiments/`) | Does the model still finish the task after the mechanism acts? | ≤ US$3–4 per question | Only when the answer changes a decision, with go/kill criteria written first |
+| One validation per release (`bench/run.mjs`, below) | What can the release claim? | Tens of runs | Once per release, in one environment, against no plugin |
+
+**The cache TTL trap.** A result can hold on the bench and reverse on real
+sessions. Bench runs have no idle gaps, so a 5-minute prompt-cache lifetime
+looks cheaper there: about −20% cost. Replayed on the maintainer's own
+sessions, where a reply often comes 5–60 minutes later and every such gap
+re-writes the whole context, the same change costs about +14% (#37). Any
+change that touches caching is replayed on real sessions too, not only run on
+the bench.
+
 ## What a run does
 
 For each task, condition and repetition, `bench/run.mjs`:
@@ -37,11 +57,12 @@ For each task, condition and repetition, `bench/run.mjs`:
    calls, one line each, and `traceTails` the last 200 characters of each
    call's result, so a repeated attempt can be read from the file.
 4. Runs the task's `verify` command in the clone. Exit code 0 is a success.
-5. Appends one JSON line to `bench/results/<date>-<model>.jsonl` and deletes
-   the clone.
+5. Appends one JSON line to `bench/results/<version>/<date>-<model>.jsonl`
+   (0.3.0's runs are in `bench/results/*.jsonl`) and deletes the clone.
 
-Runs are interleaved (task by task, alternating which condition goes first
-on each repetition) so neither condition always runs first.
+Runs are interleaved task by task, so neither condition always runs first.
+0.3.0 alternated which condition went first on each repetition; from 0.4.0
+the order of each pair is random, from a seed recorded on every row.
 
 ## Tasks
 
@@ -117,6 +138,77 @@ pass, or `--model <m>`), prints a markdown table per model and writes
 reports median total tokens with the min–max spread, median cost and turns,
 the success rate per condition and the Δ%. The total row sums the per-task
 medians. Commit the raw JSONL together with the report.
+
+## The 0.4.0 harness (#37)
+
+0.4.0's validation (#38) runs with `bench/run.mjs` and the flags below. The
+same flags apply to both conditions; only `--plugin-dir` differs.
+
+```sh
+CLAUDE_CONFIG_DIR=~/.claude-bench-flow node bench/run.mjs --condition baseline,thinwindow \
+  --reps 3 --model claude-sonnet-5-5 --account <label> --keep-transcripts --max-cost 6
+CLAUDE_CONFIG_DIR=~/.claude-bench-flow node bench/run.mjs --chains 1,2,3 --condition baseline,thinwindow \
+  --reps 3 --model claude-sonnet-5-5 --account <label> --keep-transcripts --max-cost 6
+node bench/report.mjs bench/results/0.4.0/*.jsonl --out bench/results/0.4.0
+```
+
+- **Where rows live.** `bench/results/<version>/`, so `bench/results/0.4.0/`
+  for 0.4.0 and its prereleases. `bench/report.mjs` and `bench/docs.mjs` read
+  only `bench/results/*.jsonl` unless given files, so 0.3.0's published
+  blocks can't change.
+- **One environment.** `--tools` and `--disallowed-tools` pass a fixed tool
+  list to both conditions; `--agent` runs both under one agent (a user agent
+  must already be in `$CLAUDE_CONFIG_DIR/agents/`, for example
+  `profiles/thinwindow-minimal.md`). `--disable-slash-commands` isn't used:
+  with `Skill` disallowed it removes nothing more (#35), and chains need a
+  typed `/thinwindow:resume`, which still runs without the Skill tool.
+- **Fingerprint on every row:** Claude Code version, model, effort, profile
+  name, account (the `--account` label, hashed), OS, the tool list flags,
+  tool, skill and agent counts from the stream's init event (names hashed),
+  ThinWindow's own skills counted apart, the first request's tokens and
+  whether it started on a cold prompt cache (no cache reads). Effort is what
+  the init event reports, or `default`: Claude Code 2.1.289's init event and
+  transcripts don't carry it, and the default is fixed by version and model,
+  which the fingerprint already holds.
+- **Refusal.** For rows of 0.4.0 and later, `bench/report.mjs` refuses to
+  aggregate rows whose fingerprints differ, and rows from before and after
+  0.4.0. ThinWindow's own skills, the first request's size and the cache
+  state differ by condition or by run, so they are reported, not matched.
+- **Order.** `--seed <n>` fixes the random order of each pair; without it, a
+  seed is drawn and recorded.
+- **Kept transcripts.** `--keep-transcripts` keeps each run's session and
+  writes it, scrubbed, to `transcripts/<session id>.jsonl` next to the
+  results, for tasks on a public GitHub repo only. The scrub
+  (`bench/lib/transcripts.mjs`) is an allowlist: user, assistant and
+  attachment records, with listed fields only; attachments other than hook
+  output, the turn-cap notice and the token and budget reminders keep only
+  their type and size (that drops the copy of the system prompt, the skill,
+  tool and agent listings, the environment and the account's organization);
+  then the clone, temp dir, config dir, `$HOME` and the user name are
+  replaced. Every row also keeps the agent's final message (`finalMessage`),
+  for the manual review of answers.
+- **Intervals.** For rows of 0.4.0 and later, the report uses a seeded
+  hierarchical bootstrap (`bench/lib/stats.mjs`): resample tasks, then runs
+  within each task and condition. Next to every interval it prints the
+  smallest effect the suite can detect: 2.8 × the bootstrap standard error,
+  a 5% two-sided test with 80% power. The primary metric is the cost per
+  completed task: everything a condition's runs cost, failures included,
+  over the runs that passed. 0.3.0's tables keep the method they were
+  published with.
+- **Chains.** `--chains` runs #32's chains (task A, then task B in the same
+  clone) with both conditions. The baseline continues A's session
+  (`--resume <A> --fork-session`). ThinWindow plays the user who accepts the
+  fresh start: no notice fires in `-p`, so the bench starts a new session
+  with `/thinwindow:resume <task B>`. Each job writes an A row and a B row
+  (`bench/experiments/resume.mjs` runs them); the report joins them into one
+  chain run, complete when A passes, B passes and A still passes after B. Its
+  cost is priced from token usage, never `total_cost_usd` (a resumed
+  session's figure includes what it had already cost), with B's first
+  request re-written at the 1-hour cache-write price, as after an expired
+  cache. In `-p`, the Stop hook doesn't fire on `error_max_turns`, so A's
+  brief can be a turn behind or missing: the B row records `briefFound`.
+- A report that reads more than one file counts a run found twice once (by
+  session id).
 
 ## Publishing numbers
 

@@ -3,25 +3,29 @@
 //
 //   node bench/run.mjs --condition baseline|thinwindow --reps N --model <m> [--tasks ids]
 //                      [--dry-run] [--max-cost <usd>]
+//   node bench/run.mjs --chains 1,2,3 --condition baseline,thinwindow --reps N --model <m>
 //
 // For every run: a fresh temp clone of the task repo at its pinned commit,
 // then `claude -p "<prompt>" --output-format json --model <m> --max-turns 40`
 // (plus `--plugin-dir <this repo>` for the thinwindow condition), then the
 // task's `verify` command. Each run is appended to
-// bench/results/<date>-<model>.jsonl. See bench/README.md.
+// bench/results/<version>/<date>-<model>.jsonl. See bench/README.md.
+import { randomInt } from 'node:crypto';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
-import { delimiter, join, relative } from 'node:path';
+import { delimiter, dirname, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, parseInit, parseResult, parseTrace, parseTraceTails } from './lib/claude.mjs';
+import { CONDITIONS, DEFAULT_MAX_TURNS, buildClaudeArgs, claudeEnv, claudeVersion, configDir, hostFingerprint, parseInit, parseResult, parseTrace, parseTraceTails, runFingerprint } from './lib/claude.mjs';
 import { ROOT_DIR } from './lib/paths.mjs';
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from './lib/pricing.mjs';
 import { runProcess, runSync, tail, which } from './lib/proc.mjs';
-import { appendResult, readResults, resultsPath } from './lib/results.mjs';
-import { median } from './lib/stats.mjs';
-import { loadTasks, repoLabel } from './lib/tasks.mjs';
+import { appendResult, readResults, resultsPath, versionDir } from './lib/results.mjs';
+import { median, mulberry32, shuffle } from './lib/stats.mjs';
+import { loadTask, loadTasks, repoLabel } from './lib/tasks.mjs';
+import { isPublicRepo, keepTranscript, scrubber } from './lib/transcripts.mjs';
 import { cloneAt, makeWorkdir, removeWorkdir, runSetup, runVerify } from './lib/workspace.mjs';
 import { loadState, statePath } from '../hooks/lib/state.mjs';
+import { Budget, CHAINS, runJob } from './experiments/resume.mjs';
 
 const USAGE = `usage: node bench/run.mjs --condition baseline|thinwindow --reps N --model <m> [options]
 
@@ -34,9 +38,20 @@ const USAGE = `usage: node bench/run.mjs --condition baseline|thinwindow --reps 
   --max-turns <n>     claude --max-turns (default ${DEFAULT_MAX_TURNS})
   --claude <path>     claude executable (default: claude on PATH)
   --bare              pass --bare to claude (needs ANTHROPIC_API_KEY)
-  --out <file>        results file (default bench/results/<date>-<model>.jsonl)
+  --out <file>        results file (default bench/results/<version>/<date>-<model>.jsonl)
   --keep              keep the temp clones for inspection
   --est-run-usd <x>   dry run: use this cost per run instead of the estimate
+
+0.4.0 harness (#37), the same for both conditions:
+  --seed <n>          seed of the random condition order per pair (default: random, recorded)
+  --tools <list>      claude --tools (built-in tools available)
+  --disallowed-tools <list>  claude --disallowedTools
+  --agent <name>      claude --agent (a user agent must be in $CLAUDE_CONFIG_DIR/agents/)
+  --account <label>   account label, recorded hashed
+  --keep-transcripts  keep each run's session, scrubbed, in <results dir>/transcripts/ (public repos only)
+  --chains <ids>      run #32's chains (A, then B in the same clone) instead of single tasks:
+                      the baseline continues A's session, thinwindow starts fresh with
+                      /thinwindow:resume (ids 1-${CHAINS.length})
   -h, --help          show this help`;
 
 export class UsageError extends Error {}
@@ -63,6 +78,13 @@ export function parseCli(argv) {
         out: { type: 'string' },
         keep: { type: 'boolean', default: false },
         'est-run-usd': { type: 'string' },
+        seed: { type: 'string' },
+        tools: { type: 'string' },
+        'disallowed-tools': { type: 'string' },
+        agent: { type: 'string' },
+        account: { type: 'string' },
+        'keep-transcripts': { type: 'boolean', default: false },
+        chains: { type: 'string' },
         help: { type: 'boolean', short: 'h', default: false },
       },
     }));
@@ -84,6 +106,14 @@ export function parseCli(argv) {
     if (!Number.isFinite(v) || v < 0) throw new UsageError(`--${name} must be a non-negative number`);
     return v;
   };
+  const seed = values.seed === undefined ? randomInt(2 ** 31) : Number(values.seed);
+  if (!Number.isInteger(seed) || seed < 0) throw new UsageError('--seed must be a non-negative integer');
+  let chains = null;
+  if (values.chains !== undefined) {
+    chains = values.chains.split(',').map((s) => Number(s.trim()));
+    if (!chains.length || chains.some((c) => !Number.isInteger(c) || c < 1 || c > CHAINS.length)) throw new UsageError(`--chains takes ids from 1 to ${CHAINS.length}`);
+    if (values.tasks) throw new UsageError('--chains and --tasks are exclusive');
+  }
   return {
     conditions: [...new Set(conditions)],
     reps,
@@ -97,16 +127,25 @@ export function parseCli(argv) {
     out: values.out || null,
     keep: values.keep,
     estRunUsd: num('est-run-usd'),
+    seed,
+    tools: values.tools ?? null,
+    disallowedTools: values['disallowed-tools'] ?? null,
+    agent: values.agent ?? null,
+    account: values.account ?? null,
+    keepTranscripts: values['keep-transcripts'],
+    chains,
   };
 }
 
-// Interleaves conditions and alternates which goes first on each rep, so
-// neither condition always runs first (warm caches, time of day).
-export function planRuns(tasks, conditions, reps) {
+// Interleaves conditions so neither always runs first (warm caches, time of
+// day). With a seed, the order of each task's pair is random (#37); without
+// one, it alternates per rep, as 0.3.0 ran.
+export function planRuns(tasks, conditions, reps, seed = null) {
+  const rand = seed === null || seed === undefined ? null : mulberry32(seed);
   const plan = [];
   for (let rep = 1; rep <= reps; rep++) {
     for (const task of tasks) {
-      const order = rep % 2 === 1 ? conditions : [...conditions].reverse();
+      const order = rand ? shuffle(conditions, rand) : rep % 2 === 1 ? conditions : [...conditions].reverse();
       for (const condition of order) plan.push({ task, condition, rep });
     }
   }
@@ -168,7 +207,11 @@ export function formatPlan({ tasks, plan, options, estimate, outFile }) {
         ? `, $${price.input}/$${price.output} per MTok in/out, cache write $${price.cacheWrite}, cache read $${price.cacheRead}`
         : ', price unknown'),
   );
-  lines.push(`conditions: ${conditions.join(', ')} · reps: ${reps} · max turns: ${maxTurns}`);
+  lines.push(`conditions: ${conditions.join(', ')} · reps: ${reps} · max turns: ${maxTurns}${options.seed !== undefined && options.seed !== null ? ` · order seed: ${options.seed}` : ''}`);
+  const harness = [['--tools', options.tools], ['--disallowedTools', options.disallowedTools], ['--agent', options.agent]].filter(([, v]) => v);
+  if (harness.length) lines.push(`both conditions: ${harness.map(([k, v]) => `${k} ${v}`).join(' ')}`);
+  if (options.keepTranscripts) lines.push('transcripts: kept, scrubbed, next to the results (public repos only)');
+  if (options.account === null) lines.push('no --account: the rows record no account label');
   lines.push(`results: ${relative(process.cwd(), outFile) || outFile}`);
   lines.push('');
   const w = Math.max(4, ...tasks.map((t) => t.id.length));
@@ -178,7 +221,8 @@ export function formatPlan({ tasks, plan, options, estimate, outFile }) {
     lines.push(`${t.id.padEnd(w)}  ${`${repoLabel(t.repo)}@${t.commit.slice(0, 7)}`.padEnd(30)}  ${fmtMinutes(t.timeout).padStart(7)}  ${String(runs).padStart(4)}`);
   }
   lines.push('');
-  lines.push(`total: ${tasks.length} task${tasks.length > 1 ? 's' : ''} × ${conditions.length} condition${conditions.length > 1 ? 's' : ''} × ${reps} rep${reps > 1 ? 's' : ''} = ${plan.length} run${plan.length === 1 ? '' : 's'}`);
+  const units = options.chains ? `${options.chains.length} chain${options.chains.length > 1 ? 's' : ''}` : `${tasks.length} task${tasks.length > 1 ? 's' : ''}`;
+  lines.push(`total: ${units} × ${conditions.length} condition${conditions.length > 1 ? 's' : ''} × ${reps} rep${reps > 1 ? 's' : ''} = ${plan.length} run${plan.length === 1 ? '' : 's'}${options.chains ? ' (A and B each)' : ''}`);
   lines.push('');
   const b = estimate.basis;
   const sources = [];
@@ -211,12 +255,32 @@ export function formatPlan({ tasks, plan, options, estimate, outFile }) {
   return `${lines.join('\n')}\n`;
 }
 
+// Every row of an invocation shares these: what ran, where, and how.
+function invocationMeta(options) {
+  return {
+    claudeVersion: claudeVersion(options.claude.cmd, options.claude.prefixArgs),
+    ...thinwindowMeta(),
+    ...hostFingerprint({ account: options.account }),
+    orderSeed: options.seed ?? null,
+    toolList: options.tools ?? null,
+    disallowedTools: options.disallowedTools ?? null,
+    agent: options.agent ?? null,
+  };
+}
+
+function pluginVersion() {
+  return JSON.parse(readFileSync(join(ROOT_DIR, '.claude-plugin', 'plugin.json'), 'utf8')).version;
+}
+
+export function defaultOut(options, version = pluginVersion()) {
+  return options.out || resultsPath(options.chains ? `${options.model}-chains` : options.model, { dir: versionDir(version) });
+}
+
 function thinwindowMeta() {
-  const plugin = JSON.parse(readFileSync(join(ROOT_DIR, '.claude-plugin', 'plugin.json'), 'utf8'));
   const rev = runSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT_DIR, allowFail: true });
   const status = runSync('git', ['status', '--porcelain', '--', 'rules', 'hooks', 'skills', 'bin'], { cwd: ROOT_DIR, allowFail: true });
   return {
-    thinwindowVersion: plugin.version,
+    thinwindowVersion: pluginVersion(),
     thinwindowCommit: rev.status === 0 ? rev.stdout.trim() : null,
     thinwindowDirty: status.status === 0 ? status.stdout.trim() !== '' : null,
     rulesChars: readFileSync(join(ROOT_DIR, 'rules', 'thinwindow.md'), 'utf8').length,
@@ -252,7 +316,17 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     // A Python task's setup makes .bench-venv; put it first on the agent's PATH.
     const venvBin = join(dir, '.bench-venv', 'bin');
     if (existsSync(venvBin)) agentEnv.PATH = `${venvBin}${delimiter}${agentEnv.PATH || ''}`;
-    const args = buildClaudeArgs({ prompt: task.prompt, model: options.model, condition, maxTurns: options.maxTurns, bare: options.bare });
+    const args = buildClaudeArgs({
+      prompt: task.prompt,
+      model: options.model,
+      condition,
+      maxTurns: options.maxTurns,
+      bare: options.bare,
+      persist: Boolean(options.keepTranscripts),
+      tools: options.tools ?? null,
+      disallowedTools: options.disallowedTools ?? null,
+      agent: options.agent ?? null,
+    });
     const res = await runProcess(options.claude.cmd, [...options.claude.prefixArgs, ...args], {
       cwd: dir,
       env: agentEnv,
@@ -283,8 +357,14 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     // Effort isn't pinned (Claude Code's default for the model); recorded as
     // Claude Code reports it, or as the env override, or as "default".
     record.effort = parseInit(res.stdout)?.effort ?? agentEnv.CLAUDE_CODE_EFFORT_LEVEL ?? 'default';
+    Object.assign(record, runFingerprint(res.stdout));
     record.trace = parseTrace(res.stdout);
     record.traceTails = parseTraceTails(res.stdout);
+    // For the manual review of final messages (#38).
+    record.finalMessage = record.resultText ? scrubber({ clone: dir })(record.resultText).slice(0, 8000) : null;
+    if (options.keepTranscripts && isPublicRepo(task.repo) && options.out) {
+      record.transcript = keepTranscript(record.sessionId, { outDir: dirname(options.out), clone: dir });
+    }
     record.exitCode = res.code;
     record.timedOut = res.timedOut;
     record.wallMs = res.durationMs;
@@ -330,11 +410,29 @@ function fmtTokens(n) {
   return n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : `${Math.round(n / 1000)}k`;
 }
 
+// #32's chains under the harness: one job per chain, rep and condition, in a
+// seeded random order per pair; resume.mjs runs each job and writes its A and
+// B rows.
+export async function runChains(options, { log = (s) => process.stdout.write(s) } = {}) {
+  const outFile = defaultOut(options);
+  const items = options.chains.map((chain) => ({ id: `chain-${chain}`, chain }));
+  const plan = planRuns(items, options.conditions, options.reps, options.seed);
+  const env = { ...invocationMeta(options), kind: 'chain', maxTurns: options.maxTurns, bare: options.bare };
+  const budget = new Budget(options.maxCost);
+  for (const [i, { task, condition, rep }] of plan.entries()) {
+    log(`[${i + 1}/${plan.length}] ${task.id} · ${condition} · rep ${rep}\n`);
+    const arm = condition === 'baseline' ? 'continue' : 'fresh';
+    await runJob({ chain: task.chain, rep, model: options.model, budget, env, out: outFile, log, condition, arms: [arm], run: { ...options, harness: true } });
+  }
+  log(`spent $${budget.spent.toFixed(2)}; rows appended to ${outFile}\n`);
+  return { outFile, spent: budget.spent };
+}
+
 export async function runBench(options, { log = (s) => process.stdout.write(s), env = process.env, tasks } = {}) {
   const list = tasks || loadTasks(options.taskIds);
-  const plan = planRuns(list, options.conditions, options.reps);
-  const outFile = options.out || resultsPath(options.model);
-  const meta = { claudeVersion: claudeVersion(options.claude.cmd, options.claude.prefixArgs), ...thinwindowMeta() };
+  const plan = planRuns(list, options.conditions, options.reps, options.seed);
+  const outFile = defaultOut(options);
+  const meta = invocationMeta(options);
   const records = [];
   let cumulative = 0;
   let stopped = false;
@@ -347,7 +445,7 @@ export async function runBench(options, { log = (s) => process.stdout.write(s), 
     log(`[${i + 1}/${plan.length}] ${run.task.id} · ${run.condition} · rep ${run.rep} ... `);
     let record;
     try {
-      record = await runOne({ ...run, options: { ...options, abortOnStartupFailure: i === 0 }, meta, env });
+      record = await runOne({ ...run, options: { ...options, out: outFile, abortOnStartupFailure: i === 0 }, meta, env });
     } catch (err) {
       if (!(err instanceof StartupError)) throw err;
       log(`aborted\n${err.message}\nNothing was recorded. Check that \`claude -p\` works here and that the sandbox is available (https://code.claude.com/docs/en/sandboxing).\n`);
@@ -383,16 +481,25 @@ async function main() {
     return;
   }
   let tasks;
+  let chainPlan = null;
   try {
-    tasks = loadTasks(options.taskIds);
+    if (options.chains) {
+      // The task-level plan of the chains, for the estimate: B is priced as a
+      // fresh run, so a cold continue costs more than estimated.
+      chainPlan = planRuns(options.chains.map((chain) => ({ id: `chain-${chain}`, chain })), options.conditions, options.reps, options.seed);
+      tasks = [...new Set(options.chains.flatMap((c) => CHAINS[c - 1]))].map((id) => loadTask(id));
+    } else tasks = loadTasks(options.taskIds);
   } catch (err) {
     console.error(`error: ${err.message}`);
     process.exitCode = 2;
     return;
   }
-  const outFile = options.out || resultsPath(options.model);
+  const outFile = defaultOut(options);
   if (options.dryRun) {
-    const plan = planRuns(tasks, options.conditions, options.reps);
+    const plan = chainPlan
+      ? chainPlan.flatMap((p) => CHAINS[p.task.chain - 1].map((id) => ({ task: tasks.find((t) => t.id === id), condition: p.condition, rep: p.rep })))
+      : planRuns(tasks, options.conditions, options.reps, options.seed);
+    if (chainPlan) process.stdout.write(`chains, in run order (A then B per line): ${chainPlan.map((p) => `${p.task.id}/${p.condition}/rep ${p.rep}`).join(', ')}\n`);
     let history = [];
     try {
       history = readResults();
@@ -408,6 +515,17 @@ async function main() {
   if (!claudeVersion(options.claude.cmd)) {
     console.error(`error: could not run "${options.claude.cmd} --version"; install Claude Code or pass --claude <path>`);
     process.exitCode = 2;
+    return;
+  }
+  // A user agent that isn't there would be ignored, not reported (#38's
+  // minimal-tools profile is copied in by hand).
+  if (options.agent && !options.agent.includes(':') && !existsSync(join(configDir(), 'agents', `${options.agent}.md`))) {
+    console.error(`error: no agent "${options.agent}" in ${join(configDir(), 'agents')}; copy it first, e.g. cp profiles/${options.agent}.md "${join(configDir(), 'agents')}/"`);
+    process.exitCode = 2;
+    return;
+  }
+  if (options.chains) {
+    await runChains({ ...options, out: outFile });
     return;
   }
   const { records, aborted } = await runBench({ ...options, out: outFile }, { tasks });
