@@ -203,7 +203,7 @@ test('chains: one run per chain, rep and condition, priced from token usage with
   const req = (n) => [{ input: n, cacheRead: 0, cacheWrite: 0, output: 0 }];
   const env = Object.fromEntries(Object.entries(row('x', 'baseline', 1)).filter(([k]) => !['task', 'condition', 'costUsd', 'totalTokens', 'success', 'firstRequest'].includes(k)));
   const ab = (condition, arm, { bPass = true, aAfter = true } = {}) => [
-    { ...env, kind: 'chain', experiment: 'resume', phase: 'A', chain: 1, rep: 1, taskA: 'a', taskB: 'b', condition, requests: req(1e6), numTurns: 4, aPass: true, costUsd: 99 },
+    { ...env, kind: 'chain', experiment: 'resume', phase: 'A', chain: 1, rep: 1, taskA: 'a', taskB: 'b', condition, requests: req(1e6), numTurns: 4, aPass: true, costUsd: 99, pluginSkillCount: condition === 'thinwindow' ? 4 : 0 },
     { ...env, kind: 'chain', experiment: 'resume', phase: 'B', chain: 1, rep: 1, taskA: 'a', taskB: 'b', condition, arm, requests: req(5e5), numTurns: 3, bPass, aPass: aAfter, coldPenaltyUsd: arm === 'continue' ? 0.5 : 0.1, invocations: [{ costUsd: 150, subtype: 'success' }], sessionId: `${condition}-b` },
   ];
   const [base, skin] = chainRuns([...ab('baseline', 'continue'), ...ab('thinwindow', 'fresh', { aAfter: false })]);
@@ -217,6 +217,7 @@ test('chains: one run per chain, rep and condition, priced from token usage with
   assert.equal(base.task, 'chain-1 (a → b)');
   const [s] = summarize([...ab('baseline', 'continue'), ...ab('thinwindow', 'fresh')]);
   assert.equal(s.model, 'claude-sonnet-5-5 (chains)');
+  assert.equal(s.env.pluginSkillCount, 4);
   assert.match(markdownReport([s]), /A chain run is task A, then task B in the same clone/);
   // #32's rows (no harness kind) are not chain runs.
   assert.deepEqual(chainRuns([]), []);
@@ -260,13 +261,13 @@ const TRANSCRIPT = [
       ],
     },
   },
-  { type: 'user', uuid: 'u6', sessionId: 's1', toolUseResult: { originalFile: 'all of it' }, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', content: [{ type: 'text', text: `owner someone in ${HOME}/x` }] }] } },
+  { type: 'user', uuid: 'u6', sessionId: 's1', toolUseResult: { originalFile: 'all of it' }, message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', content: [{ type: 'text', text: `owner someone in ${HOME}/x, skill in ${HOME}/code/thinwindow/skills/resume` }] }] } },
   { type: 'cost-state', totalCostUSD: 1 },
   { type: 'file-history-snapshot', snapshot: {} },
 ];
 
 test('kept transcripts: an allowlist of records, fields and attachments, with home and clone paths replaced', () => {
-  const scrub = scrubber({ clone: CLONE, home: HOME, config: `${HOME}/.claude-bench-flow`, user: 'someone', tmp: '/private/var/folders/xx/T' });
+  const scrub = scrubber({ clone: CLONE, home: HOME, config: `${HOME}/.claude-bench-flow`, plugin: `${HOME}/code/thinwindow`, user: 'someone', tmp: '/private/var/folders/xx/T' });
   const out = scrubTranscript(TRANSCRIPT, scrub);
   const text = JSON.stringify(out);
   for (const secret of ['org-secret', 'You are', 'acct-skill', 'req-secret', 'sig-secret', 'all of it', 'opaque', HOME, 'someone', 'enqueue', 'totalCostUSD']) assert.ok(!text.includes(secret), secret);
@@ -278,7 +279,7 @@ test('kept transcripts: an allowlist of records, fields and attachments, with ho
   assert.equal(out[4].promptSource, undefined);
   assert.deepEqual(out[5].message.content, [{ type: 'thinking', thinking: 'plan' }, { type: 'tool_use', id: 't1', name: 'Read', input: { file_path: '<clone>/lib/a.js' } }, { type: 'redacted_thinking' }]);
   assert.deepEqual(out[5].message.usage, { input_tokens: 1 });
-  assert.equal(out[6].message.content[0].content[0].text, 'owner <user> in ~/x');
+  assert.equal(out[6].message.content[0].content[0].text, 'owner <user> in ~/x, skill in <plugin>/skills/resume');
   assert.equal(out[6].toolUseResult, undefined);
   assert.ok(isPublicRepo('https://github.com/tj/commander.js.git') && !isPublicRepo('/tmp/repo') && !isPublicRepo('git@github.com:x/y'));
 });

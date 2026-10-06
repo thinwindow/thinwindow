@@ -420,10 +420,10 @@ const passBoth = (r) => r.bPass && r.aPass;
 // Claude Code's total_cost_usd for a resumed session includes what the
 // session had already cost (A's run, and the /compact call for the compacted
 // session). The B phase's own cost: the last invocation's reported cost minus
-// A's, except in the brief arm, which starts fresh.
+// A's, except in the brief and fresh arms, which start a new session.
 export function ownWarmUsd(row, aCost) {
   const last = row.invocations.at(-1)?.costUsd ?? 0;
-  return row.arm === 'brief' ? last : last - aCost;
+  return row.arm === 'brief' || row.arm === 'fresh' ? last : last - aCost;
 }
 
 // B rows with their own warm and cold costs.
