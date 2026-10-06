@@ -157,11 +157,14 @@ node bench/report.mjs bench/results/0.4.0/*.jsonl --out bench/results/0.4.0
   only `bench/results/*.jsonl` unless given files, so 0.3.0's published
   blocks can't change.
 - **One environment.** `--tools` and `--disallowed-tools` pass a fixed tool
-  list to both conditions; `--agent` runs both under one agent (a user agent
-  must already be in `$CLAUDE_CONFIG_DIR/agents/`, for example
-  `profiles/thinwindow-minimal.md`). `--disable-slash-commands` isn't used:
-  with `Skill` disallowed it removes nothing more (#35), and chains need a
-  typed `/thinwindow:resume`, which still runs without the Skill tool.
+  list to both conditions; `--agent` runs both under one agent. User agents
+  in `$CLAUDE_CONFIG_DIR/agents/` don't work: the bench's `--setting-sources
+  project,local` doesn't load them, so the run refuses one (#38). To run a
+  profile such as `profiles/thinwindow-minimal.md`, pass its
+  `disallowedTools` list with `--disallowed-tools`.
+  `--disable-slash-commands` isn't used: with `Skill` disallowed it removes
+  nothing more (#35), and chains need a typed `/thinwindow:resume`, which
+  still runs without the Skill tool.
 - **Fingerprint on every row:** Claude Code version, model, effort, profile
   name, account (the `--account` label, hashed), OS, the tool list flags,
   tool, skill and agent counts from the stream's init event (names hashed),
