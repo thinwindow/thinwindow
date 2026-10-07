@@ -62,32 +62,57 @@ const realpath = (p) => {
   }
 };
 
+// What the exact paths below can't catch, because no whole path is left to
+// match: a macOS temp folder cut short by a clipped excerpt
+// ("/private/var/folders/ab/cd…"), Claude Code's sandbox temp folder
+// (/tmp/claude-<uid>), and the folder names Claude Code builds from a path by
+// turning each "/" into "-". On macOS /var and /tmp are links into /private,
+// so a path can also arrive with that prefix in front of the replaced part.
+const machinePaths = (tmp) => [
+  [new RegExp(`/private(?=${tmp.replace(/[$<>]/g, '\\$&')}|<clone>)`, 'g'), ''],
+  [/\/(?:private\/)?var\/folders\/[\w+-]*(?:\/[\w+-]*(?:\/T\b)?)?/g, tmp],
+  [/\/(?:private\/)?tmp\/claude-\d+/g, tmp],
+  [/-(?:private-)?var-folders-[\w+]+-[\w+]+-T(?=-)/g, `-${tmp.replace(/^\$/, '')}`],
+];
+
 // Replaces what says whose machine ran it, longest path first. The user name
 // is replaced as a whole word (it shows in `ls -l`), and only when it is long
 // enough not to clobber ordinary words.
-export function scrubber({ clone = null, home = homedir(), config = configDir(), plugin = ROOT_DIR, user = userInfo().username, tmp = tmpdir() } = {}) {
+// `shell`: for result rows, whose traces are read as shell commands
+// (bench/compliance.mjs): placeholders are shell words ($TMPDIR, $USER), not
+// <tmp>, which a shell parser reads as redirections, and the clone keeps its
+// folder name, which names the task.
+export function scrubber({ clone = null, home = homedir(), config = configDir(), plugin = ROOT_DIR, user = userInfo().username, tmp = tmpdir(), shell = false } = {}) {
+  const T = shell ? '$TMPDIR' : '<tmp>';
   const pairs = [
-    [clone && realpath(clone), '<clone>'],
-    [clone, '<clone>'],
-    [realpath(tmp), '<tmp>'],
-    [tmp, '<tmp>'],
-    [config, '<config>'],
-    [plugin, '<plugin>'],
+    [!shell && clone && realpath(clone), '<clone>'],
+    [!shell && clone, '<clone>'],
+    [realpath(tmp), T],
+    [tmp, T],
+    [config, shell ? '$CLAUDE_CONFIG_DIR' : '<config>'],
+    [plugin, shell ? '$CLAUDE_PLUGIN_ROOT' : '<plugin>'],
     [home, '~'],
   ]
     .filter(([from]) => from && from.length > 1)
     .sort((a, b) => b[0].length - a[0].length);
   const word = user && user.length >= 4 ? new RegExp(`\\b${user.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g') : null;
+  const machine = machinePaths(T);
   return (text) => {
     let s = pairs.reduce((acc, [from, to]) => acc.split(from).join(to), String(text ?? ''));
-    if (word) s = s.replace(word, '<user>');
+    // Replacer functions: "$TMPDIR" must not read as a replacement pattern.
+    s = machine.reduce((acc, [re, to]) => acc.replace(re, () => to), s);
+    if (word) s = s.replace(word, () => (shell ? '$USER' : '<user>'));
     return s;
   };
 }
 
 export function scrubTranscript(records, scrub) {
-  return records.map(scrubRecord).filter(Boolean).map((r) => JSON.parse(scrub(JSON.stringify(r))));
+  return records.map(scrubRecord).filter(Boolean).map((r) => scrubRow(r, scrub));
 }
+
+// A result row, scrubbed the same way: its traces, tails and messages quote
+// paths in the run's clone and temp folders.
+export const scrubRow = (row, scrub) => JSON.parse(scrub(JSON.stringify(row)));
 
 // A session's transcript records, found by id under the profile's projects/.
 export function sessionRecords(sessionId, root = join(configDir(), 'projects')) {
