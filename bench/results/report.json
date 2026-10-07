@@ -10,6 +10,7 @@
       "Claude apps"
     ]
   },
+  "note": "Measured with the 0.3.0 method, in Claude Code. Instead of measuring savings in Cowork and the Claude apps, ThinWindow 0.4.0 checked what works on each surface (#29, #39); no savings were measured outside Claude Code.",
   "tasks": 8,
   "runs": 128,
   "models": [

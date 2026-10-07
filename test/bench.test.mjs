@@ -11,11 +11,12 @@ import { BENCH_DIR, FIXTURES_DIR, ROOT_DIR, SOLUTIONS_DIR } from '../bench/lib/p
 import { PRIOR_RUN_TOKENS, costOf, priceOf, resolveModel } from '../bench/lib/pricing.mjs';
 import { readResultFile, resultsPath } from '../bench/lib/results.mjs';
 import { bootstrapDelta, median, pctDelta } from '../bench/lib/stats.mjs';
-import { inlineChars, mechanisms, notReplayable, readChars } from '../bench/input-size.mjs';
+import { inlineChars, mechanisms, notReplayable, parseStep, readChars } from '../bench/input-size.mjs';
+import { compliance, lastLine, loadRuns, noisy, reads } from '../bench/compliance.mjs';
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
-import { buildReport, costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, resultsBlock, staleRanges, tokenMix } from '../bench/docs.mjs';
+import { buildReport, costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, tokenMix } from '../bench/docs.mjs';
 import { tempDir } from './helpers.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -227,9 +228,11 @@ if (args[0] === '--version') { console.log('0.0.1 (Fake Claude)'); process.exit(
 writeFileSync('args.json', JSON.stringify({ args, THINWINDOW: process.env.THINWINDOW ?? null }));
 const prompt = args[args.indexOf('-p') + 1];
 if (!prompt.includes('fail')) writeFileSync('done.txt', 'ok');
-console.log(JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5-5', effort: 'medium' }));
+const skills = args.includes('--plugin-dir') ? ['review', 'thinwindow:resume'] : ['review'];
+console.log(JSON.stringify({ type: 'system', subtype: 'init', model: 'claude-sonnet-5-5', effort: 'medium', tools: ['Read', 'Bash'], skills, agents: ['general-purpose'] }));
+console.log(JSON.stringify({ type: 'assistant', message: { id: 'm1', usage: { input_tokens: 10, cache_read_input_tokens: 0, cache_creation_input_tokens: 100, output_tokens: 5 } } }));
 console.log(JSON.stringify({
-  type: 'result', subtype: 'success', is_error: false, duration_ms: 50, num_turns: 3, total_cost_usd: 0.4,
+  type: 'result', subtype: 'success', is_error: false, duration_ms: 50, num_turns: 3, total_cost_usd: 0.4, result: 'Done in ' + process.cwd(),
   usage: { input_tokens: 10, cache_creation_input_tokens: 100, cache_read_input_tokens: 1000, output_tokens: 5 },
   modelUsage: { 'claude-haiku-4-5-20251001': { inputTokens: 10, cacheCreationInputTokens: 100, cacheReadInputTokens: 1000, outputTokens: 5 } },
 }));
@@ -273,6 +276,15 @@ test('runBench end to end with a fake claude and a local repo', { skip: process.
   assert.equal(solved.modelResolved, 'claude-haiku-4-5');
   assert.equal(solved.effort, 'medium');
   assert.equal(solved.thinwindowVersion, JSON.parse(readFileSync(join(ROOT_DIR, '.claude-plugin', 'plugin.json'), 'utf8')).version);
+  // The environment fingerprint (#37): ThinWindow's skills counted apart.
+  const twin = onDisk.find((r) => r.task === 'solve' && r.condition === 'baseline');
+  for (const k of ['toolCount', 'toolsHash', 'skillCount', 'skillsHash', 'agentCount', 'profile', 'os']) assert.deepEqual(solved[k], twin[k], k);
+  assert.equal(solved.toolCount, 2);
+  assert.equal(solved.pluginSkillCount, 1);
+  assert.equal(twin.pluginSkillCount, 0);
+  assert.equal(solved.cacheState, 'cold');
+  assert.equal(solved.firstRequest.context, 110);
+  assert.equal(solved.finalMessage, 'Done in <clone>');
   const argsSkin = JSON.parse(readFileSync(join(solved.workdir, 'args.json'), 'utf8'));
   assert.ok(argsSkin.args.includes('--plugin-dir'));
   assert.equal(argsSkin.THINWINDOW, null);
@@ -478,12 +490,10 @@ test('modelLabel reads the family and version out of a model id', () => {
   assert.equal(modelLabel('claude-sonnet-5-5').label, 'Sonnet 5.5');
 });
 
-test('the results say where the runs were measured', () => {
+test('report.json says where the runs were measured, and that 0.4.0 measured no savings elsewhere', () => {
   const r = buildReport();
-  assert.match(resultsBlock(r, 'en'), /measured in Claude Code, not in Cowork or the Claude apps/);
-  assert.match(resultsBlock(r, 'es'), /se midieron en Claude Code, no en Cowork/);
-  assert.match(resultsBlock(r, 'pt-BR'), /medidas no Claude Code, não no Cowork/);
   assert.deepEqual(r.surfaces.measured, ['Claude Code']);
+  assert.match(r.note, /no savings were measured outside Claude Code/);
 });
 
 test('tokenMix is the share of billed tokens by kind', () => {
@@ -505,7 +515,7 @@ test('costMix weights each kind of token by its list price', () => {
   assert.equal(costMix([{ ...run, modelResolved: 'mystery' }]), null);
 });
 
-test('the README blocks and report.json match the committed runs', () => {
+test('report.json matches the committed runs', () => {
   // The same check CI runs: every published number comes from bench/results/.
   assert.deepEqual(benchDocsOutOfDate(), []);
 });
@@ -522,10 +532,6 @@ test('headroom clamps every regressing task to its baseline', () => {
   const h = headroom([t('saves', 100, 80), t('regresses', 100, 120)]);
   assert.equal(h.regressingTasks, 1);
   assert.equal(h.tokensDeltaNoRegressions, -10);
-});
-
-test('the website blocks and the prose ranges match the committed runs', () => {
-  assert.deepEqual(staleRanges(), []);
 });
 
 test('bootstrapDelta is seeded and brackets the change of a sum', () => {
@@ -563,4 +569,20 @@ test('input-size replays only calls that leave the clone alone', () => {
   assert.equal(inlineChars(40000, 0), 2120);
   assert.equal(inlineChars(40000, 1), 10000);
   assert.deepEqual(mechanisms('thinwindow ran `npm test` through thinwindow-run, so the output is a summary'), ['command run through thinwindow-run']);
+});
+
+test('compliance counts each run once, groups it by its own commit, and reads the trace', () => {
+  const [a, b] = [tempDir(), tempDir()];
+  const run = (o) => JSON.stringify({ sessionId: 's1', task: 't', condition: 'baseline', modelResolved: 'claude-haiku-4-5', thinwindowCommit: 'ce45cd1', numTurns: 2, outputTokens: 100, success: true, trace: [], ...o });
+  // A file named after one commit holds another commit's runs, and repeats a run.
+  writeFileSync(join(a, 'haiku-528598a.jsonl'), `${run({})}\n${run({ sessionId: 's2', condition: 'thinwindow', thinwindowCommit: 'a6ebe93' })}\n`);
+  writeFileSync(join(b, 'haiku-ce45cd1.jsonl'), `${run({})}\n`);
+  const runs = loadRuns([a, b]);
+  assert.equal(runs.length, 2);
+  assert.deepEqual(compliance(runs).map((g) => [g.release, g.n.baseline, g.n.thinwindow]), [['0.2.2', 0, 1], ['ce45cd1', 1, 0]]);
+  const steps = (...calls) => calls.map(parseStep);
+  assert.deepEqual(reads(steps('Read [1+20] /c/a.js', 'Read /c/b.js', 'Bash cat a.js | head -n 5', "Bash sed -n '1,20p' a.js", 'Bash cat b.js', 'Bash cat > c.js <<EOF x EOF')), [true, false, true, true, false]);
+  assert.deepEqual(noisy(steps('Bash npm test 2>&1 | tail -n 20', 'Bash npx jest', 'Bash thinwindow-run npm test', 'Bash pytest -q', 'Bash ls')), [true, false, true, true]);
+  assert.equal(lastLine('x" 654 assert y 655 return 0 656'), 656);
+  assert.equal(lastLine('no line numbers 42 here'), null);
 });

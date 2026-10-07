@@ -25,23 +25,27 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
 | `.claude-plugin/` | Plugin manifest and marketplace catalog. |
 | `hooks/` | `hooks.json` and the Node hook scripts; logic in `hooks/lib/`. |
 | `scripts/` | Repository checks and the rules sync. |
-| `bench/` | The benchmark: tasks, runner, report and raw results. |
+| `bench/` | The measurements: tasks, runner, report, experiments and raw results (see `bench/README.md`). |
 | `test/` | `node --test` suites. |
 
 ## Rules of the house
 
-- **A new rule, or a changed rule or threshold, must come with a benchmark
-  delta.** Run the benchmark for the baseline and for thinwindow with your
-  change, on the same model and tasks, and paste the report table in the PR
-  (see `bench/README.md`). Savings that cost success rate don't count.
+- **A new rule, or a changed rule or threshold, comes with evidence,**
+  following Measurement 2.0 in `bench/README.md`:
+  - `node bench/compliance.mjs`, which shows how often the recorded runs
+    followed each rule, at no model cost;
+  - when the decision depends on how the model reacts, a few targeted runs,
+    with what counts as a pass or a failure written in the issue before you
+    run them.
+
+  Changes that cost success rate don't count as savings.
   ```sh
-  node bench/run.mjs --condition baseline,thinwindow --reps 2 --model sonnet --dry-run
-  node bench/run.mjs --condition baseline,thinwindow --reps 2 --model sonnet --max-cost 20
-  node bench/report.mjs
+  node bench/compliance.mjs
+  node bench/run.mjs --condition baseline,thinwindow --reps 2 --model claude-sonnet-5-5 --dry-run
   ```
 - `rules/thinwindow.md` stays at or under ~500 tokens (2,000 characters); CI
   enforces it. After editing it, run `node scripts/sync-rules.mjs` so the
-  copies in `SKILL.md` and `adapters/AGENTS.md` match.
+  copies in `SKILL.md`, `adapters/AGENTS.md` and the site match.
 - Every number in the docs comes from `bench/` results. No estimates,
   testimonials or star counts.
 - Hooks fail open: any error must let the tool call proceed. Hooks never

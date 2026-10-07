@@ -28,6 +28,8 @@ function runHook(script, input, env = {}) {
       TEMP: tmp,
       TMP: tmp,
       CLAUDE_PROJECT_DIR: proj.root,
+      // Never the developer's real plugin data: SessionStart prunes briefs there.
+      CLAUDE_PLUGIN_DATA: '',
       THINWINDOW: '',
       THINWINDOW_DEBUG: '',
       ...env,
@@ -182,4 +184,7 @@ test('hooks.json points at the scripts under test', () => {
   assert.equal(hooks.SessionStart[0].matcher, 'startup|resume|clear|compact|fork');
   assert.deepEqual(hooks.PreToolUse[0].hooks[0].args, ['${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.mjs']);
   assert.equal(hooks.PreToolUse[0].matcher, 'Read|Bash|Grep');
+  assert.deepEqual(hooks.Stop[0].hooks[0].args, ['${CLAUDE_PLUGIN_ROOT}/hooks/stop.mjs']);
+  assert.deepEqual(hooks.UserPromptSubmit[0].hooks[0].args, ['${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.mjs']);
+  assert.equal(hooks.UserPromptSubmit[0].hooks[0].async, undefined, 'runs before the prompt is sent');
 });
