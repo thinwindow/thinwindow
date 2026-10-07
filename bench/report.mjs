@@ -8,15 +8,101 @@
 // Medians and min–max spread over all runs, failures included. Runs that
 // produced no usage (an error before or inside claude) count toward the
 // success rate only.
+//
+// Rows of ThinWindow 0.4.0 and later (#37) are reported the 0.4.0 way: only
+// within one environment fingerprint, with hierarchical intervals, the
+// smallest detectable effect and the cost per completed task. Earlier rows
+// keep the method they were published with.
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { RESULTS_DIR } from './lib/paths.mjs';
+import { costOf, priceOf } from './lib/pricing.mjs';
 import { listResultFiles, readResults } from './lib/results.mjs';
-import { bootstrapDelta, median, pctDelta, spread } from './lib/stats.mjs';
+import { bootstrapDelta, costPerCompleted, hierarchicalBootstrap, median, pctDelta, spread, sumOfMedians } from './lib/stats.mjs';
 
 const CONDS = ['baseline', 'thinwindow'];
+
+// True for 0.4.0 and later, prereleases of 0.4.0 included (0.4.0-dev).
+export function since(version, min = '0.4.0') {
+  const parts = (v) => String(v ?? '').split('-')[0].split('.').map((x) => Number(x) || 0);
+  const [a, b] = [parts(version), parts(min)];
+  for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  return true;
+}
+
+// What must match for two rows to be compared. ThinWindow's own skills, the
+// first request's size and the cache state differ by condition or by run, so
+// they are reported, not matched.
+export const ENV_KEYS = ['claudeVersion', 'effort', 'os', 'profile', 'account', 'maxTurns', 'bare', 'toolList', 'disallowedTools', 'agent', 'toolCount', 'toolsHash', 'skillCount', 'skillsHash', 'agentCount'];
+
+// The fields on which rows that reached Claude Code differ.
+export function envMismatch(runs) {
+  const seen = runs.filter((r) => r.toolCount !== undefined && r.toolCount !== null);
+  return ENV_KEYS.filter((k) => new Set(seen.map((r) => JSON.stringify(r[k] ?? null))).size > 1);
+}
+
+const priced = (requests, price) => (requests || []).reduce((a, q) => a + costOf({ input: q.input, cacheCreation: q.cacheWrite, cacheRead: q.cacheRead, output: q.output }, price), 0);
+const tokensOf = (requests) => (requests || []).reduce((a, q) => a + q.input + q.cacheRead + q.cacheWrite + q.output, 0);
+
+// One run per chain, rep and condition from the harness's A and B rows
+// (run.mjs --chains). Priced from token usage: a resumed session's
+// total_cost_usd includes what it had already cost (#32). B's first request
+// is re-written at the 1-hour cache-write price, as after an expired cache.
+// Complete when A passed, B passed and A still passes after B.
+export function chainRuns(rows) {
+  const key = (r) => `${r.chain}/${r.rep}/${r.condition}`;
+  const as = new Map(rows.filter((r) => r.phase === 'A').map((r) => [key(r), r]));
+  return rows
+    .filter((r) => r.phase === 'B' && !r.skipped && as.has(key(r)))
+    .map((b) => {
+      const a = as.get(key(b));
+      const price = priceOf(b.modelResolved || b.model);
+      const runs = [a.requests, b.requests];
+      return {
+        ...Object.fromEntries(ENV_KEYS.map((k) => [k, a[k]])),
+        kind: 'chain',
+        task: `chain-${b.chain} (${b.taskA} → ${b.taskB})`,
+        condition: b.condition,
+        rep: b.rep,
+        model: b.model,
+        modelResolved: b.modelResolved,
+        thinwindowVersion: b.thinwindowVersion,
+        thinwindowCommit: b.thinwindowCommit,
+        thinwindowDirty: b.thinwindowDirty,
+        startedAt: a.startedAt,
+        sessionId: b.sessionId,
+        pluginSkillCount: a.pluginSkillCount,
+        firstRequest: a.firstRequest,
+        cacheState: a.cacheState,
+        totalTokens: runs.every(Array.isArray) ? tokensOf(a.requests) + tokensOf(b.requests) : null,
+        costUsd: price && runs.every(Array.isArray) ? priced(a.requests, price) + priced(b.requests, price) + (b.coldPenaltyUsd ?? 0) : null,
+        numTurns: (a.numTurns ?? 0) + (b.numTurns ?? 0),
+        subtype: b.invocations?.at(-1)?.subtype ?? null,
+        success: a.aPass === true && b.bPass === true && b.aPass === true,
+      };
+    });
+}
+
+const toPct = (x) => (Number.isFinite(x) ? 100 * Math.expm1(x) : null);
+
+function hier(groups, stat) {
+  const b = hierarchicalBootstrap(groups, stat);
+  return b && { delta: toPct(b.point), ci: b.ci.map(toPct), mde: toPct(b.mde), dropped: b.dropped };
+}
+
+// What the group ran in, for the report header.
+function envSummary(runs) {
+  const r = runs.find((x) => x.toolCount !== undefined && x.toolCount !== null) || {};
+  const out = Object.fromEntries(ENV_KEYS.map((k) => [k, r[k] ?? null]));
+  out.pluginSkillCount = Math.max(0, ...runs.map((x) => x.pluginSkillCount ?? 0));
+  for (const c of CONDS) {
+    const rs = runs.filter((x) => x.condition === c);
+    out[c] = { firstRequest: median(rs.map((x) => x.firstRequest?.context)), cold: rs.filter((x) => x.cacheState === 'cold').length, runs: rs.length };
+  }
+  return out;
+}
 
 function condStats(runs) {
   const withUsage = runs.filter((r) => Number.isFinite(r.totalTokens));
@@ -33,15 +119,21 @@ function condStats(runs) {
 }
 
 // Groups records by model (resolved id when present), then task and condition.
+// Chains are their own group.
 export function summarize(records) {
+  records = [...records.filter((r) => !r.phase), ...chainRuns(records.filter((r) => r.kind === 'chain'))];
   const byModel = new Map();
   for (const r of records) {
-    const model = r.modelResolved || r.model;
+    const model = `${r.modelResolved || r.model}${r.kind === 'chain' ? ' (chains)' : ''}`;
     if (!byModel.has(model)) byModel.set(model, []);
     byModel.get(model).push(r);
   }
   const out = [];
   for (const [model, runs] of [...byModel.entries()].sort()) {
+    const hierarchical = runs.some((r) => since(r.thinwindowVersion));
+    if (hierarchical && !runs.every((r) => since(r.thinwindowVersion))) throw new Error(`${model}: rows from before and after 0.4.0 are measured differently; report them separately`);
+    const differs = hierarchical ? envMismatch(runs) : [];
+    if (differs.length) throw new Error(`${model}: rows from different environments (${differs.join(', ')} ${differs.length === 1 ? 'differs' : 'differ'}); report them separately`);
     const taskIds = [...new Set(runs.map((r) => r.task))].sort();
     const tasks = taskIds.map((task) => {
       const row = { task };
@@ -86,8 +178,22 @@ export function summarize(records) {
       tokensDelta: pctDelta(passed.reduce((a, [b]) => a + b, 0), passed.reduce((a, [, k]) => a + k, 0)),
       tokensCI: bootstrapDelta(passed),
     };
+    if (hierarchical) {
+      const groups = (keep = () => true) =>
+        paired.map((t) => Object.fromEntries(CONDS.map((c) => [c, runs.filter((r) => r.task === t.task && r.condition === c && keep(r))]))).filter((g) => CONDS.every((c) => g[c].length));
+      const tokens = hier(groups(), sumOfMedians('totalTokens'));
+      const cost = hier(groups(), sumOfMedians('costUsd'));
+      const passing = hier(groups((r) => r.success === true), sumOfMedians('totalTokens'));
+      total.tokensCI = tokens?.ci ?? null;
+      total.tokensMde = tokens?.mde ?? null;
+      total.costCI = cost?.ci ?? null;
+      total.costMde = cost?.mde ?? null;
+      total.successful.tokensCI = passing?.ci ?? null;
+      total.costPerCompleted = hier(groups(), costPerCompleted);
+    }
     const dates = runs.map((r) => r.startedAt).filter(Boolean).sort();
     out.push({
+      ...(hierarchical ? { method: 'hierarchical', env: envSummary(runs) } : {}),
       model,
       requested: [...new Set(runs.map((r) => r.model))],
       claudeVersions: [...new Set(runs.map((r) => r.claudeVersion).filter(Boolean))],
@@ -163,17 +269,22 @@ export function markdownReport(summaries) {
         `**${successCell(T.baseline)}** | **${successCell(T.thinwindow)}** |`,
     );
     lines.push('');
-    if (T.tokensCI) lines.push(`Total tokens ${fmtPct(T.tokensDelta)} (95% CI ${fmtPct(T.tokensCI[0])} to ${fmtPct(T.tokensCI[1])}); cost ${fmtPct(T.costDelta)} (95% CI ${fmtPct(T.costCI[0])} to ${fmtPct(T.costCI[1])}).`, '');
+    if (s.method === 'hierarchical') lines.push(...hierarchicalLines(s), '');
+    else if (T.tokensCI) lines.push(`Total tokens ${fmtPct(T.tokensDelta)} (95% CI ${fmtPct(T.tokensCI[0])} to ${fmtPct(T.tokensCI[1])}); cost ${fmtPct(T.costDelta)} (95% CI ${fmtPct(T.costCI[0])} to ${fmtPct(T.costCI[1])}).`, '');
     const errors = T.baseline.errors + T.thinwindow.errors;
+    const chains = s.model.endsWith('(chains)');
     lines.push(
       'Tokens are input + cache-creation + cache-read + output, summed over every model the run used. ' +
         'Per task: medians over all runs, failures included; min–max in parentheses. ' +
         `Total: sum of the per-task medians over the ${T.pairedTasks} tasks that have both conditions; success counts every run. ` +
-        'Δ = (thinwindow − baseline) / baseline. Cost is Claude Code\'s own estimate (`total_cost_usd`), not a bill. ' +
+        'Δ = (thinwindow − baseline) / baseline. ' +
+        (chains ? 'Cost is priced from token usage at list prices, not a bill. ' : 'Cost is Claude Code\'s own estimate (`total_cost_usd`), not a bill. ') +
         'Turns is Claude Code\'s `num_turns`: the top-level agent loop only. A run that delegates to a subagent ' +
         '(the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already ' +
         'include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. ' +
         'The thinwindow rules and thresholds were tuned on these same tasks.' +
+        (s.method === 'hierarchical' ? ` ${hierarchicalNote(chains ? 'chain' : 'task')}` : '') +
+        (chains ? ` ${CHAIN_NOTE}` : '') +
         (errors ? ` ${errors} run(s) ended without usage data and count as failures.` : ''),
     );
     lines.push('');
@@ -238,6 +349,35 @@ function niceStepPct(max) {
 
 // The change between a ThinWindow run and a baseline run of the same task,
 // over every pairing: [fewest ThinWindow / most baseline, most / fewest] - 1.
+const fmtMde = (m) => (Number.isFinite(m) ? `±${Math.abs(m).toFixed(1)}%` : '–');
+const fmtCI = (ci) => (ci ? `${fmtPct(ci[0])} to ${fmtPct(ci[1])}` : 'n/a');
+
+export const hierarchicalNote = (unit) =>
+  'Intervals (0.4.0 method, #37): a seeded 95% bootstrap that resamples tasks, then runs within each task and condition. ' +
+  'The smallest detectable effect is 2.8 × the bootstrap standard error (a 5% two-sided test with 80% power): a true change smaller than it is likely to go unseen. ' +
+  `Cost per completed ${unit}: everything a condition's runs cost, failures included, over the runs that passed.`;
+export const CHAIN_NOTE =
+  'A chain run is task A, then task B in the same clone: the baseline continues A\'s session, ThinWindow starts fresh with `/thinwindow:resume`. ' +
+  'It completes when A passes, B passes and A still passes after B. Its cost is priced from token usage, with B\'s first request re-written at the 1-hour cache-write price, as after an expired cache.';
+
+// The 0.4.0 lines under a table: the intervals and what they ran in.
+export function hierarchicalLines(s) {
+  const T = s.total;
+  const C = T.costPerCompleted;
+  const e = s.env;
+  const tok = (n) => (Number.isFinite(n) ? `${fmtTokens(n)} tokens` : '–');
+  const lines = [
+    `Cost per completed ${s.model.endsWith('(chains)') ? 'chain' : 'task'}: ${C ? `${fmtPct(C.delta)} (95% interval ${fmtCI(C.ci)}; smallest detectable effect ${fmtMde(C.mde)})` : 'n/a'}.` +
+      (C?.dropped ? ` ${C.dropped} resamples had no passing run in a condition and were left out.` : ''),
+    `Total tokens ${fmtPct(T.tokensDelta)} (95% interval ${fmtCI(T.tokensCI)}; ${fmtMde(T.tokensMde)}); cost ${fmtPct(T.costDelta)} (95% interval ${fmtCI(T.costCI)}; ${fmtMde(T.costMde)}).`,
+    `Environment: Claude Code ${e.claudeVersion ?? '?'} · effort ${e.effort ?? '?'} · profile ${e.profile ?? '?'} · account ${e.account ?? 'not recorded'} · ` +
+      `${e.toolCount ?? '?'} tools${e.toolsHash ? ` (${e.toolsHash})` : ''} · ${e.skillCount ?? '?'} skills${e.skillsHash ? ` (${e.skillsHash})` : ''} + ${e.pluginSkillCount} ThinWindow · ${e.agentCount ?? '?'} agents` +
+      `${e.toolList ? ` · --tools ${e.toolList}` : ''}${e.disallowedTools ? ` · --disallowedTools ${e.disallowedTools}` : ''}${e.agent ? ` · --agent ${e.agent}` : ''}.`,
+    `First request (median): baseline ${tok(e.baseline.firstRequest)}, ThinWindow ${tok(e.thinwindow.firstRequest)} · cold first requests: baseline ${e.baseline.cold}/${e.baseline.runs}, ThinWindow ${e.thinwindow.cold}/${e.thinwindow.runs}.`,
+  ];
+  return lines;
+}
+
 export function taskRange(t) {
   const b = t.baseline.tokenSpread;
   const k = t.thinwindow.tokenSpread;
@@ -371,8 +511,9 @@ export function svgChart(s) {
   return `${o.filter(Boolean).join('\n')}\n`;
 }
 
+// claude-sonnet-5-5 (chains) -> claude-sonnet-5-5-chains
 function slug(s) {
-  return String(s).replace(/[^A-Za-z0-9._-]+/g, '_');
+  return String(s).replace(/ \((\w+)\)$/, '-$1').replace(/[^A-Za-z0-9._-]+/g, '_');
 }
 
 async function main() {
@@ -397,7 +538,14 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const summaries = summarize(records);
+  let summaries;
+  try {
+    summaries = summarize(records);
+  } catch (err) {
+    console.error(`error: ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
   const md = markdownReport(summaries);
   process.stdout.write(md);
   if (!values['no-write']) {

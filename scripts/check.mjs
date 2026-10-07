@@ -5,14 +5,13 @@
 //   - SKILL.md frontmatter (Agent Skills fields)
 //   - the token budget of rules/thinwindow.md
 //   - the rules copies in SKILL.md and adapters/AGENTS.md are in sync
-//   - the benchmark numbers in the READMEs, the website and report.json
-//     match bench/results/, and the ranges quoted in prose still hold
+//   - bench/results/report.json matches bench/results/
 //   - .github/labels.json is valid and defines every label the issue
 //     templates and the stale workflow use
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { outOfDate as benchDocsOutOfDate, staleRanges } from '../bench/docs.mjs';
+import { outOfDate as benchDocsOutOfDate } from '../bench/docs.mjs';
 import { outOfDate } from './sync-rules.mjs';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,6 +26,10 @@ const SEMVER = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/;
 // Frontmatter fields defined by the Agent Skills standard; anything else may
 // be rejected by other agents (https://code.claude.com/docs/en/skills#frontmatter-reference).
 const SKILL_FIELDS = new Set(['name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools']);
+// Claude Code-only fields, accepted in skills that `npx skills` hides
+// (`metadata:` with `internal: true`), so other agents never install them.
+const CLAUDE_CODE_SKILL_FIELDS = new Set(['disable-model-invocation']);
+const INTERNAL = /^metadata:[ \t]*\n(?:[ \t]+.*\n)*?[ \t]+internal:[ \t]*true[ \t]*$/m;
 const HOOK_EVENTS = new Set([
   'SessionStart', 'Setup', 'InstructionsLoaded', 'UserPromptSubmit', 'UserPromptExpansion', 'MessageDisplay',
   'PreToolUse', 'PermissionRequest', 'PostToolUse', 'PostToolUseFailure', 'PostToolBatch', 'PermissionDenied',
@@ -157,7 +160,11 @@ export function validateSkill(text, dirName) {
   const fm = parseFrontmatter(text);
   if (!fm) return ['missing YAML frontmatter'];
   const e = [];
-  for (const k of Object.keys(fm)) if (!SKILL_FIELDS.has(k)) e.push(`frontmatter field ${k} is not in the Agent Skills standard`);
+  const internal = INTERNAL.test(/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)[1].replace(/\r/g, ''));
+  for (const k of Object.keys(fm)) {
+    if (SKILL_FIELDS.has(k) || (internal && CLAUDE_CODE_SKILL_FIELDS.has(k))) continue;
+    e.push(`frontmatter field ${k} is not in the Agent Skills standard`);
+  }
   if (!fm.name || fm.name.length > 64 || !KEBAB.test(fm.name)) e.push('name must be 1-64 chars of a-z, 0-9 and single hyphens');
   else if (dirName && fm.name !== dirName) e.push(`name "${fm.name}" must match its directory "${dirName}"`);
   if (!fm.description) e.push('description is required');
@@ -267,7 +274,6 @@ export function runChecks(root = ROOT) {
   if (root === ROOT) {
     for (const t of outOfDate()) errors.push(`${rel(t)}: rules block out of date (run npm run sync-rules)`);
     for (const t of benchDocsOutOfDate()) errors.push(`${rel(t)}: benchmark numbers out of date (run npm run bench:docs)`);
-    for (const problem of staleRanges()) errors.push(`${problem} (the data moved; update the sentence)`);
   }
 
   const runner = 'skills/thinwindow/scripts/thinwindow-run.mjs';

@@ -1,6 +1,9 @@
 // How the runner calls Claude Code, and how it reads the result.
 // CLI flags: https://code.claude.com/docs/en/cli-reference
 // JSON output: https://code.claude.com/docs/en/headless#get-structured-output
+import { createHash } from 'node:crypto';
+import { homedir, platform, release } from 'node:os';
+import { basename, join } from 'node:path';
 import { BENCH_DIR, ROOT_DIR } from './paths.mjs';
 import { runSync } from './proc.mjs';
 
@@ -62,6 +65,12 @@ export function buildClaudeArgs({
   pluginDir = ROOT_DIR,
   benchDir = BENCH_DIR,
   bare = false,
+  // 0.4.0 harness (#37), the same for both conditions. `persist` keeps the
+  // session (kept transcripts, chains).
+  persist = false,
+  tools = null,
+  disallowedTools = null,
+  agent = null,
 }) {
   if (!CONDITIONS.includes(condition)) throw new Error(`unknown condition ${condition}`);
   const args = [
@@ -85,8 +94,11 @@ export function buildClaudeArgs({
     '--setting-sources',
     'project,local',
     '--strict-mcp-config',
-    '--no-session-persistence',
   ];
+  if (!persist) args.push('--no-session-persistence');
+  if (tools !== null) args.push('--tools', tools);
+  if (disallowedTools !== null) args.push('--disallowedTools', disallowedTools);
+  if (agent !== null) args.push('--agent', agent);
   if (bare) args.push('--bare');
   if (condition === 'thinwindow') args.push('--plugin-dir', pluginDir);
   return args;
@@ -189,8 +201,9 @@ export function parseInit(stdout) {
 }
 
 // The agent's tool calls, one short line each, so a run can be compared with
-// its twin after the temp clone and the session are gone.
-export function parseTrace(stdout, { maxSteps = 80 } = {}) {
+// its twin after the temp clone and the session are gone. `scrub` runs before
+// the cut, so a path is never left half replaced.
+export function parseTrace(stdout, { maxSteps = 80, scrub = (s) => s } = {}) {
   const steps = [];
   for (const line of String(stdout || '').split('\n')) {
     let e;
@@ -205,7 +218,10 @@ export function parseTrace(stdout, { maxSteps = 80 } = {}) {
       const i = c.input || {};
       const range = i.offset != null || i.limit != null ? ` [${i.offset ?? 1}+${i.limit ?? ''}]` : '';
       const arg = String(i.file_path ?? i.command ?? i.pattern ?? i.description ?? '').replace(/\s+/g, ' ');
-      steps.push(`${c.name}${range} ${arg}`.slice(0, 140));
+      // A call cut short ends with "…": its length alone doesn't say so once
+      // a scrub has shortened its paths.
+      const step = scrub(`${c.name}${range} ${arg}`);
+      steps.push(step.length > 140 ? `${step.slice(0, 139)}…` : step);
     }
   }
   return steps;
@@ -214,7 +230,7 @@ export function parseTrace(stdout, { maxSteps = 80 } = {}) {
 // The last `chars` characters of each traced call's result, aligned with
 // parseTrace by index (null when the stream has no result for it), so a
 // repeated attempt can be told apart from a retry after an error (#7).
-export function parseTraceTails(stdout, { maxSteps = 80, chars = 200 } = {}) {
+export function parseTraceTails(stdout, { maxSteps = 80, chars = 200, scrub = (s) => s } = {}) {
   const ids = [];
   const tails = [];
   for (const line of String(stdout || '').split('\n')) {
@@ -233,12 +249,78 @@ export function parseTraceTails(stdout, { maxSteps = 80, chars = 200 } = {}) {
         const i = c.tool_use_id ? ids.indexOf(c.tool_use_id) : -1;
         if (i === -1) continue;
         const text = typeof c.content === 'string' ? c.content : (c.content || []).map((p) => p.text || '').join(' ');
-        const flat = text.replace(/\s+/g, ' ').trim();
+        const flat = scrub(text.replace(/\s+/g, ' ').trim());
         tails[i] = `${c.is_error ? '[error] ' : ''}${flat.slice(-chars)}`;
       }
     }
   }
   return tails;
+}
+
+// The first API request's usage in a stream-json run.
+export function firstUsage(stdout) {
+  for (const line of String(stdout || '').split('\n')) {
+    let e;
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const u = e?.type === 'assistant' && e.message?.usage;
+    if (!u) continue;
+    const r = { input: u.input_tokens || 0, cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0, output: u.output_tokens || 0 };
+    if (r.input + r.cacheRead + r.cacheWrite > 0) return { ...r, context: r.input + r.cacheRead + r.cacheWrite };
+  }
+  return null;
+}
+
+export function configDir(env = process.env) {
+  return env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
+}
+
+export const shortHash = (s) => createHash('sha256').update(String(s)).digest('hex').slice(0, 12);
+
+// The Claude Code profile a run used: its config folder's name, hashed, so a
+// row doesn't carry the operator's folder names.
+export const profileLabel = (env = process.env) => (env.CLAUDE_CONFIG_DIR ? shortHash(basename(env.CLAUDE_CONFIG_DIR)) : 'default');
+
+// The machine and profile a run used. `account` is a label the operator
+// passes (--account), stored hashed: two profiles can share an account, and
+// one profile can be logged into another later.
+export function hostFingerprint({ account = null, env = process.env } = {}) {
+  return {
+    profile: profileLabel(env),
+    account: account ? shortHash(account) : null,
+    os: `${platform()} ${release()}`,
+    node: process.version,
+  };
+}
+
+const names = (list) => (Array.isArray(list) ? list.map((x) => (typeof x === 'string' ? x : x?.name)).filter(Boolean) : []);
+const OWN_SKILL = 'thinwindow:';
+
+// What can change between two runs' environments, from the stream: tool,
+// skill and agent counts from the init event (names hashed: account tools and
+// skills say which account ran), and the first request's tokens. ThinWindow's
+// own skills are counted apart, so both conditions can share a fingerprint.
+// A first request that reads nothing from the prompt cache started cold.
+export function runFingerprint(stdout) {
+  const found = parseInit(stdout);
+  const init = found || {};
+  const tools = names(init.tools).sort();
+  const skills = names(Array.isArray(init.skills) ? init.skills : init.slash_commands);
+  const other = skills.filter((s) => !s.startsWith(OWN_SKILL)).sort();
+  const first = firstUsage(stdout);
+  return {
+    toolCount: found ? tools.length : null,
+    toolsHash: tools.length ? shortHash(tools.join('\n')) : null,
+    skillCount: found ? other.length : null,
+    skillsHash: other.length ? shortHash(other.join('\n')) : null,
+    pluginSkillCount: skills.length - other.length,
+    agentCount: Array.isArray(init.agents) ? init.agents.length : null,
+    firstRequest: first,
+    cacheState: first ? (first.cacheRead > 0 ? 'warm' : 'cold') : null,
+  };
 }
 
 export function claudeVersion(cmd = 'claude', prefixArgs = []) {

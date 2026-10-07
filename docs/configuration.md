@@ -1,6 +1,6 @@
 # Configuration
 
-thinwindow works without configuration. To change it, create
+ThinWindow works without configuration. To change it, create
 `.thinwindow.json` in the project root or `~/.thinwindow.json` in your home
 directory. Values in the project file override the home file; lists
 (`noisyCommands`, `allowlist.*`) from both files are combined.
@@ -10,6 +10,9 @@ directory. Values in the project file override the home file; lists
   "enabled": true,
   "maxReadLines": 400,
   "rewrite": true,
+  "briefs": true,
+  "coldResumeNotice": true,
+  "coldResumeMinTokens": 100000,
   "noisyCommands": ["^just (build|test)\\b"],
   "allowlist": {
     "paths": ["docs/**", "*.lock"],
@@ -21,11 +24,16 @@ directory. Values in the project file override the home file; lists
 | Key | Default | What it does |
 | --- | --- | --- |
 | `enabled` | `true` | `false` turns every hook off for that project (or everywhere, in `~/.thinwindow.json`). |
-| `maxReadLines` | `400` | A whole-file `Read` (no `offset`/`limit`) of a file with more lines than this is denied, and so is `cat` of such a file. |
+| `maxReadLines` | `400` | A whole-file `Read` (no `offset`/`limit`) of a file with more lines than this returns its first 120 lines and an outline (with `rewrite` off, it is refused), and `cat` of such a file is refused. |
 | `rewrite` | `true` | Runs uncapped noisy commands through `thinwindow-run` automatically (via the hook's `updatedInput`), so the agent gets a summary without spending a turn on a denial. The rewritten command still goes through your normal permission rules. `false` denies them instead, with a soft block. |
+| `briefs` | `true` | `false` stops the Stop hook from writing session briefs for `/thinwindow:resume`. Briefs already written are deleted after 7 days. |
+| `coldResumeNotice` | `true` | `false` turns off the cold-resume notice (see UserPromptSubmit below). |
+| `coldResumeMinTokens` | `100000` | The smallest context, in tokens, for which the cold-resume notice holds a prompt. |
+| `setupNotice` | `true` | `false` turns off the setup-cost notice (see Stop below). |
+| `setupNoticeMinTokens` | `40000` | The smallest first request, in tokens, for which the setup-cost notice shows. |
 | `noisyCommands` | see below | Extra regular expressions for noisy commands. They are added to the built-in list. |
-| `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files thinwindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
-| `allowlist.commands` | `[]` | Regular expressions for Bash commands thinwindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
+| `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files ThinWindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
+| `allowlist.commands` | `[]` | Regular expressions for Bash commands ThinWindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
 
 A missing, unreadable or mistyped file is ignored (with a debug message), and a
 key with the wrong type keeps its default.
@@ -34,7 +42,7 @@ key with the wrong type keeps its default.
 
 | Variable | Effect |
 | --- | --- |
-| `THINWINDOW=off` | Turns thinwindow off, whatever the config files say. `thinwindow-run` then runs the command with its output untouched. |
+| `THINWINDOW=off` | Turns ThinWindow off, whatever the config files say. `thinwindow-run` then runs the command with its output untouched. |
 | `THINWINDOW_DEBUG=1` | The hooks write each decision to stderr, which Claude Code keeps in its debug log (`claude --debug`, or `claude --debug-file <path>`). |
 
 ## What the hooks do
@@ -103,15 +111,76 @@ without a permission prompt, allow
 `Bash(thinwindow-run *)`, which no longer matches. Either rule approves every
 command it wraps.
 
-thinwindow never returns an `allow` decision, so it can't approve a tool call
+ThinWindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any
 reason, the tool call proceeds.
+
+**Stop** (the end of every turn) updates the session's brief for
+`/thinwindow:resume`. It reads only what the transcript gained since the last
+turn (at most 4 MB per turn), runs `git status` after a turn that used Bash,
+Edit or Write, and prints nothing. Claude Code waits for Stop hooks before
+the turn ends, so this one skips its work when the transcript hasn't grown.
+
+Stop also shows the setup-cost notice. Every request re-sends the session's
+setup (system prompt, tools, skill listing, MCP instructions, CLAUDE.md
+files), so a session's first request shows what each later one starts at.
+
+- It reads the first 256 KB of the transcript for the first request: its
+  context, and the attachments written before it, sized as in
+  `/thinwindow:report` (JSON characters / 4).
+- When that context is at least `setupNoticeMinTokens`, it shows you one
+  line, as a `systemMessage`, which Claude never sees:
+
+  ```text
+  ThinWindow: each request in this session starts at 54k tokens (skill listing 5.3k, deferred tools 2.5k, MCP instructions 1.6k). Run /context to see what you could turn off.
+  ```
+
+- At most once a week per project, and only in sessions a person attends
+  (`CLAUDE_CODE_SESSION_ATTENDED=1`, as above). If the transcript doesn't have
+  the first request yet, a later turn checks again.
+
+**UserPromptSubmit** (before each prompt) is the cold-resume notice. Claude
+Code caches a conversation for an hour at most, so a prompt sent after an hour
+without a request re-writes the whole context at the cache-write price.
+
+- It reads the last 256 KB of the session's transcript for the last request:
+  its time, its context (input + cache read + cache write tokens) and its
+  model.
+- When that request is over an hour old and its context is at least
+  `coldResumeMinTokens`, it holds the prompt once. The message shows what
+  continuing re-writes, in tokens and in US$ at the model's list price, next
+  to a fresh start: `/clear`, then `/thinwindow:resume <your request>`, or a
+  new session when this session's brief isn't the project's newest. The fresh
+  start's figure is the session's first request, from the first 256 KB of the
+  transcript.
+- Sending again continues. Any prompt goes through until a request runs, and
+  the hook never acts for you.
+- It never holds a command (a prompt starting with `/`), or a prompt Claude
+  Code writes itself, such as a background task's report. It holds nothing
+  unless Claude Code says a person is at the session: it sets
+  `CLAUDE_CODE_SESSION_ATTENDED=1` for hooks in terminal, IDE and desktop
+  sessions and `0` in `-p`, SDK and background ones. That variable isn't
+  documented; without it, nothing is held.
+- Scheduled tasks, a `/loop` that fires at intervals over an hour, and the
+  usage-limit auto-continue send their prompts as plain text, and the hook
+  input doesn't say where a prompt came from. So one of them can be held, once
+  per idle gap.
 
 ## State and logs
 
 - Read tracking lives in one JSON file per session in
-  `<os temp dir>/thinwindow/state/`. Files older than a week are removed at
-  the start of a new session.
-- `thinwindow-run` logs go to `<os temp dir>/thinwindow/logs/` and are removed
-  after a week. Nothing is written inside your repository, and nothing is
-  sent anywhere.
+  `<os temp dir>/thinwindow/state/`, with the time of the last request a
+  cold-resume notice was shown for. The same folder holds one
+  `setup-<project hash>.mark` file per project, with when the setup-cost
+  notice was last shown. Files older than a week are removed at the start of
+  the next session.
+- `thinwindow-run` logs go to `<os temp dir>/thinwindow/logs/`. Logs older than
+  a week are removed the next time `thinwindow-run` runs.
+- Session briefs live in `<plugin data dir>/briefs/<project hash>/<session id>.json`
+  (`~/.claude/plugins/data/` holds the plugin data dir). Briefs older than a
+  week are removed at the start of the next session. `/thinwindow:resume` reads
+  the newest one under 48 hours old for the current project.
+- Claude Code deletes the plugin data dir when you uninstall the plugin. If you
+  remove ThinWindow from your account in the Claude desktop app, the folder can
+  stay: delete `~/.claude/plugins/data/thinwindow-*` to remove the briefs.
+- Nothing is written inside your repository, and nothing is sent anywhere.

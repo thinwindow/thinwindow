@@ -7,7 +7,7 @@ license: MIT
 <!-- rules:start (generated from rules/thinwindow.md by scripts/sync-rules.mjs; edit the source, not this block) -->
 # thinwindow: spend fewer tokens
 
-Everything you read stays in context and is re-sent on every later turn, so most of the cost is reading. Read only what the task needs, then write and say only what it needs.
+Everything you read or write stays in context and is re-sent on every later turn. Read, write and say only what the task needs.
 
 Read less
 - Locate before reading: grep or glob for the symbol, then read only the range around it.
@@ -17,11 +17,10 @@ Read less
 - Don't send a subagent to explore what one grep answers.
 
 Print less
-- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, or `thinwindow-run <cmd>` for installs, builds and tests.
-- Summaries first: `git diff --stat`, `git log -n 10 --oneline`.
+- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, `git diff --stat`, `git log -n 10 --oneline`, or `thinwindow-run <cmd>` for installs, builds and tests.
 
 Write less
-- Before adding code, check that it needs to exist, that the codebase doesn't have it already, and that the standard library or platform doesn't do it. Then make the smallest change that works.
+- Before adding code, check that it needs to exist and that the codebase, standard library or platform doesn't already do it. Then make the smallest change that works.
 - Never cut validation, error handling, security or tests to save lines.
 - Don't add comments or docstrings that restate the code.
 
@@ -53,7 +52,7 @@ thinwindow-run pytest -x tests/test_api.py
 thinwindow-run "npm ci && npm run build"   # a single quoted argument runs through the shell
 ```
 
-With the thinwindow Claude Code plugin installed, its Bash hook points
+With the ThinWindow Claude Code plugin installed, its Bash hook points
 `thinwindow-run` at this copy, so the bare name works. Otherwise run the copy
 bundled with this skill:
 `node <this skill's directory>/scripts/thinwindow-run.mjs <cmd>`. It needs

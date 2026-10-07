@@ -39,6 +39,19 @@ export function listResultFiles(dir = RESULTS_DIR) {
     .map((n) => join(dir, n));
 }
 
+// A run found in two files counts once (the archive repeats runs, #36).
+export function dedupeRuns(records) {
+  const seen = new Set();
+  return records.filter((r) => !r.sessionId || (!seen.has(r.sessionId) && seen.add(r.sessionId)));
+}
+
 export function readResults(files = listResultFiles()) {
-  return files.flatMap(readResultFile);
+  return dedupeRuns(files.flatMap(readResultFile));
+}
+
+// Where a release's rows live: bench/results/<version>/ (a prerelease such as
+// 0.4.0-dev goes with 0.4.0). listResultFiles() doesn't descend into it, so
+// the published 0.3.0 blocks, built from bench/results/*.jsonl, can't change.
+export function versionDir(version, dir = RESULTS_DIR) {
+  return join(dir, String(version).split('-')[0]);
 }

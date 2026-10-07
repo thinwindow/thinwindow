@@ -10,12 +10,17 @@
 const STDIN_TIMEOUT_MS = 5000;
 
 // The only environment variables the hooks read: the off switch, the debug
-// switch and the project dir Claude Code sets. Nothing else from the
-// environment is read or passed around.
+// switch, the project dir and plugin data dir Claude Code sets
+// (https://code.claude.com/docs/en/plugins-reference#environment-variables),
+// and whether a person is at the session, which Claude Code sets for hooks
+// without documenting it ("1" or "0", seen in 2.1.289).
+// Nothing else from the environment is read or passed around.
 export const HOOK_ENV = {
   THINWINDOW: process.env.THINWINDOW,
   THINWINDOW_DEBUG: process.env.THINWINDOW_DEBUG,
   CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
+  CLAUDE_PLUGIN_DATA: process.env.CLAUDE_PLUGIN_DATA,
+  CLAUDE_CODE_SESSION_ATTENDED: process.env.CLAUDE_CODE_SESSION_ATTENDED,
 };
 
 export function debugEnabled(env = HOOK_ENV) {
@@ -39,11 +44,19 @@ async function readStdin() {
   return data;
 }
 
+// An error for the debug log. `redact` keeps its type and stack frames but not
+// its message, which can quote the input (a Stop's input carries the last
+// reply).
+export function errorDetail(err, redact) {
+  if (redact) return [err?.name, err?.code, ...String(err?.stack || '').split('\n').slice(1)].filter(Boolean).join('\n');
+  return err && err.stack ? err.stack : err;
+}
+
 // Runs `handler(input)` and writes its return value as JSON. A handler that
 // returns null/undefined prints nothing. Any error (bad JSON, a bug, a
 // timeout) exits 0 without output: thinwindow never blocks a tool call
-// because of its own failure.
-export async function runHook(name, handler) {
+// because of its own failure. `redact`: see errorDetail.
+export async function runHook(name, handler, { redact = false } = {}) {
   const bail = setTimeout(() => {
     debug(`${name}: timed out, allowing`);
     process.exit(0);
@@ -55,7 +68,7 @@ export async function runHook(name, handler) {
     const output = await handler(input);
     if (output) process.stdout.write(JSON.stringify(output));
   } catch (err) {
-    debug(`${name}: error, allowing: ${err && err.stack ? err.stack : err}`);
+    debug(`${name}: error, allowing: ${errorDetail(err, redact)}`);
   }
   process.exitCode = 0;
 }

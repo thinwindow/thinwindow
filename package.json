@@ -1,8 +1,8 @@
 {
   "name": "thinwindow",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "Less in the window. Less on the bill. ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens.",
+  "description": "Less in the window. Don't pay for it twice. ThinWindow keeps Claude Code's context window thin for the whole session: it trims oversized reads and command logs, shows what each request carries, and offers a fresh start from a short brief after the prompt cache expires. Plugin and Agent Skill.",
   "license": "MIT",
   "author": "Iván Luna (https://github.com/imprvhub)",
   "repository": {

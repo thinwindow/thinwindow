@@ -1,7 +1,7 @@
 // The same checks CI runs through scripts/check.mjs, plus unit tests for
 // the validators themselves.
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -103,12 +103,34 @@ test('validateSkill and parseFrontmatter', () => {
   assert.ok(validateSkill('---\nname: a\n---\n', 'a').length > 0);
   assert.ok(validateSkill('---\nname: a\ndescription: x\nmodel: opus\n---\n', 'a').length > 0);
   assert.ok(validateSkill('no frontmatter', 'a').length > 0);
+  // Claude Code-only fields only in skills hidden from `npx skills`.
+  assert.ok(validateSkill('---\nname: a\ndescription: x\ndisable-model-invocation: true\n---\n', 'a').length > 0);
+  assert.deepEqual(validateSkill('---\nname: a\ndescription: x\ndisable-model-invocation: true\nmetadata:\n  internal: true\n---\n', 'a'), []);
+  assert.ok(validateSkill('---\nname: a\ndescription: x\nmodel: opus\nmetadata:\n  internal: true\n---\n', 'a').length > 0);
+});
+
+test('the report skill is user-invoked and runs the bundled script', () => {
+  const skill = readFileSync(join(ROOT, 'skills', 'report', 'SKILL.md'), 'utf8');
+  assert.deepEqual(validateSkill(skill, 'report'), []);
+  // Out of the skill listing paid on every request.
+  assert.equal(parseFrontmatter(skill)['disable-model-invocation'], 'true');
+  const m = /^!`node "\$\{CLAUDE_PLUGIN_ROOT\}\/([^"]+)" \$ARGUMENTS`$/m.exec(skill);
+  assert.ok(m, 'injects the script output with !`...`');
+  assert.ok(existsSync(join(ROOT, m[1])), m[1]);
+  // Outside auto mode an injected command that isn't allowed aborts the skill,
+  // so the skill pre-approves exactly that command, with or without --json.
+  assert.ok(skill.includes(`\n  - Bash(node "\${CLAUDE_PLUGIN_ROOT}/${m[1]}" *)\n`), 'allowed-tools pre-approves the injected command');
 });
 
 test('sync-rules replaces only the marked block', () => {
   const target = 'before\n<!-- rules:start (x) -->\nold\n<!-- rules:end -->\nafter\n';
   assert.equal(syncedContent(target, 'new rules\n'), 'before\n<!-- rules:start (x) -->\nnew rules\n<!-- rules:end -->\nafter\n');
   assert.throws(() => syncedContent('no markers', 'x'));
+  // The site shows the rules in a <pre> block, escaped.
+  assert.equal(
+    syncedContent('<!-- rules:start -->\nold\n<!-- rules:end -->', 'run `x <cmd>` & go\n', { html: true }),
+    '<!-- rules:start -->\n<pre><code>run `x &lt;cmd&gt;` &amp; go</code></pre>\n<!-- rules:end -->',
+  );
 });
 
 test('validateLabels', () => {
@@ -134,7 +156,7 @@ test('labels.json defines every label the templates and the stale workflow use',
 });
 
 test('the hooks read only the environment variables they name', () => {
-  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR']);
+  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR', 'CLAUDE_PLUGIN_DATA', 'CLAUDE_CODE_SESSION_ATTENDED']);
   for (const dir of ['hooks', 'hooks/lib']) {
     for (const f of readdirSync(join(ROOT, dir)).filter((n) => n.endsWith('.mjs'))) {
       const reads = readFileSync(join(ROOT, dir, f), 'utf8').match(/process\.env(\.\w+)?/g) || [];

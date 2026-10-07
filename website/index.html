@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ThinWindow documentation</title>
-  <meta name="description" content="Less in the window. Less on the bill. ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens.">
-  <meta name="theme-color" content="#fbf9f4" media="(prefers-color-scheme: light)">
+  <meta name="description" content="Less in the window. Don't pay for it twice. ThinWindow keeps Claude Code's context window thin for the whole session: it trims oversized reads and command logs, shows what each request carries, and offers a fresh start from a short brief after the prompt cache expires. Plugin and Agent Skill.">
+  <meta name="theme-color" content="#fcf9f4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121317" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon/favicon-192.png">
@@ -20,7 +20,7 @@
   <aside class="sidebar">
     <a class="brand" href="#overview">
       <img src="../assets/icon.iconset/icon_32x32@2x.png" alt="" width="32" height="32">
-      <span>ThinWindow <small>docs · v0.3.0</small></span>
+      <span>ThinWindow <small>docs · v0.4.0</small></span>
     </a>
     <nav aria-label="Documentation">
       <div class="nav-group">
@@ -31,32 +31,34 @@
         </ol>
       </div>
       <div class="nav-group">
-        <h2>Concepts</h2>
+        <h2>The four moments</h2>
         <ol>
-          <li><a href="#how-it-works">How it works</a></li>
-          <li><a href="#rules">The rules</a></li>
-          <li><a href="#hooks">Hooks reference</a></li>
-          <li><a href="#examples">Examples</a></li>
+          <li><a href="#start">Start</a></li>
+          <li><a href="#during">During</a></li>
+          <li><a href="#between">Between sessions</a></li>
+          <li><a href="#after">After</a></li>
         </ol>
       </div>
       <div class="nav-group">
         <h2>Usage</h2>
         <ol>
           <li><a href="#install">Install</a></li>
+          <li><a href="#surfaces">Where it works</a></li>
           <li><a href="#configuration">Configuration</a></li>
+          <li><a href="#upgrading">Upgrading from 0.3.0</a></li>
         </ol>
       </div>
       <div class="nav-group">
-        <h2>Evidence</h2>
+        <h2>Trust</h2>
         <ol>
-          <li><a href="#benchmark">Benchmark</a></li>
+          <li><a href="#checked">How it's checked</a></li>
+          <li><a href="#privacy">What it reads, writes and sends</a></li>
           <li><a href="#limitations">Limitations</a></li>
         </ol>
       </div>
       <div class="nav-group">
         <h2>Project</h2>
         <ol>
-          <li><a href="#status">Status</a></li>
           <li><a href="#repository">Repository</a></li>
           <li><a href="#faq">FAQ</a></li>
         </ol>
@@ -75,41 +77,43 @@
         <img src="../assets/icon.iconset/icon_128x128@2x.png" alt="ThinWindow logo" width="96" height="96">
         <div>
           <h1>ThinWindow</h1>
-          <p class="lede"><strong>Less in the window. Less on the bill.</strong> ThinWindow makes Claude use less context — without changing the outcome. A plugin and Agent Skill for Claude Code, Cowork, and the Claude apps, benchmarked in Claude Code on Opus 5.5, Sonnet 5.5, and Haiku 4.5: 7–11% lower cost, 3–6% fewer tokens. Listed in the official Claude Code plugin directory.</p>
+          <p class="lede"><strong>Less in the window. Don't pay for it twice.</strong> ThinWindow keeps Claude Code's context window thin from the first prompt to the next morning. It trims oversized reads and logs while you work, shows what every request carries, and when you come back to an expired session, offers a fresh start from a short brief instead of paying for the old context again. Listed in the official Claude Code plugin directory.</p>
         </div>
       </header>
 
       <section aria-labelledby="overview-h">
         <h2 id="overview-h"><span class="num">01</span>Overview</h2>
-        <p>ThinWindow is a small, local layer that sits between a coding agent and its tools. It keeps what the agent does not need out of the context window: whole-file reads of large files, re-reads of files already in context, thousands of lines of install and test logs, unbounded searches and listings.</p>
-        <p>It has three parts:</p>
+        <p>ThinWindow is a small, local plugin for Claude Code, and an Agent Skill for other agents. It works at the four moments of a session:</p>
         <div class="cards">
           <div class="card">
-            <h3>Rules <span class="tag">any agent</span></h3>
-            <p>A short set of reading, printing, writing and answering rules, loaded into the agent's context at session start. Under 2,000 characters, enforced in CI.</p>
+            <h3>Start <span class="tag">setup</span></h3>
+            <p>Shows what every request carries, once a week per project, and offers an opt-in profile with fewer built-in tools.</p>
           </div>
           <div class="card">
-            <h3>Hooks <span class="tag">Claude Code</span></h3>
-            <p>Checks that run on each <code>Read</code>, <code>Bash</code> and <code>Grep</code> call before the result reaches the context, and shrink or redirect the wasteful ones.</p>
+            <h3>During <span class="tag">guards</span></h3>
+            <p>Short rules, and hooks that trim oversized reads, logs and searches before they enter the context.</p>
           </div>
           <div class="card">
-            <h3>thinwindow-run <span class="tag">CLI</span></h3>
-            <p>Runs a noisy command, keeps the full log in a temp file, and prints only the exit code, the tail and the error lines.</p>
+            <h3>Between sessions <span class="tag">resume</span></h3>
+            <p>Keeps a brief of each session, and before you re-pay an expired one, offers a fresh start from it.</p>
+          </div>
+          <div class="card">
+            <h3>After <span class="tag">report</span></h3>
+            <p>Shows where your own sessions' context went, from the transcripts on your machine.</p>
           </div>
         </div>
-        <p><strong>Who it is for:</strong> people who use coding agents on real repositories and pay for them, in money or in subscription usage limits, and want the same work done while the agent carries less.</p>
-        <p><strong>What it is not:</strong> a model, a proxy, or a service. Nothing is hosted, nothing is sent anywhere, and it has no runtime dependencies. It removes waste; it does not make an agent smarter.</p>
+        <p><strong>Who it is for:</strong> people who run Claude Code for hours on real repositories, and pay for it in money or in usage limits.</p>
+        <p><strong>What it is not:</strong> a model, a proxy, a service or a memory system. Nothing is hosted, nothing is sent anywhere, and it changes no setting on its own.</p>
       </section>
 
       <section id="problem" aria-labelledby="problem-h">
         <h2 id="problem-h"><span class="num">02</span>Why context is the bill</h2>
-        <p>A coding agent does not pay mostly for what it writes. It pays for what it carries. Every file it opens, every log it prints and every wide search it runs is appended to the conversation, and the whole conversation is sent again on every later turn. So the cost of a session is much closer to</p>
-        <div class="formula" role="img" aria-label="tokens roughly equal context size times turns">
-          <span>tokens</span><span class="op">≈</span><span class="term ctx">context size</span><span class="op">×</span><span class="term turns">turns</span>
-        </div>
-        <p>than to the length of the answer. In the benchmark runs, <strong>roughly 90% to 95% of all tokens billed were cache reads</strong>: context being re-sent, turn after turn. The agent's own output was under 2% of tokens.</p>
-        <p>Priced, the picture shifts: a cache read costs a tenth of an input token or less, a cache write twice one, and output five times one, so output is 19–27% of the cost. Telling an agent to be brief touches that part. Stopping it from pulling a 2,000-line file into context on turn 3 touches the cache writes and reads, on every turn that follows.</p>
-
+        <p>A coding agent pays for what it carries more than for what it writes.</p>
+        <ul>
+          <li><strong>Every request re-sends the whole session.</strong> Each file Claude reads, each log it prints and each long answer stays in the conversation, and is paid again, from the prompt cache, on every request after it.</li>
+          <li><strong>An expired session gets paid for twice.</strong> Claude Code keeps a session's prompt cache for up to an hour. Come back later, and your next prompt writes the whole context again at the cache-write price, many times what reading it from the cache costs.</li>
+          <li><strong>Your setup rides on every request.</strong> The system prompt, the tool definitions, the skill and agent listings, MCP instructions and CLAUDE.md files go out with each one.</li>
+        </ul>
         <figure class="illustration">
           <div class="figure-box">
             <svg viewBox="0 0 640 215" role="img" aria-labelledby="ill-t ill-d">
@@ -141,13 +145,52 @@
           </div>
           <figcaption>Illustration, not measured data. Each bar is the context sent on one turn (1–6). A whole-file read on turn 2 (blue) is re-sent on every turn after it; a ranged read (orange) costs a fraction of that. The billed total is the area of all the bars.</figcaption>
         </figure>
-
-        <p>ThinWindow therefore works on both factors: it shrinks what enters the context, and it avoids the extra turns an agent spends recovering from output it never needed. A denial also costs a turn, which is why the hooks prefer to <em>fix a call in place</em> rather than refuse it.</p>
       </section>
 
-      <section id="how-it-works" aria-labelledby="how-h">
-        <h2 id="how-h"><span class="num">03</span>How it works</h2>
-        <p>The rules tell the agent what to do. The hooks make sure the expensive part actually happens, because a rule the agent can forget under pressure is not a rule. The hooks run on the tool call itself, before its result reaches the context, so enforcing them costs no extra turn.</p>
+      <section id="start" aria-labelledby="start-h">
+        <h2 id="start-h"><span class="num">03</span>Start: know what every request carries</h2>
+        <h3>The setup-cost notice</h3>
+        <p>Once a week per project, when a session's first request is 40k tokens or more, ThinWindow shows you one line: what every request in that session starts at, and its largest parts. It's shown to you and never sent to Claude. In the desktop app it appears as a collapsed "Claude Code notice". Example:</p>
+<pre><code>ThinWindow: each request in this session starts at 54k tokens (skill listing 5.3k, deferred tools 2.5k, MCP instructions 1.6k). Run /context to see what you could turn off.</code></pre>
+
+        <h3><code>thinwindow-minimal</code>, an opt-in profile</h3>
+        <p>One file you copy, for focused coding sessions. It keeps Claude Code's own system prompt and your MCP tools, and removes the built-in tools the maintainer's sessions almost never used: subagents and agent teams; <code>/loop</code>, scheduled tasks, remote triggers and push notifications; background-task tools (background Bash commands still run); reading the task list back; worktrees, notebooks and multiple-choice questions; plan mode entered by Claude (Shift+Tab still works); the Skill tool and its listing (skills you type still run); and, in the desktop app, artifacts, design sync, file cards, feedback and review findings.</p>
+<pre><code>curl -fsSL --create-dirs -o ~/.claude/agents/thinwindow-minimal.md https://raw.githubusercontent.com/thinwindow/thinwindow/main/profiles/thinwindow-minimal.md
+claude --agent thinwindow-minimal</code></pre>
+        <p>Or, for every session in a project, <code>"agent": "thinwindow-minimal"</code> in that project's <code>.claude/settings.json</code>. ThinWindow never turns it on for you. Skip it when you want subagents, <code>/loop</code>, scheduled tasks or skills Claude starts on its own. While the file is in <code>~/.claude/agents/</code>, sessions that don't use it list it among your subagents, one line with its tool list; delete the file to remove it.</p>
+      </section>
+
+      <section id="during" aria-labelledby="during-h">
+        <h2 id="during-h"><span class="num">04</span>During: keep the window thin while you work</h2>
+        <p>The rules tell Claude what to do. The guards make sure the expensive part happens, because a rule the agent can forget under pressure is not a rule. They act on the tool call itself, before its result reaches the context, so enforcing them costs no extra turn.</p>
+
+        <h3>The rules</h3>
+        <p>This is the complete text added to Claude's context at session start, from <code>rules/thinwindow.md</code>. The Agent Skill, the <code>AGENTS.md</code> snippet and this page carry the same copy, and CI checks that they stay in sync. The rules stay under 2,000 characters.</p>
+<!-- rules:start (generated from rules/thinwindow.md by scripts/sync-rules.mjs; edit the source, not this block) -->
+<pre><code># thinwindow: spend fewer tokens
+
+Everything you read or write stays in context and is re-sent on every later turn. Read, write and say only what the task needs.
+
+Read less
+- Locate before reading: grep or glob for the symbol, then read only the range around it.
+- Don't read whole files over ~300 lines. Don't re-read what is already in context unless it changed.
+- Batch independent lookups into one call. Stop exploring once you have enough to act.
+- To count, search or summarize across many files, run one command that prints only the answer.
+- Don't send a subagent to explore what one grep answers.
+
+Print less
+- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, `git diff --stat`, `git log -n 10 --oneline`, or `thinwindow-run &lt;cmd&gt;` for installs, builds and tests.
+
+Write less
+- Before adding code, check that it needs to exist and that the codebase, standard library or platform doesn't already do it. Then make the smallest change that works.
+- Never cut validation, error handling, security or tests to save lines.
+- Don't add comments or docstrings that restate the code.
+
+Say less
+- Don't narrate between tool calls; just make the next call.
+- End with at most three lines: what changed and where. No preamble, no restating the task, no step-by-step recap unless asked.
+- Cite `file:line` instead of pasting code back.</code></pre>
+<!-- rules:end -->
 
         <h3>The workflow of one tool call</h3>
         <div class="flow">
@@ -186,53 +229,10 @@
           </div>
         </div>
 
-        <h3>Design principles</h3>
-        <ul>
-          <li><strong>Fails open.</strong> If a hook errors for any reason, the tool call proceeds. ThinWindow must never block someone's work because of its own bug.</li>
-          <li><strong>Can't get stuck.</strong> Repeating a refused <code>Read</code>, or a refused noisy or unbounded command, within ten minutes lets it through. The commands that are always refused (such as <code>cat</code> of a lockfile) come with a cheaper replacement that works.</li>
-          <li><strong>Never approves anything.</strong> ThinWindow never returns an <code>allow</code> decision, so it can't approve a call your permission settings would have prompted for. A rewritten command still goes through your normal permission rules.</li>
-          <li><strong>Its own footprint is budgeted.</strong> The always-loaded rules must stay under 2,000 characters (about 500 tokens); CI fails otherwise. The current rules are 1,439 characters.</li>
-          <li><strong>Never phones home.</strong> No telemetry, no analytics, no update or license checks.</li>
-          <li><strong>Easy to turn off.</strong> <code>THINWINDOW=off</code>, or <code>"enabled": false</code> in the config file.</li>
-        </ul>
-      </section>
-
-      <section id="rules" aria-labelledby="rules-h">
-        <h2 id="rules-h"><span class="num">04</span>The rules</h2>
-        <p>This is the complete text loaded into the agent's context, from <code>rules/thinwindow.md</code>. The same block is copied into the Agent Skill and the <code>AGENTS.md</code> snippet by <code>scripts/sync-rules.mjs</code>, and CI checks that the copies stay in sync.</p>
-<pre><code># thinwindow: spend fewer tokens
-
-Everything you read stays in context and is re-sent on every later turn, so most of the cost is reading. Read only what the task needs, then write and say only what it needs.
-
-Read less
-- Locate before reading: grep or glob for the symbol, then read only the range around it.
-- Don't read whole files over ~300 lines. Don't re-read what is already in context unless it changed.
-- Batch independent lookups into one call. Stop exploring once you have enough to act.
-- To count, search or summarize across many files, run one command that prints only the answer.
-- Don't send a subagent to explore what one grep answers.
-
-Print less
-- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, or `thinwindow-run &lt;cmd&gt;` for installs, builds and tests.
-- Summaries first: `git diff --stat`, `git log -n 10 --oneline`.
-
-Write less
-- Before adding code, check that it needs to exist, that the codebase doesn't have it already, and that the standard library or platform doesn't do it. Then make the smallest change that works.
-- Never cut validation, error handling, security or tests to save lines.
-- Don't add comments or docstrings that restate the code.
-
-Say less
-- Don't narrate between tool calls; just make the next call.
-- End with at most three lines: what changed and where. No preamble, no restating the task, no step-by-step recap unless asked.
-- Cite `file:line` instead of pasting code back.</code></pre>
-        <p class="muted small">"Read less" and "Print less" target the large, repeatedly re-sent part of the bill. "Write less" and "Say less" target output, the small part. The rules are tuned against the benchmark: a proposed rule is kept only if it measurably helps, and an attempt to add explicit "use fewer turns" rules was reverted after it made Sonnet 5 worse.</p>
-      </section>
-
-      <section id="hooks" aria-labelledby="hooks-h">
-        <h2 id="hooks-h"><span class="num">05</span>Hooks reference</h2>
-        <p>The hooks are part of the plugin, and they're what does most of the work (the Claude apps don't run plugin hooks). Every threshold below is configurable; see <a href="#configuration">Configuration</a>.</p>
-
+        <h3>Guards reference</h3>
+        <p>Every threshold below is configurable; see <a href="#configuration">Configuration</a>.</p>
         <h3><code>SessionStart</code></h3>
-        <p>On startup, resume, clear, compact and fork: adds <code>rules/thinwindow.md</code> to the context. On compact and clear, it also resets read tracking.</p>
+        <p>On startup, resume, clear, compact and fork: adds <code>rules/thinwindow.md</code> to the context. On compact and clear, it also resets read tracking, because that content is gone from the context. On startup, it also removes state files and briefs older than 7 days.</p>
 
         <h3><code>PreToolUse</code> · <code>Read</code></h3>
         <div class="table-wrap"><table>
@@ -267,12 +267,16 @@ Say less
         </ul>
         <p>When nothing would be cut (10 lines or fewer on success, 40 on failure), the output comes back as it is, with the exit code if the command failed. The command's exit code is preserved.</p>
 
-        <h3>State and logs</h3>
-        <p>Read tracking lives in one JSON file per session in <code>&lt;os temp dir&gt;/thinwindow/state/</code>; <code>thinwindow-run</code> logs go to <code>&lt;os temp dir&gt;/thinwindow/logs/</code>. Both are cleaned up after a week. Nothing is written inside your repository, and nothing is sent anywhere.</p>
-      </section>
+        <h3><code>Stop</code></h3>
+        <p>At the end of every turn: updates the session's brief from what the transcript gained since the last turn (at most 4 MB per turn, plus <code>git status</code> after a turn that could have changed files), then shows the setup-cost notice when one is due. Each part fails open on its own.</p>
 
-      <section id="examples" aria-labelledby="examples-h">
-        <h2 id="examples-h"><span class="num">06</span>Examples</h2>
+        <h3><code>UserPromptSubmit</code></h3>
+        <p>Before each prompt you send: the cold-resume notice. It reads the last 256 KB of the transcript for the last request's time, context size and model, and holds the prompt once per idle gap when the session was idle for over an hour with at least <code>coldResumeMinTokens</code> tokens of context. It acts only in sessions a person attends, and never on commands or on prompts Claude Code writes itself.</p>
+
+        <h3>State, logs and briefs</h3>
+        <p>Read tracking and the hooks' counts live in one small file per session in <code>&lt;os temp dir&gt;/thinwindow/state/</code>, with one tiny file per project for the setup-cost notice. <code>thinwindow-run</code> logs go to <code>&lt;os temp dir&gt;/thinwindow/logs/</code>, and briefs to the plugin's data folder. ThinWindow removes them once they're 7 days old, the next time it runs. Nothing is written inside your repository, and nothing is sent anywhere.</p>
+
+        <h3>What Claude gets back</h3>
         <p>What the agent asks for, and what it gets with ThinWindow installed. All of these are default behaviours of the plugin.</p>
 
         <div class="example">
@@ -300,42 +304,101 @@ Say less
           <div class="result"><b>Refused</b> as already in context. If the agent really needs it again, repeating the call goes through.</div>
         </div>
 
-        <h3>Typical use</h3>
-        <p>The benchmark tasks show the kind of everyday work where this matters: fixing a bug that has a failing test, adding a small feature with tests, renaming a method across files and typings, moving helpers into a new module, answering a question from a repository's configuration, and "make the footer copyright year update automatically". The last one is the origin of the project: an agent that burned a large share of a plan's budget on a one-line change.</p>
+        <h3>Design principles</h3>
+        <ul>
+          <li><strong>Fails open.</strong> If a hook errors for any reason, the tool call or the prompt proceeds. ThinWindow must never block someone's work because of its own bug.</li>
+          <li><strong>Can't get stuck.</strong> Repeating a refused <code>Read</code>, or a refused noisy or unbounded command, within ten minutes lets it through. The commands that are always refused come with a cheaper replacement that works.</li>
+          <li><strong>Never approves anything.</strong> ThinWindow never returns an <code>allow</code> decision, so it can't approve a call your permission settings would have asked about. A rewritten command still goes through your permission rules.</li>
+          <li><strong>Its own footprint is budgeted.</strong> The rules stay under 2,000 characters, and CI fails otherwise. The commands you type add nothing to the skill listing Claude sees.</li>
+          <li><strong>Never phones home.</strong> No telemetry, no analytics, no update or license checks.</li>
+        </ul>
+      </section>
+
+      <section id="between" aria-labelledby="between-h">
+        <h2 id="between-h"><span class="num">05</span>Between sessions: resume without paying twice</h2>
+
+        <h3>The brief</h3>
+        <p>At the end of every turn, ThinWindow keeps a short brief of the session up to date, without calling a model: the goal, your last requests, the files changed, the last commands with their exit codes, and Claude's last reply. A session that never uses the brief gains no tokens from it.</p>
+
+        <h3>The cold-resume notice</h3>
+        <p>You send a prompt to a session that has been idle for over an hour with at least 100k tokens of context. ThinWindow holds it once and shows what continuing re-writes, in tokens and in US$ at the model's list price, next to a fresh start. You decide every time: send the prompt again to continue. Commands are never held, and neither are prompts in <code>-p</code>, SDK or background sessions. In the desktop app the notice is an "A hook blocked your prompt" card, with "Edit prompt" to send it again. Example:</p>
+<pre><code>ThinWindow held this message: this session has been idle 9 h, so its prompt cache has expired.
+Continuing re-writes ~427k tokens (~US$3.42 at Opus 5.5 list price): send it again.
+A fresh start from a short brief re-writes ~55k tokens (~US$0.44): /clear, then /thinwindow:resume &lt;your request&gt;.</code></pre>
+
+        <h3><code>/thinwindow:resume</code></h3>
+        <p>After <code>/clear</code>, it starts the new session from this project's newest brief, up to 48 hours old, optionally followed by your next request. The brief is at most 600 characters, marked as reference for Claude to check against <code>git status</code>, and comes with its age, the commits made since and the path to the full brief.</p>
+
+        <h3><code>/thinwindow:brief</code></h3>
+        <p>Before you step away, Claude writes a five-line handoff while the cache is still warm: what's done, where it stopped, the decisions, what didn't work, and the next step. ThinWindow keeps it in the brief.</p>
+
+        <div class="callout">
+          <strong>Claude Code's own "Resume from summary"</strong>
+          <p>Claude Code shows its own dialog when you <code>--resume</code> a large session after about an hour (Pro and Max plans). ThinWindow also covers sessions you left open, shows what continuing costs before you pay it, and keeps a brief for any later <code>/clear</code>.</p>
+        </div>
+      </section>
+
+      <section id="after" aria-labelledby="after-h">
+        <h2 id="after-h"><span class="num">06</span>After: see where your context went</h2>
+        <p><code>/thinwindow:report</code> reads the transcripts of your own Claude Code sessions on this machine and prints, on one screen:</p>
+        <ul>
+          <li>how much context each request re-sends, on average and in your longest sessions;</li>
+          <li>how often a session was re-written after its cache expired, at what size, and what those re-writes cost at list price;</li>
+          <li>what a session's first request carries, and its largest parts;</li>
+          <li>whose tool output is re-sent most, and in what sizes;</li>
+          <li>what ThinWindow did in the last 7 days.</li>
+        </ul>
+        <p>The amounts are what's at stake in your own sessions, not what ThinWindow saved. On a subscription, read US$ as a relative size. <code>/thinwindow:report --json</code> prints a short summary without US$ amounts; you can share it in <a href="https://github.com/thinwindow/thinwindow/issues/43">#43</a> if you want to. Nothing is collected automatically.</p>
       </section>
 
       <section id="install" aria-labelledby="install-h">
         <h2 id="install-h"><span class="num">07</span>Install</h2>
 
-        <h3>Claude Code: rules and hooks</h3>
-        <p>The full version. The repository is its own plugin marketplace.</p>
+        <h3>From the plugin directory</h3>
+        <p>In the Claude desktop app, Customize → Plugins → Discover → ThinWindow. In Claude Code, <code>/plugin</code> → Discover → ThinWindow, or:</p>
+<pre><code>claude plugin install thinwindow@anthropic-plugin-directory</code></pre>
+
+        <h3>From the repository, in Claude Code</h3>
 <pre><code>/plugin marketplace add thinwindow/thinwindow
 /plugin install thinwindow@thinwindow</code></pre>
 
-        <h3>Any agent with Agent Skills: rules only</h3>
-        <p>Codex, Cursor, Copilot, Gemini CLI, OpenCode and other agents that support the Agent Skills standard. The skill also bundles <code>thinwindow-run</code>.</p>
+        <h3>Any agent with Agent Skills</h3>
+        <p>Codex, Cursor, Copilot, Gemini CLI, OpenCode and other agents that support the Agent Skills standard get the rules, <code>thinwindow-run</code> and the report script.</p>
 <pre><code>npx skills add thinwindow/thinwindow</code></pre>
 
-        <h3>Agents that read <code>AGENTS.md</code>: rules only</h3>
+        <h3>Agents that read <code>AGENTS.md</code></h3>
         <p>Paste <code>adapters/AGENTS.md</code> into your project's <code>AGENTS.md</code>, or into whichever instructions file your agent loads.</p>
-
-        <div class="callout">
-          <strong>Hooks are Claude Code only.</strong>
-          <p>They depend on Claude Code's tool-call hook API. Other agents get the rules, which the agent may or may not follow. Enforcement for other agents' hook systems is open to contributions.</p>
-        </div>
 
         <h3>Turning it off</h3>
         <p>Set <code>THINWINDOW=off</code> in the environment, or <code>"enabled": false</code> in <code>.thinwindow.json</code>. With it off, <code>thinwindow-run</code> runs commands with their output untouched.</p>
         <p class="small muted">Requirements: Node.js 18 or newer. No other dependencies.</p>
       </section>
 
+      <section id="surfaces" aria-labelledby="surfaces-h">
+        <h2 id="surfaces-h"><span class="num">08</span>Where it works</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Where</th><th>What ThinWindow does there</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code (terminal, IDE, the desktop app's Code tab)</td><td>Everything: the rules, the guards, the brief, the cold-resume notice, the setup-cost notice and the <code>/thinwindow:</code> commands. The <code>thinwindow-minimal</code> profile works from the terminal.</td></tr>
+            <tr><td>Cowork</td><td>The rules, the Read guard and <code>/thinwindow:brief</code> work. <code>/thinwindow:report</code> covers only the current task, briefs don't carry over between tasks, and neither notice shows.</td></tr>
+            <tr><td>Chat (claude.ai, the desktop and mobile apps)</td><td>Only the Agent Skill: Claude loads the rules when it decides a task needs them, and <code>/thinwindow:brief</code> works. The other commands need a shell, which chat doesn't run.</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted">ThinWindow's validation ran in Claude Code. Cowork and chat were checked for what works there, not measured.</p>
+      </section>
+
       <section id="configuration" aria-labelledby="config-h">
-        <h2 id="config-h"><span class="num">08</span>Configuration</h2>
+        <h2 id="config-h"><span class="num">09</span>Configuration</h2>
         <p>ThinWindow works without configuration. To change it, create <code>.thinwindow.json</code> in the project root or <code>~/.thinwindow.json</code> in your home directory. Project values override home values; lists from both files are combined.</p>
 <pre><code>{
   "enabled": true,
   "maxReadLines": 400,
   "rewrite": true,
+  "briefs": true,
+  "coldResumeNotice": true,
+  "coldResumeMinTokens": 100000,
+  "setupNotice": true,
+  "setupNoticeMinTokens": 40000,
   "noisyCommands": ["^just (build|test)\\b"],
   "allowlist": {
     "paths": ["docs/**", "*.lock"],
@@ -348,6 +411,11 @@ Say less
             <tr><td><code>enabled</code></td><td><code>true</code></td><td><code>false</code> turns every hook off for that project, or everywhere in <code>~/.thinwindow.json</code>.</td></tr>
             <tr><td><code>maxReadLines</code></td><td><code>400</code></td><td>Line count above which a whole-file <code>Read</code> is shortened, and <code>cat</code> of the file is refused.</td></tr>
             <tr><td><code>rewrite</code></td><td><code>true</code></td><td>Fix wasteful calls in place. <code>false</code> refuses them instead, as a soft block, at the cost of a turn each.</td></tr>
+            <tr><td><code>briefs</code></td><td><code>true</code></td><td><code>false</code> stops keeping session briefs for <code>/thinwindow:resume</code>.</td></tr>
+            <tr><td><code>coldResumeNotice</code></td><td><code>true</code></td><td><code>false</code> turns off the cold-resume notice.</td></tr>
+            <tr><td><code>coldResumeMinTokens</code></td><td><code>100000</code></td><td>The smallest context, in tokens, for which the notice holds a prompt.</td></tr>
+            <tr><td><code>setupNotice</code></td><td><code>true</code></td><td><code>false</code> turns off the setup-cost notice.</td></tr>
+            <tr><td><code>setupNoticeMinTokens</code></td><td><code>40000</code></td><td>The smallest first request, in tokens, for which the notice shows.</td></tr>
             <tr><td><code>noisyCommands</code></td><td>built-in list</td><td>Extra regular expressions for noisy commands, added to the built-in list.</td></tr>
             <tr><td><code>allowlist.paths</code></td><td><code>[]</code></td><td>Globs for files ThinWindow never blocks.</td></tr>
             <tr><td><code>allowlist.commands</code></td><td><code>[]</code></td><td>Regular expressions for Bash commands ThinWindow never blocks.</td></tr>
@@ -366,133 +434,64 @@ Say less
         <p class="small muted">The complete reference is <code>docs/configuration.md</code> in the repository.</p>
       </section>
 
-      <section id="benchmark" aria-labelledby="bench-h">
-        <h2 id="bench-h"><span class="num">09</span>Benchmark</h2>
-        <p>Every number on this page comes from the raw run files in <code>bench/results/</code>, through <code>bench/report.mjs</code> and <code>bench/docs.mjs</code>. None is typed by hand, and CI fails if any of them drifts.</p>
-
-        <h3>Current results</h3>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Model</th><th class="n">Tokens</th><th class="n">Cost</th><th class="n">Turns</th><th class="n">Success baseline → ThinWindow</th><th class="n">Runs</th></tr></thead>
-          <tbody>
-            <!-- ROWS:START -->
-            <tr><td>Opus 5.5</td><td class="n win">−2.9%</td><td class="n win">−10.5%</td><td class="n">75 → 76</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
-            <tr><td>Sonnet 5.5</td><td class="n win">−2.6%</td><td class="n win">−6.5%</td><td class="n">56 → 53</td><td class="n">24/24 → 24/24</td><td class="n">48</td></tr>
-            <tr><td>Haiku 4.5</td><td class="n win">−3.3%</td><td class="n win">−7.7%</td><td class="n">212.5 → 225.5</td><td class="n">12/16 → 12/16</td><td class="n">32</td></tr>
-            <!-- ROWS:END -->
-          </tbody>
-        </table></div>
-        <!-- FOOTNOTE:START -->
-        <p class="small muted">Same 8 tasks, 128 runs, one agent per run. Claude Code 2.1.287, 2026-10-02. ThinWindow 0.3.0 (6546385) on Opus 5.5; 0.3.0 (6546385) on Sonnet 5.5; 0.3.0 (6546385) on Haiku 4.5. Tokens and cost are the sum of the per-task medians; turns are the sum of per-task median top-level turns; success counts every run. The 3–6% at the top counts only runs that passed their hidden check. On Haiku 4.5 that is −5.8% over the 6 tasks where both conditions have a passing run, against −3.3% over all 8. Opus 5.5 and Sonnet 5.5 passed every run. Every run was measured in Claude Code, not in Cowork or the Claude apps; versions after 0.3.0 will add those measurements. Haiku 4.5 has two runs per task and condition; Opus 5.5 and Sonnet 5.5, three. The runs came from two accounts whose Claude Code sessions start with different built-in tools; both conditions of each task share the same mix.</p>
-        <!-- FOOTNOTE:END -->
-
-        <div class="callout warn">
-          <strong>These numbers are still being improved.</strong>
-          <p>They're a current measurement, not a ceiling. The project's own launch target is at least 25% fewer total tokens at an equal success rate, and no model has reached it yet. The results will be re-measured, and the raw files re-published, as the rules, the models and Claude Code change.</p>
-        </div>
-
-        <h3>Per-task change</h3>
-        <p>Bars left of zero are tokens saved with ThinWindow; bars to the right are tokens lost. Not every task improves.</p>
-        <figure>
-          <div class="figure-box"><img src="../bench/results/chart-claude-opus-5-5.svg" alt="Change in total tokens per task for Opus 5.5" loading="lazy"></div>
-          <figcaption>Opus 5.5 · 48 runs, 3 per task and condition.</figcaption>
-        </figure>
-        <figure>
-          <div class="figure-box"><img src="../bench/results/chart-claude-sonnet-5-5.svg" alt="Change in total tokens per task for Sonnet 5.5" loading="lazy"></div>
-          <figcaption>Sonnet 5.5 · 48 runs, 3 per task and condition.</figcaption>
-        </figure>
-        <figure>
-          <div class="figure-box"><img src="../bench/results/chart-claude-haiku-4-5.svg" alt="Change in total tokens per task for Haiku 4.5" loading="lazy"></div>
-          <figcaption>Haiku 4.5 · 32 runs, 2 per task and condition.</figcaption>
-        </figure>
-        <p>The per-task tables, with medians and min–max ranges, are in <code>bench/results/report.md</code> and in the README.</p>
-
-        <h3>How a run is measured</h3>
-        <ol>
-          <li>Clone a real open-source repository (<a href="https://github.com/pallets/click">pallets/click</a>, Python, or <a href="https://github.com/tj/commander.js">tj/commander.js</a>, Node) at a pinned commit, into a fresh temporary directory. The remote is removed, so the agent can't read later history.</li>
-          <li>Install its dependencies before the agent starts, so install logs are billed to neither side.</li>
-          <li>Run Claude Code headless (<code>claude -p</code>) with the chosen model, capped at 40 turns, inside Claude Code's sandbox. The <em>baseline</em> gets plain Claude Code with <code>THINWINDOW=off</code>; the <em>ThinWindow</em> condition gets the same plus the plugin. No user settings, no MCP servers, no memory carried between runs.</li>
-          <li>Run the task's hidden check, a test or script the agent never sees. Exit code 0 is a success.</li>
-          <li>Record input, cache-write, cache-read and output tokens (subagents included), cost, turns, wall time and the tool-call trace, as one JSON line.</li>
-        </ol>
-        <p>Runs are sequential and interleaved, alternating which condition goes first, so neither side always runs first or competes for rate limits.</p>
-
-        <h3>The tasks</h3>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Task</th><th>Kind</th></tr></thead>
-          <tbody>
-            <tr><td><code>commander-negate-default-order</code></td><td>Bug fix</td></tr>
-            <tr><td><code>commander-command-clash</code></td><td>Small feature + tests</td></tr>
-            <tr><td><code>commander-rename-display-width</code></td><td>Cross-file rename, including typings</td></tr>
-            <tr><td><code>commander-extract-utils</code></td><td>Refactor into a new module</td></tr>
-            <tr><td><code>commander-ci-config</code></td><td>Config lookup, written to an answer file</td></tr>
-            <tr><td><code>click-choice-brackets</code></td><td>Bug fix</td></tr>
-            <tr><td><code>click-help-spec</code></td><td>Small feature + tests</td></tr>
-            <tr><td><code>click-footer-year</code></td><td>"Make the footer copyright year update automatically"</td></tr>
-          </tbody>
-        </table></div>
-        <p><code>bench/validate-tasks.mjs</code> proves each task is fair without running an agent: in a fresh clone its check must fail, and after applying the reference solution it must pass.</p>
-
-        <h3>How to read the numbers</h3>
+      <section id="upgrading" aria-labelledby="upgrading-h">
+        <h2 id="upgrading-h"><span class="num">10</span>Upgrading from 0.3.0</h2>
+        <p>Nothing that worked stops working, and every new part has its own off switch.</p>
         <ul>
-          <li><strong>Tokens</strong> are input + cache writes + cache reads + output, summed over every model a run used. Per task, the table reports the median over all runs, failures included, with the min–max spread.</li>
-          <li><strong>Cost</strong> is Claude Code's own estimate (<code>total_cost_usd</code>), not a bill. On a subscription you pay in usage limits instead, but the ratio is the same.</li>
-          <li><strong>Turns</strong> count the top-level agent loop only. Work delegated to a subagent is included in tokens and cost but not in turns, so tokens and cost are the fair comparison.</li>
-          <li><strong>The rules and thresholds were tuned on these same tasks.</strong> Savings on other work will differ.</li>
+          <li><strong>New hooks:</strong> at the end of each turn (the brief and the setup-cost notice), and before each prompt (the cold-resume notice).</li>
+          <li><strong>New commands:</strong> <code>/thinwindow:resume</code>, <code>/thinwindow:brief</code> and <code>/thinwindow:report</code>. You type them; they add nothing to the skill listing Claude sees.</li>
+          <li><strong>New switches:</strong> <code>briefs</code>, <code>coldResumeNotice</code>, <code>coldResumeMinTokens</code>, <code>setupNotice</code> and <code>setupNoticeMinTokens</code>.</li>
+          <li><strong>New, optional:</strong> the <code>thinwindow-minimal</code> profile, a file you copy in.</li>
+          <li><strong>Changed:</strong> the rules say the same in fewer words.</li>
         </ul>
+      </section>
 
-        <h3>Where the remaining headroom is</h3>
+      <section id="checked" aria-labelledby="checked-h">
+        <h2 id="checked-h"><span class="num">11</span>How it's checked</h2>
+        <p>ThinWindow used to publish one benchmark percentage per model. From 0.4.0 it's checked with a different method (<a href="https://github.com/thinwindow/thinwindow/issues/28">#28</a>):</p>
         <ul>
-          <!-- HEADROOM:START -->
-          <li><strong>Not every task improves.</strong> On Sonnet 5.5, six of the eight tasks cost more with ThinWindow. Just neutralising those regressions, without saving a token anywhere else, would take Sonnet 5.5 from −2.6% to about −13.1%, and Haiku 4.5 from −3.3% to about −10.2%. Most of the near-term headroom is in not making short tasks worse.</li>
-          <li><strong>Turns are the untapped factor.</strong> Sonnet 5.5 took 5.4% fewer turns and cut cost by 6.5%; Haiku 4.5 took 6.1% more turns and cut cost by 7.7%. An earlier attempt at explicit "use fewer turns" rules made Sonnet measurably worse, and it was reverted rather than kept and quietly excluded. That experiment is still in the history.</li>
-          <!-- HEADROOM:END -->
+          <li><strong>Every mechanism has unit tests,</strong> run in CI on macOS, Linux and Windows.</li>
+          <li><strong>Ideas are first replayed</strong> on recorded sessions, at no model cost, to see what's at stake.</li>
+          <li><strong>A few targeted agent runs</strong> answer what only a model can, with the pass criteria written before the first run.</li>
+          <li><strong>0.4.0 was validated before release</strong> against Claude Code without the plugin, on real open-source repositories, with its method and pass rules posted before the first run (<a href="https://github.com/thinwindow/thinwindow/issues/38">#38</a>). Every benchmark task and every resume chain completed with ThinWindow, as they did without it. When the second task of a chain started fresh after the prompt cache expired, it cost less per completed chain than continuing.</li>
         </ul>
+        <p>The method, the raw rows and the agents' scrubbed transcripts are public in <a href="https://github.com/thinwindow/thinwindow/tree/main/bench">bench/</a>.</p>
+      </section>
 
-        <h3>Re-run it yourself</h3>
-<pre><code>node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
-node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
-node bench/report.mjs</code></pre>
-        <p class="small muted"><code>--dry-run</code> clones nothing and prints the plan and a cost estimate. <code>--max-cost</code> stops before the next run once the spend passes the limit. Runs need Claude Code with its sandbox, git, Node.js 22.12+, Python 3.10+ and network access to GitHub, npm and PyPI; on Windows, use WSL2. Every option is in <code>bench/README.md</code>.</p>
+      <section id="privacy" aria-labelledby="privacy-h">
+        <h2 id="privacy-h"><span class="num">12</span>What it reads, writes and sends</h2>
+        <ul>
+          <li><strong>Reads:</strong> the tool call Claude Code passes to the hooks (a file path, a command or a search pattern), and the line count and outline of files Claude is about to read or print; its settings in <code>.thinwindow.json</code>; the environment variables <code>THINWINDOW</code>, <code>THINWINDOW_DEBUG</code>, <code>CLAUDE_PROJECT_DIR</code>, <code>CLAUDE_PLUGIN_DATA</code> and <code>CLAUDE_CODE_SESSION_ATTENDED</code>; before each prompt, the last 256 KB of the session's transcript, and the first 256 KB when a cold-resume notice is due; at the end of each turn, the part of the transcript written since the last turn, and its first 256 KB while a setup-cost notice may be due; and <code>git status</code> in the session's folder after a turn that could have changed files. <code>/thinwindow:resume</code> also runs <code>git log</code> there. It reads no credentials.</li>
+          <li><strong>Writes, to your operating system's temp folder:</strong> one small file per session (which files and ranges were read, recent refusals, when a cold-resume notice was last shown, and counts of what the hooks did), one tiny file per project (when the setup-cost notice was last shown), and the full log of each command run through <code>thinwindow-run</code>.</li>
+          <li><strong>Writes, to the plugin's data folder</strong> (<code>~/.claude/plugins/data/</code>): one small brief per session, in a folder per project. A brief holds <strong>excerpts of your prompts and of Claude's replies</strong>: the first prompt (up to 200 characters), the last three requests (up to 80 each), the last reply (up to 1,200), the changed files, and the last four commands (up to 70 characters each) with their exit codes. <code>"briefs": false</code> stops writing them.</li>
+          <li><strong>Deletes:</strong> ThinWindow removes its files once they're 7 days old, the next time it runs. Claude Code deletes the plugin's data folder when you uninstall the plugin. If you remove ThinWindow from your account in the Claude desktop app, briefs can stay; delete the <code>thinwindow-*</code> folder in <code>~/.claude/plugins/data/</code> to remove them.</li>
+          <li><strong>Sends:</strong> nothing. There is no network code. A brief enters a conversation only when you type <code>/thinwindow:resume</code>.</li>
+        </ul>
+        <p><code>/thinwindow:report</code> reads your Claude Code transcripts (<code>~/.claude/projects</code>, or <code>$CLAUDE_CONFIG_DIR/projects</code>) only when you run it, and writes nothing. It prints aggregate numbers with its own labels: never prompts, file contents, commands, paths, project names, session ids, or the names of your tools, models or MCP servers; a test checks this. Through the slash command, the printed numbers become part of your conversation; run the script yourself with <code>!</code> to keep them out. If Claude Code changes its transcript format, the report says "format not recognized" instead of printing wrong numbers.</p>
+        <p class="small muted">This page loads no external fonts or scripts either.</p>
       </section>
 
       <section id="limitations" aria-labelledby="limits-h">
-        <h2 id="limits-h"><span class="num">10</span>Limitations and disclaimer</h2>
-        <p>ThinWindow started as a personal tool, built to make one person's workflow cheaper, and published because the measurements might be useful to someone else. It is not a finished product with a support contract behind it.</p>
+        <h2 id="limits-h"><span class="num">13</span>Limitations</h2>
         <ul>
-          <li><strong>The benchmark is narrow and self-selected.</strong> Eight tasks, two repositories, three models, a few repetitions each, with rules tuned on those same tasks. That's enough to show a direction, not to promise you a percentage. It is published in full, raw files included, so you can judge how well it generalises.</li>
-          <li><strong>Token accounting is volatile.</strong> What lands in a context window depends on the model version, the agent harness and its system prompt, cache hit rates, enabled tools, MCP servers, repository size, and how the task happens to unfold. Any of these can move the result by more than the effect measured here, and two identical runs can differ substantially.</li>
-          <li><strong>The results will age.</strong> They were measured with one Claude Code version and specific model snapshots, both of which change often.</li>
-          <li><strong>Hooks are Claude Code only.</strong> Other agents get the rules, not the enforcement.</li>
-          <li><strong>It is not a substitute for a good prompt.</strong> It removes waste; it doesn't make an agent smarter.</li>
-          <li><strong>No warranty.</strong> The software is provided "as is" under the MIT License, without warranty of any kind. You are responsible for what runs in your environment and for what you spend. The hooks are designed to fail open, and the test suite covers that, but no amount of testing is a guarantee. Review the code, run the tests, and try it on a branch before trusting it with real work.</li>
+          <li><strong>ThinWindow is built for long sessions,</strong> and for coming back to big ones. A short task carries little context to begin with.</li>
+          <li><strong>The hooks need Claude Code.</strong> Other agents get the rules, and Cowork and chat get the parts listed in <a href="#surfaces">Where it works</a>.</li>
+          <li><strong>US$ figures are estimates at the API list price.</strong> They aren't a bill.</li>
+          <li><strong>No warranty.</strong> The software is provided "as is" under the MIT License, without warranty of any kind. The hooks are designed to fail open, and the tests cover that, but no amount of testing is a guarantee. Review the code before trusting it with real work.</li>
         </ul>
       </section>
 
-      <section id="status" aria-labelledby="status-h">
-        <h2 id="status-h"><span class="num">11</span>Project status</h2>
-        <div class="table-wrap"><table>
-          <tbody>
-            <tr><td>Version</td><td><code>0.3.0</code>. The hook runs the skill's bundled script instead of a top-level <code>bin/</code> (<a href="https://github.com/thinwindow/thinwindow/issues/13">#13</a>), short command output and named-file diffs come back as they are, and the measurements add Sonnet 5.5 (<a href="https://github.com/thinwindow/thinwindow/issues/21">#21</a>). Every run in the tables records <code>0.3.0</code> and the commit <code>6546385</code>; the 0.2.2 results are in <code>bench/results/archive/</code>.</td></tr>
-            <tr><td>Built</td><td>Rules, Agent Skill, <code>AGENTS.md</code> snippet, Claude Code plugin with <code>SessionStart</code>, <code>Read</code>, <code>Bash</code> and <code>Grep</code> hooks, <code>thinwindow-run</code>, configuration, tests and CI on macOS, Linux and Windows (Node 18 and 22).</td></tr>
-            <!-- MEASURED:START -->
-            <tr><td>Measured</td><td>Three models, 128 runs, as above. The launch target (≥25% fewer tokens at equal success) is not met yet.</td></tr>
-            <!-- MEASURED:END -->
-            <tr><td>In progress</td><td>Removing the regressions on short tasks, and reducing turns without hurting success.</td></tr>
-            <tr><td>Out of scope for v0.1</td><td>An npm package, a hosted service, and telemetry of any kind.</td></tr>
-          </tbody>
-        </table></div>
-      </section>
-
       <section id="repository" aria-labelledby="repo-h">
-        <h2 id="repo-h"><span class="num">12</span>Repository</h2>
+        <h2 id="repo-h"><span class="num">14</span>Repository</h2>
         <div class="table-wrap"><table>
           <thead><tr><th>Path</th><th>Contents</th></tr></thead>
           <tbody>
             <tr><td><code>rules/thinwindow.md</code></td><td>The rules: the single source of truth for the behaviour.</td></tr>
-            <tr><td><code>skills/thinwindow/</code></td><td>The Agent Skill, with a bundled <code>thinwindow-run</code>.</td></tr>
+            <tr><td><code>skills/</code></td><td>The Agent Skill, with <code>thinwindow-run</code> and the report script, and the <code>/thinwindow:</code> commands.</td></tr>
             <tr><td><code>.claude-plugin/</code>, <code>hooks/</code></td><td>The plugin manifest, its marketplace entry and the hooks.</td></tr>
+            <tr><td><code>profiles/</code></td><td>The opt-in <code>thinwindow-minimal</code> profile.</td></tr>
             <tr><td><code>adapters/AGENTS.md</code></td><td>The rules as a snippet for agents that read <code>AGENTS.md</code>.</td></tr>
-            <tr><td><code>bench/</code></td><td>Tasks, runner, report, hidden checks, reference solutions and raw results.</td></tr>
+            <tr><td><code>bench/</code></td><td>Tasks, runner, report, hidden checks, reference solutions, raw results and the method.</td></tr>
             <tr><td><code>docs/</code></td><td>Product spec, configuration reference and manual testing guide.</td></tr>
             <tr><td><code>test/</code>, <code>scripts/</code></td><td>The test suite (<code>node --test</code>) and the repository checks CI runs.</td></tr>
             <tr><td><code>assets/</code>, <code>website/</code></td><td>The ThinWindow logo and icon set, and this documentation site.</td></tr>
@@ -500,32 +499,35 @@ node bench/report.mjs</code></pre>
         </table></div>
 
         <h3>Contributing</h3>
-        <p>The benchmark is one person's sample, so other people's workloads are the most valuable input. Roughly in order of usefulness:</p>
         <ol>
-          <li><strong>A benchmark task from your own stack:</strong> another language, a monorepo, a framework with heavy generated code.</li>
-          <li><strong>A reproducible regression:</strong> a case where ThinWindow costs more than the baseline, with the run file to prove it.</li>
-          <li><strong>Rule and hook proposals</strong>, together with the measurement that justifies them. A new rule must come with a benchmark delta.</li>
+          <li><strong>A task from your own stack:</strong> another language, a monorepo, a framework with heavy generated code.</li>
+          <li><strong>A reproducible regression,</strong> with the rows that show it.</li>
+          <li><strong>A rule or hook proposal,</strong> with the compliance table (<code>node bench/compliance.mjs</code>), and, when the decision depends on how the model reacts, a few targeted runs whose pass criteria are written before running them.</li>
         </ol>
         <p>The workflow is in <code>CONTRIBUTING.md</code>. The project uses Conventional Commits and the MIT License.</p>
       </section>
 
       <section id="faq" aria-labelledby="faq-h">
-        <h2 id="faq-h"><span class="num">13</span>FAQ</h2>
+        <h2 id="faq-h"><span class="num">15</span>FAQ</h2>
         <details>
-          <summary>Does it make my agent worse at the task?</summary>
-          <p>That is what the success column measures; a saving that fails the task is not a saving. Across the three models, success was identical to the baseline except on one Haiku task, commander-rename-display-width: 1/2 without ThinWindow, 0/2 with it. Haiku struggles there either way: three of its four runs failed, and every run took 35 turns or more.</p>
+          <summary>Does it make Claude worse at the task?</summary>
+          <p>In 0.4.0's validation, every benchmark task and resume chain completed with ThinWindow as often as without it, and a blind review of final answers found them correct and complete in both conditions. Every guard fails open.</p>
         </details>
         <details>
-          <summary>Why not just tell the agent to be brief?</summary>
-          <p>It helps, and the rules ask for it: output is under 2% of tokens, but at five times the input price it is 19–27% of the cost. The rest is context: a long answer is paid once, while a long read is written to the cache once and read again on every turn that follows it.</p>
+          <summary>How is it different from Claude Code's "Resume from summary"?</summary>
+          <p>That dialog appears when you <code>--resume</code> a large session after about an hour, on Pro and Max plans. ThinWindow also covers sessions you left open, shows what continuing costs in tokens and US$ before you pay it, and keeps a brief for any later <code>/clear</code>.</p>
+        </details>
+        <details>
+          <summary>Will the cold-resume notice interrupt me?</summary>
+          <p>At most once per idle gap: only after an hour idle, and only over 100k tokens of context. Send the prompt again to continue, or turn it off with <code>"coldResumeNotice": false</code>.</p>
         </details>
         <details>
           <summary>Does it send my code or telemetry anywhere?</summary>
-          <p>No. There is no network code in the project: no analytics, crash reports, usage statistics, or license or update checks. The hooks are local Node scripts that read the tool call and return a decision, and truncated logs go to a temporary file on your own disk. This site loads no external fonts or scripts either.</p>
+          <p>No. There is no network code in the project: no analytics, crash reports, usage statistics, or license or update checks. The hooks are local Node scripts.</p>
         </details>
         <details>
           <summary>Does it work outside Claude Code?</summary>
-          <p>The rules do, through Agent Skills or <code>AGENTS.md</code>. The hooks, which do most of the work, are Claude Code only, because they depend on its tool-call hook API.</p>
+          <p>The rules do, through Agent Skills or <code>AGENTS.md</code>. The hooks need Claude Code. Cowork and chat get the parts in <a href="#surfaces">Where it works</a>.</p>
         </details>
         <details>
           <summary>Can it block something I actually need?</summary>

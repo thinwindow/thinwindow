@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Copies rules/thinwindow.md (the single source of truth) into the files that
-// must carry the rules inline: the Agent Skill and the AGENTS.md adapter.
+// must carry the rules inline: the Agent Skill, the AGENTS.md adapter and the
+// site, which shows them in an HTML <pre> block.
 // `node scripts/sync-rules.mjs --check` exits 1 when a copy is out of date.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -8,20 +9,24 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const RULES = join(ROOT, 'rules', 'thinwindow.md');
-export const TARGETS = [join(ROOT, 'skills', 'thinwindow', 'SKILL.md'), join(ROOT, 'adapters', 'AGENTS.md')];
+export const TARGETS = [join(ROOT, 'skills', 'thinwindow', 'SKILL.md'), join(ROOT, 'adapters', 'AGENTS.md'), join(ROOT, 'website', 'index.html')];
 
 const BLOCK = /(<!-- rules:start[^>]*-->\n)[\s\S]*?(<!-- rules:end -->)/;
+const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-export function syncedContent(target, rules) {
+export function syncedContent(target, rules, { html = false } = {}) {
   if (!BLOCK.test(target)) throw new Error('missing <!-- rules:start --> ... <!-- rules:end --> markers');
-  return target.replace(BLOCK, (_, open, close) => `${open}${rules.trim()}\n${close}`);
+  const body = html ? `<pre><code>${escapeHtml(rules.trim())}</code></pre>` : rules.trim();
+  return target.replace(BLOCK, (_, open, close) => `${open}${body}\n${close}`);
 }
+
+const synced = (file, current, rules) => syncedContent(current, rules, { html: file.endsWith('.html') });
 
 export function outOfDate() {
   const rules = readFileSync(RULES, 'utf8');
   return TARGETS.filter((t) => {
     const current = readFileSync(t, 'utf8');
-    return syncedContent(current, rules) !== current;
+    return synced(t, current, rules) !== current;
   });
 }
 
@@ -31,7 +36,7 @@ function main() {
   let stale = 0;
   for (const t of TARGETS) {
     const current = readFileSync(t, 'utf8');
-    const next = syncedContent(current, rules);
+    const next = synced(t, current, rules);
     if (next === current) continue;
     stale++;
     if (check) console.error(`out of date: ${t} (run node scripts/sync-rules.mjs)`);
