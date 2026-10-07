@@ -196,7 +196,7 @@ test('0.4.0 report: cost per completed task, intervals with the smallest detecta
   const md = markdownReport([s]);
   assert.match(md, /Cost per completed task: −20\.0% \(95% interval .+; smallest detectable effect ±\d+\.\d%\)/);
   assert.match(md, /Environment: Claude Code 2\.1\.289 · effort default · profile p1p1p1p1p1p1 · account abc123abc123 · 28 tools \(aaaaaaaaaaaa\) · 17 skills \(bbbbbbbbbbbb\) \+ 4 ThinWindow/);
-  assert.match(md, /First request \(median\): baseline 19k tokens, thinwindow 21k tokens · cold first requests: baseline 0\/12, thinwindow 0\/12/);
+  assert.match(md, /First request \(median\): baseline 19k tokens, ThinWindow 21k tokens · cold first requests: baseline 0\/12, ThinWindow 0\/12/);
   assert.match(md, /resamples tasks, then runs within each task and condition/);
 });
 
