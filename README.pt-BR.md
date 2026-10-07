@@ -7,94 +7,204 @@
 <h1 align="center">ThinWindow</h1>
 
 <p align="center">
-  <strong>Menos na janela. Menos na conta.</strong><br>
-  O ThinWindow faz o Claude usar menos contexto, sem mudar o resultado. Um plugin e Agent Skill para Claude Code, Cowork e os apps do Claude, medido no Claude Code com Opus 5.5, Sonnet 5.5 e Haiku 4.5: de 7% a 11% menos custo e de 3% a 6% menos tokens.<br>
+  <strong>Menos na janela. Não pague duas vezes.</strong><br>
+  O ThinWindow mantém fina a janela de contexto do Claude Code do primeiro prompt até a manhã seguinte. Ele corta leituras e logs desmedidos enquanto você trabalha, mostra o que cada requisição carrega e, quando você volta a uma sessão expirada, oferece recomeçar do zero a partir de um resumo curto em vez de pagar de novo pelo contexto antigo.<br>
   Listado no diretório oficial de plugins do Claude Code.
 </p>
 
 <p align="center">
-  <a href="docs/WHERE-THE-TOKENS-GO.md"><b>Para onde vão os tokens</b></a> (em inglês) · <a href="#benchmark">Benchmark e dados brutos</a> · <a href="#instalação">Instalação</a> · <a href="https://www.youtube.com/watch?v=ks1_B5Uq5Gc">Vídeo de instalação</a>
+  <a href="#instalação"><b>Instalação</b></a> · <a href="#o-que-o-thinwindow-faz">O que faz</a> · <a href="#onde-funciona">Onde funciona</a> · <a href="#o-que-ele-lê-escreve-e-envia">Privacidade</a> · <a href="https://thinwindow.github.io/thinwindow/">Site de documentação</a> (em inglês)
 </p>
 
 <p align="center">
   <a href="README.md">English</a> · <a href="README.es.md">Español</a> · <b>Português</b>
 </p>
 
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=ks1_B5Uq5Gc"><img src="https://img.youtube.com/vi/ks1_B5Uq5Gc/maxresdefault.jpg" alt="Vídeo: instalação do ThinWindow pelo app de desktop do Claude" width="720"></a>
-</p>
+## Por que o contexto é a conta
 
-<!-- RESULTS:START -->
-| Modelo | Tokens (IC 95%) | Tokens, execuções aprovadas | Custo (IC 95%) | Sucesso base → ThinWindow | Interrompidas pelo limite de turnos | Execuções |
-| --- | ---: | ---: | ---: | :---: | :---: | ---: |
-| Opus 5.5 | −2,9% (−13,3% a +9,3%) | −2,9% | −10,5% (−16,5% a −3,0%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
-| Sonnet 5.5 | −2,6% (−23,1% a +17,5%) | −2,6% | −6,5% (−20,0% a +7,6%) | 24/24 → 24/24 | 0/24 → 0/24 | 48 |
-| Haiku 4.5 | −3,3% (−19,1% a +12,2%) | −5,8% | −7,7% (−21,8% a +3,5%) | 12/16 → 12/16 | 5/16 → 5/16 | 32 |
+Um agente de código paga mais pelo que carrega do que pelo que escreve.
 
-As mesmas 8 tarefas, 128 execuções, um agente por execução, sem descartar
-nenhuma: tudo o que foi registrado está na tabela, exceto as execuções que uma
-versão posterior do código substituiu na mesma tarefa, guardadas em
-[`bench/results/archive/`](bench/results/archive). O detalhe por tarefa e os
-dados brutos estão em [Benchmark](#benchmark).
-Todas as execuções foram medidas no Claude Code, não no Cowork nem nos apps do Claude; as versões depois da 0.3.0 vão trazer essas medições. O Haiku 4.5 tem duas execuções por tarefa e condição; o Opus 5.5 e o Sonnet 5.5, três. As execuções vieram de duas contas cujas sessões do Claude Code começam com ferramentas integradas diferentes; as duas condições de cada tarefa têm a mesma mistura.
+- **Cada requisição reenvia a sessão inteira.** Cada arquivo que o Claude lê,
+  cada log que imprime e cada resposta longa fica na conversa e é pago de
+  novo, a partir do cache de prompts, em cada requisição seguinte.
+- **Uma sessão expirada é paga duas vezes.** O Claude Code mantém o cache de
+  prompts de uma sessão por até uma hora. Se você voltar depois disso, o seu
+  próximo prompt escreve todo o contexto de novo ao preço de escrita de cache,
+  muitas vezes o que custa lê-lo do cache.
+- **A sua configuração vai junto em cada requisição.** O prompt de sistema, as
+  definições de ferramentas, as listas de skills e de agentes, as instruções de
+  MCP e os arquivos CLAUDE.md saem com cada uma.
 
-A faixa de 3% a 6% no topo conta só as execuções que passaram na verificação oculta. No Haiku 4.5, isso dá −5,8% nas 6 tarefas em que as duas condições têm uma execução aprovada, contra −3,3% nas 8. Opus 5.5 e Sonnet 5.5 passaram em todas as execuções. IC 95%: bootstrap sobre as tarefas. Onde inclui o zero, a mudança não se distingue de nenhuma neste conjunto de tarefas. Uma execução interrompida pelo limite de turnos terminou no limite antes de o agente acabar; seus tokens não são comparáveis com os de uma execução concluída.
-<!-- RESULTS:END -->
+O ThinWindow atua nas três coisas, nos quatro momentos de uma sessão.
 
-## Por que o contexto pesa na conta
+## O que o ThinWindow faz
 
-Um agente de código não paga principalmente pelo que escreve. Paga pelo que
-carrega. Cada arquivo que abre, cada log de instalação que imprime e cada grep
-amplo que roda é anexado à conversa, e a conversa inteira é reenviada a cada
-turno seguinte. O custo de uma sessão se parece mais com
+### No começo: saber o que cada requisição carrega
+
+**O aviso de custo de configuração.** Uma vez por semana e por projeto, quando
+a primeira requisição de uma sessão tem 40k tokens ou mais, o ThinWindow mostra
+uma linha para você: com quanto começa cada requisição daquela sessão e as suas
+maiores partes. Exemplo:
 
 ```
-tokens ≈ tamanho do contexto × turnos
+ThinWindow: each request in this session starts at 54k tokens (skill listing 5.3k, deferred tools 2.5k, MCP instructions 1.6k). Run /context to see what you could turn off.
 ```
 
-do que com o tamanho da resposta. Nas execuções base medidas aqui, **de 90% a 95%
-de todos os tokens cobrados foram leituras de cache** — contexto reenviado, turno
-após turno — contra 0,8% a 1,4% da saída do próprio agente:
+Ele é mostrado a você e nunca é enviado ao Claude. No app de desktop, aparece
+como um "Claude Code notice" recolhido.
 
-<!-- CACHE:START -->
-| Modelo | Parcela de | Leituras de cache | Escritas de cache | Saída |
-| --- | --- | ---: | ---: | ---: |
-| Opus 5.5 | tokens | 91,7% | 6,9% | 1,4% |
-|  | custo | 18,1% | 54,6% | 27,2% |
-| Sonnet 5.5 | tokens | 89,7% | 8,9% | 1,4% |
-|  | custo | 26,7% | 52,9% | 20,4% |
-| Haiku 4.5 | tokens | 95,5% | 3,7% | 0,8% |
-|  | custo | 45,7% | 35,5% | 18,7% |
-<!-- CACHE:END -->
+**`thinwindow-minimal`, um perfil opcional para sessões de código focadas.** Um
+arquivo que você copia. Ele mantém o prompt de sistema do próprio Claude Code e
+as suas ferramentas de MCP, e remove as ferramentas integradas que as sessões
+do autor quase nunca usaram:
 
-Com preços, as mesmas execuções ficam diferentes (as linhas de custo): uma
-leitura de cache custa um décimo de um token de entrada ou menos, uma escrita de
-cache o dobro de um, e a saída cinco vezes um. Pedir brevidade ao agente mexe na
-coluna de saída, que é pequena em tokens mas não em custo. Impedir que ele puxe
-um arquivo de 2.000 linhas para o contexto no turno 3 mexe nas duas colunas de
-cache, em todos os turnos seguintes.
+- subagentes e equipes de agentes;
+- `/loop`, tarefas agendadas, gatilhos remotos e notificações push;
+- as ferramentas de tarefas em segundo plano (comandos de Bash em segundo plano
+  continuam funcionando);
+- ler a lista de tarefas de volta (criar e atualizar tarefas continua
+  funcionando);
+- worktrees, notebooks e perguntas de múltipla escolha;
+- o modo de plano ativado pelo Claude (Shift+Tab continua funcionando);
+- a ferramenta Skill e, com ela, a lista de skills (as skills que você digita,
+  como `/thinwindow:report`, continuam funcionando);
+- no app de desktop: artifacts, a sincronização de design, os cartões de
+  arquivo, o feedback e os achados de revisão.
 
-O ThinWindow ataca os dois fatores: encolhe o que entra no contexto e evita os
-turnos extras gastos lidando com uma saída de que o agente nunca precisou.
-Como a conta se divide por tipo de token, o que o agente chama e o que acontece
-com as execuções que não terminam: [Where the tokens go](docs/WHERE-THE-TOKENS-GO.md)
-(em inglês).
+```bash
+curl -fsSL --create-dirs -o ~/.claude/agents/thinwindow-minimal.md https://raw.githubusercontent.com/thinwindow/thinwindow/main/profiles/thinwindow-minimal.md
+claude --agent thinwindow-minimal
+```
+
+Ou, para todas as sessões de um projeto, `"agent": "thinwindow-minimal"` no
+`.claude/settings.json` desse projeto. O ThinWindow nunca o ativa por você.
+
+- **Não use quando** você quiser subagentes, `/loop`, tarefas agendadas ou
+  skills que o Claude inicia por conta própria.
+- **Enquanto o arquivo estiver em `~/.claude/agents/`,** as sessões que não o
+  usam o listam entre os seus subagentes, numa linha que inclui a sua lista de
+  ferramentas. Apague o arquivo para removê-lo.
+- **A cópia não se atualiza sozinha** quando o Claude Code adiciona
+  ferramentas. A lista exata está [no arquivo](profiles/thinwindow-minimal.md).
+
+### Durante o trabalho: manter a janela fina
+
+**As regras.** No início da sessão, o ThinWindow adiciona ao contexto do Claude
+um conjunto curto de regras: localizar antes de ler e ler só o trecho
+necessário; limitar a saída dos comandos; verificar se o código precisa existir
+antes de escrevê-lo e fazer a menor mudança; não narrar entre chamadas de
+ferramentas e terminar com no máximo três linhas. Elas ficam abaixo de 2.000
+caracteres, e o CI verifica isso:
+[`rules/thinwindow.md`](rules/thinwindow.md).
+
+**Os controles.** Hooks que agem na própria chamada da ferramenta, antes que o
+resultado entre no contexto, então aplicá-los não custa um turno.
+
+- **Controle de Read:**
+  - ler inteiro um arquivo de mais de 400 linhas devolve as suas primeiras 120
+    linhas e um índice com números de linha, para que a próxima leitura mire
+    um trecho;
+  - reler um arquivo sem mudanças que já está no contexto é recusado.
+- **Controle de Bash:**
+  - instalações, builds, testes e linters passam pelo `thinwindow-run`;
+  - buscas recursivas sem limite são limitadas, e um `git diff` sozinho roda
+    como `git diff --stat`;
+  - `cat` de um lockfile ou de um arquivo enorme, `git log` sem limite,
+    `ls -R`, `tree` sem `-L` e um `find` sem limite são recusados, com um
+    comando mais barato para rodar no lugar.
+- **Limite do Grep:** uma busca de conteúdo sem limite recebe um de 100 linhas.
+
+**`thinwindow-run`.** Ele roda um comando barulhento, guarda o log completo num
+arquivo temporário e mostra ao Claude o código de saída, o final e as linhas de
+erro. Uma saída curta volta como está.
+
+**Falha aberto.**
+
+- Se um controle falha, a chamada segue adiante.
+- Repetir uma leitura ou um comando barulhento recusados também deixa passar,
+  e os poucos comandos que são sempre recusados vêm com um que funciona. O
+  Claude não fica travado.
+- O ThinWindow nunca aprova uma chamada sobre a qual as suas configurações de
+  permissão perguntariam.
+
+### Entre sessões: retomar sem pagar duas vezes
+
+**O resumo.** No fim de cada turno, o ThinWindow mantém atualizado um resumo
+curto da sessão, sem chamar um modelo. Ele guarda:
+
+- o objetivo;
+- os seus últimos pedidos;
+- os arquivos alterados;
+- os últimos comandos, com os seus códigos de saída;
+- a última resposta do Claude.
+
+Uma sessão que nunca usa o resumo não ganha nenhum token por causa dele.
+
+**O aviso de sessão expirada.** Você envia um prompt a uma sessão que está
+parada há mais de uma hora e tem pelo menos 100k tokens de contexto. O
+ThinWindow segura o prompt uma vez e mostra o que continuar reescreve, em
+tokens e em US$ ao preço de tabela do modelo, ao lado de recomeçar do zero.
+Exemplo:
+
+```
+ThinWindow held this message: this session has been idle 9 h, so its prompt cache has expired.
+Continuing re-writes ~427k tokens (~US$3.42 at Opus 5.5 list price): send it again.
+A fresh start from a short brief re-writes ~55k tokens (~US$0.44): /clear, then /thinwindow:resume <your request>.
+```
+
+- **Você decide toda vez:** envie o prompt de novo para continuar.
+- **Nunca são segurados:** os comandos, nem os prompts em sessões `-p`, do SDK
+  ou em segundo plano.
+- **No app de desktop,** o aviso é um cartão "A hook blocked your prompt", com
+  "Edit prompt" para enviá-lo de novo.
+
+**`/thinwindow:resume`.** Depois de `/clear`, ele começa a sessão nova a partir
+do resumo mais recente deste projeto, de até 48 horas. Você pode adicionar o
+seu próximo pedido depois do comando. O resumo:
+
+- tem no máximo 600 caracteres;
+- vem marcado como referência, para o Claude conferir com `git status`;
+- traz a sua idade, os commits feitos desde então e o caminho do resumo
+  completo.
+
+**`/thinwindow:brief`.** Antes de você sair, o Claude escreve uma passagem de
+cinco linhas enquanto o cache ainda está quente: o que está feito, onde parou,
+as decisões, o que não funcionou e o próximo passo. O ThinWindow a guarda no
+resumo.
+
+**O diálogo do próprio Claude Code, "Resume from summary",** aparece quando
+você faz `--resume` de uma sessão grande depois de cerca de uma hora (planos
+Pro e Max). O ThinWindow também cobre as sessões que você deixou abertas,
+mostra o que custa continuar antes de você pagar e guarda um resumo para
+qualquer `/clear` posterior.
+
+### Depois: ver para onde foi o seu contexto
+
+**`/thinwindow:report`.** Ele lê as transcrições das suas próprias sessões do
+Claude Code nesta máquina e mostra, numa tela:
+
+- quanto contexto cada requisição reenvia, em média e nas suas sessões mais
+  longas;
+- quantas vezes uma sessão foi reescrita depois que o cache expirou, com que
+  tamanho e quanto essas reescritas custaram a preço de tabela;
+- o que a primeira requisição de uma sessão carrega, e as suas maiores partes;
+- a saída de qual ferramenta é mais reenviada (Bash, Read, ferramentas de
+  MCP…), e em que tamanhos;
+- o que o ThinWindow fez nos últimos 7 dias.
+
+Os valores são o que está em jogo nas suas próprias sessões, não o que o
+ThinWindow economizou. Numa assinatura, leia os US$ como um tamanho relativo.
 
 ## Instalação
 
-**Pelo diretório de plugins** (Claude Code, Cowork e os apps do Claude): no app
-de desktop do Claude, Customize → Plugins → Discover → ThinWindow; no Claude
-Code, `/plugin` → Discover → ThinWindow, ou:
+**Pelo diretório de plugins:** no app de desktop do Claude, Customize → Plugins
+→ Discover → ThinWindow; no Claude Code, `/plugin` → Discover → ThinWindow, ou:
 
 ```
 claude plugin install thinwindow@anthropic-plugin-directory
 ```
 
-[Veja a instalação pelo app de desktop do Claude](https://www.youtube.com/watch?v=ks1_B5Uq5Gc). Nos apps do Claude os
-plugins não executam hooks, então ali o ThinWindow funciona só como Agent
-Skill; o benchmark foi medido no Claude Code.
-
-**Claude Code** (regras + hooks, a versão completa):
+**Por este repositório**, no Claude Code:
 
 ```
 /plugin marketplace add thinwindow/thinwindow
@@ -102,338 +212,232 @@ Skill; o benchmark foi medido no Claude Code.
 ```
 
 **Qualquer agente com Agent Skills** (Codex, Cursor, Copilot, Gemini CLI,
-OpenCode...), somente as regras:
+OpenCode…). Você recebe as regras, o `thinwindow-run` e o script do relatório:
 
 ```
 npx skills add thinwindow/thinwindow
 ```
 
-**Agentes que leem `AGENTS.md`**: cole [`adapters/AGENTS.md`](adapters/AGENTS.md)
+**Agentes que leem `AGENTS.md`:** cole [`adapters/AGENTS.md`](adapters/AGENTS.md)
 no `AGENTS.md` do seu projeto.
 
-Desligue quando quiser com `THINWINDOW=off`, ou com `"enabled": false` no
-`.thinwindow.json`.
+Desligue o ThinWindow a qualquer momento com `THINWINDOW=off`, ou com
+`"enabled": false` no `.thinwindow.json`. Ele precisa do Node.js 18 ou mais
+recente, e de nada mais.
 
-## Como funciona
+## Onde funciona
 
-1. **Regras** ([`rules/thinwindow.md`](rules/thinwindow.md), menos de 500 tokens)
-   carregadas no início da sessão: localizar antes de ler, ler por intervalos,
-   limitar a saída dos comandos, escrever a menor mudança possível, encerrar com
-   no máximo três linhas.
-2. **Hooks** (só no Claude Code) que garantem a parte cara sem custar um turno
-   ao agente:
-   - Um `Read` completo de um arquivo com mais de 400 linhas devolve as primeiras
-     120 linhas mais um índice numerado, para que a próxima leitura mire um
-     intervalo.
-   - A releitura de um arquivo sem alterações que já está no contexto é recusada.
-   - Instalações, builds, testes e linters passam pelo `thinwindow-run`: o log
-     completo vai para um arquivo temporário e o agente vê o código de saída, o
-     final do log e as linhas de erro. Quando não haveria nada a cortar (10
-     linhas ou menos se termina bem, 40 se falha), a saída volta como está, com
-     o código de saída se o comando falhou.
-   - `cat` de arquivos enormes, lockfiles ou arquivos minificados, `git log` sem
-     `-n`, `ls -R`, `tree` sem `-L` e `find` sem limite recebem uma alternativa
-     mais barata. O `Grep` por conteúdo recebe `head_limit: 100`.
-3. **Falha em modo aberto.** Qualquer erro de hook deixa a chamada passar.
-   Repetir uma leitura ou um comando ruidoso recusados também os deixa passar,
-   e os poucos comandos sempre recusados vêm com um substituto que funciona,
-   então o agente nunca fica travado.
+| Onde | O que o ThinWindow faz ali |
+| --- | --- |
+| Claude Code (terminal, IDE, a aba Code do app de desktop) | Tudo: as regras, os controles, o resumo, o aviso de sessão expirada, o aviso de custo de configuração e os comandos `/thinwindow:`. O perfil `thinwindow-minimal` funciona pelo terminal. |
+| Cowork | Funcionam as regras, o controle de Read e o `/thinwindow:brief`. O `/thinwindow:report` cobre só a tarefa atual, os resumos não passam de uma tarefa para outra e nenhum dos dois avisos aparece. |
+| Chat (claude.ai, os apps de desktop e móveis) | Só a Agent Skill: o Claude carrega as regras quando decide que uma tarefa precisa delas, e o `/thinwindow:brief` funciona. Os outros comandos precisam de um shell, que o chat não roda. |
 
-As regras são garantidas pelos hooks em vez de ficarem a cargo do modelo, porque uma
-regra que o agente pode esquecer sob pressão não é uma regra. Os hooks rodam na
-chamada da ferramenta, antes de o resultado chegar ao contexto, então aplicá-las
-não custa um turno.
+A validação do ThinWindow rodou no Claude Code. No Cowork e no chat, foi
+verificado o que funciona, sem medir.
 
-Sem dependências, sem telemetria, Node 18+. Detalhes e todas as opções:
-[docs/configuration.md](docs/configuration.md).
+## Veja as suas próprias sessões
 
-### O que lê, o que escreve e o que envia
+Instale o ThinWindow, trabalhe normalmente por alguns dias e digite
+`/thinwindow:report`. Ele mostra para onde foi o contexto das suas sessões,
+medido no seu próprio trabalho em vez de num benchmark.
 
-- **Lê:** a chamada de ferramenta que o Claude Code passa aos hooks (um
-  caminho, um comando ou um padrão de busca); o número de linhas e um índice
-  dos arquivos que o agente vai ler ou imprimir; suas configurações em
-  `.thinwindow.json`, no projeto e na sua pasta de usuário; e as variáveis de
-  ambiente `THINWINDOW`, `THINWINDOW_DEBUG` e `CLAUDE_PROJECT_DIR`. Não lê
-  credenciais.
-- **Escreve:** só no diretório temporário do sistema operacional: um JSON
-  pequeno por sessão (quais arquivos e intervalos foram lidos, as recusas
-  recentes e a contagem do que os hooks fizeram) e o log completo de cada
-  comando executado pelo `thinwindow-run`. Os dois são apagados após 7 dias.
-- **Envia:** nada. Não há código de rede.
+- **`/thinwindow:report --json`** imprime um resumo curto sem valores em US$.
+  Você pode colá-lo na
+  [#43](https://github.com/thinwindow/thinwindow/issues/43), o que ajuda a
+  decidir o que o ThinWindow vai construir depois.
+- **Nada é coletado automaticamente.**
 
-## Benchmark
+## Como é verificado
 
-<!-- BENCH:START -->
-Três modelos, 8 tarefas, 128 execuções. Os gráficos e as tabelas são gerados por
-[`bench/report.mjs`](bench/report.mjs) a partir dos arquivos brutos.
+Antes, o ThinWindow publicava uma porcentagem de benchmark por modelo. Desde a
+0.4.0, ele é verificado com outro método
+([#28](https://github.com/thinwindow/thinwindow/issues/28)):
 
-### Opus 5.5
+- **Cada mecanismo tem testes unitários,** que rodam no CI em macOS, Linux e
+  Windows.
+- **As ideias são testadas primeiro repetindo sessões gravadas,** sem custo de
+  modelo, para ver o que está em jogo.
+- **Algumas execuções de agente direcionadas** respondem o que só um modelo
+  pode responder, com os critérios de aprovação escritos antes da primeira
+  execução.
+- **A 0.4.0 foi validada antes do lançamento** contra o Claude Code sem o
+  plugin, em repositórios reais de código aberto. O método e as regras de
+  aprovação foram publicados antes da primeira execução
+  ([#38](https://github.com/thinwindow/thinwindow/issues/38)).
+  - Todas as tarefas do benchmark e todas as cadeias de retomada foram
+    concluídas com o ThinWindow, assim como sem ele.
+  - Quando a segunda tarefa de uma cadeia recomeçou do zero depois que o cache
+    de prompts expirou, ela custou menos por cadeia concluída do que continuar.
 
-![Mudança em tokens totais por tarefa, Opus 5.5: à esquerda do zero, menos tokens com ThinWindow; as barras de erro cobrem cada par de execuções](bench/results/chart-claude-opus-5-5.svg)
+O método, as linhas brutas e as transcrições limpas dos agentes são públicos:
+[`bench/README.md`](bench/README.md) (em inglês).
 
-### Sonnet 5.5
+## Configuração
 
-![Mudança em tokens totais por tarefa, Sonnet 5.5: à esquerda do zero, menos tokens com ThinWindow; as barras de erro cobrem cada par de execuções](bench/results/chart-claude-sonnet-5-5.svg)
+O ThinWindow funciona sem configuração. Para mudá-la, crie `.thinwindow.json`
+num projeto, ou `~/.thinwindow.json` na sua pasta pessoal. Os valores do
+projeto têm prioridade sobre os da pasta pessoal.
 
-### Haiku 4.5
+| Chave | Padrão | O que faz |
+| --- | --- | --- |
+| `enabled` | `true` | `false` desliga todos os hooks |
+| `maxReadLines` | `400` | Linhas a partir das quais a leitura de um arquivo inteiro é encurtada |
+| `rewrite` | `true` | Corrige no lugar as chamadas que desperdiçam; `false` as recusa |
+| `briefs` | `true` | `false` para de guardar os resumos de sessão |
+| `coldResumeNotice` | `true` | `false` desliga o aviso de sessão expirada |
+| `coldResumeMinTokens` | `100000` | Contexto mínimo para o qual o aviso segura um prompt |
+| `setupNotice` | `true` | `false` desliga o aviso de custo de configuração |
+| `setupNoticeMinTokens` | `40000` | Primeira requisição mínima para a qual o aviso aparece |
+| `noisyCommands` | lista integrada | Padrões extras de comandos barulhentos |
+| `allowlist.paths`, `allowlist.commands` | `[]` | Arquivos e comandos que o ThinWindow nunca toca |
 
-![Mudança em tokens totais por tarefa, Haiku 4.5: à esquerda do zero, menos tokens com ThinWindow; as barras de erro cobrem cada par de execuções](bench/results/chart-claude-haiku-4-5.svg)
-<!-- BENCH:END -->
+Todas as opções, e o que cada hook faz:
+[docs/configuration.md](docs/configuration.md) (em inglês).
 
-As tabelas por tarefa, com a dispersão e a taxa de sucesso, estão em
-[`bench/results/report.md`](bench/results/report.md) e na
-[seção Benchmark do README em inglês](README.md#benchmark) (são geradas em
-inglês, por isso não as duplico aqui e assim ficam sempre atualizadas). As
-execuções brutas, uma linha por execução, estão em
-[`bench/results/`](bench/results).
+## Atualizar a partir da 0.3.0
 
-### Como é medido
+Nada que funcionava deixa de funcionar, e cada parte nova tem o seu próprio
+interruptor.
 
-Cada **execução** é um agente resolvendo uma tarefa do zero:
+- **Hooks novos:** no fim de cada turno (o resumo e o aviso de custo de
+  configuração) e antes de cada prompt (o aviso de sessão expirada).
+- **Comandos novos:** `/thinwindow:resume`, `/thinwindow:brief` e
+  `/thinwindow:report`. Você os digita; eles não acrescentam nada à lista de
+  skills que o Claude vê.
+- **Interruptores novos:** `briefs`, `coldResumeNotice`, `coldResumeMinTokens`,
+  `setupNotice` e `setupNoticeMinTokens`.
+- **Novo e opcional:** o perfil `thinwindow-minimal`, um arquivo que você copia.
+- **Mudaram:** as regras, que dizem o mesmo em menos palavras.
 
-1. Clonar um repositório real de código aberto
-   ([click](https://github.com/pallets/click) ou
-   [commander.js](https://github.com/tj/commander.js)) num commit fixo, dentro de
-   um diretório temporário novo.
-2. Instalar as dependências antes de o agente começar, para que os logs de
-   instalação não sejam cobrados de nenhum dos lados.
-3. Rodar `claude -p "<tarefa>"` com o modelo escolhido, com teto de 40 turnos. A
-   *baseline* usa o Claude Code puro; o *ThinWindow* usa o mesmo mais este
-   plugin. Nada mais muda: sem servidores MCP, sem configurações de usuário, sem
-   memória entre execuções.
-4. Rodar a verificação oculta da tarefa: um teste ou script que o agente nunca
-   vê. Código de saída 0 é sucesso.
-5. Registrar tokens (entrada, escritas e leituras de cache, saída, subagentes
-   incluídos), custo, turnos e tempo a partir do JSON do próprio Claude Code,
-   mais o rastro completo de chamadas de ferramentas.
+## O que ele lê, escreve e envia
 
-As 8 tarefas são uma mistura de trabalho do dia a dia: correções de bugs com um teste que
-falha, uma funcionalidade pequena, uma renomeação entre arquivos, uma
-refatoração, uma consulta de configuração e "fazer o ano do copyright do rodapé se
-atualizar sozinho". As definições estão em [`bench/tasks/`](bench/tasks).
+- **Lê:**
+  - a chamada que o Claude Code passa aos hooks (um caminho de arquivo, um
+    comando ou um padrão de busca), e a contagem de linhas e o índice dos
+    arquivos que o Claude vai ler ou imprimir;
+  - as suas configurações em `.thinwindow.json`;
+  - as variáveis de ambiente `THINWINDOW`, `THINWINDOW_DEBUG`,
+    `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_DATA` e
+    `CLAUDE_CODE_SESSION_ATTENDED`;
+  - antes de cada prompt, os últimos 256 KB da transcrição da sessão, e os
+    primeiros 256 KB quando cabe um aviso de sessão expirada;
+  - no fim de cada turno, a parte da transcrição escrita desde o turno
+    anterior, e os seus primeiros 256 KB enquanto puder caber um aviso de custo
+    de configuração;
+  - `git status` na pasta da sessão, depois de um turno que pode ter mudado
+    arquivos. O `/thinwindow:resume` também roda `git log` ali, para os commits
+    feitos desde o resumo.
 
-As execuções são sequenciais, uma de cada vez, então nunca disputam os limites
-de uso. O custo é o preço equivalente de API que o Claude Code informa; numa
-assinatura você paga em limites de uso, mas a proporção é a mesma.
+  Ele não lê credenciais.
+- **Escreve, na pasta temporária do seu sistema operacional:**
+  - um arquivo pequeno por sessão: quais arquivos e trechos foram lidos, as
+    recusas recentes, quando um aviso de sessão expirada foi mostrado pela
+    última vez e contagens do que os hooks fizeram;
+  - um arquivo mínimo por projeto: quando o aviso de custo de configuração foi
+    mostrado pela última vez;
+  - o log completo de cada comando que passa pelo `thinwindow-run`.
+- **Escreve, na pasta de dados do plugin** (`~/.claude/plugins/data/`): um
+  resumo pequeno por sessão, numa pasta por projeto. Um resumo guarda
+  **trechos dos seus prompts e das respostas do Claude**:
+  - o primeiro prompt, até 200 caracteres;
+  - os últimos três pedidos, até 80 cada;
+  - a última resposta, até 1.200;
+  - os arquivos alterados;
+  - os últimos quatro comandos, até 70 caracteres cada, com os seus códigos de
+    saída.
 
-### Verifique em vez de acreditar
+  `"briefs": false` para de escrevê-los.
+- **Apaga:** o ThinWindow remove os seus arquivos quando completam 7 dias, na
+  próxima vez que roda.
+  - O Claude Code apaga a pasta de dados do plugin quando você desinstala o
+    plugin.
+  - Se você remover o ThinWindow da sua conta no app de desktop do Claude, os
+    resumos podem ficar. Apague a pasta `thinwindow-*` em
+    `~/.claude/plugins/data/` para removê-los.
+- **Envia:** nada. Não há código de rede. Um resumo entra numa conversa só
+  quando você digita `/thinwindow:resume`.
 
-- Cada execução é uma linha de JSONL em [`bench/results/`](bench/results), com o
-  modelo, a versão do Claude Code, o commit do ThinWindow, as contagens brutas
-  de tokens e o rastro de ferramentas. Nenhum número deste README é escrito à
-  mão.
-- As regras foram ajustadas nessas mesmas 8 tarefas, em duas bibliotecas de
-  parsing de argumentos de linha de comando, em JavaScript e Python. É uma fatia
-  estreita do software que existe. Sua economia em outros trabalhos será
-  diferente.
-- As amostras são pequenas. Agentes variam muito: a mesma tarefa levou 7 turnos
-  em uma execução e 13 na seguinte (click-help-spec no Sonnet 5.5, sem o
-  ThinWindow), por isso as tabelas mostram medianas e a faixa por tarefa, e não
-  uma única média de manchete.
-- Rode contra a sua própria conta e os seus próprios limites:
+**O `/thinwindow:report`** lê as suas transcrições do Claude Code, só quando
+você o roda.
 
-  ```
-  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --dry-run
-  node bench/run.mjs --condition baseline,thinwindow --reps 3 --model sonnet --max-cost 10
-  node bench/report.mjs
-  ```
+- **Lê:** `~/.claude/projects/**/*.jsonl` (`$CLAUDE_CONFIG_DIR/projects` se
+  você o definiu), uma linha por vez, e as contagens do próprio ThinWindow na
+  pasta temporária. Ele não escreve nada.
+- **Imprime:** números agregados, com rótulos próprios.
+- **Nunca imprime:** prompts, conteúdo de arquivos, comandos, caminhos, nomes
+  de projetos, ids de sessão, nem os nomes das suas ferramentas, modelos ou
+  servidores de MCP. Um teste verifica isso.
+- **Envia:** nada. Pelo comando de barra, os números impressos passam a fazer
+  parte da sua conversa, como a saída de qualquer comando. Para deixá-los de
+  fora, rode você mesmo o script:
+  `! node <pasta do plugin>/skills/thinwindow/scripts/thinwindow-report.mjs`.
 
-  Todas as opções estão em [bench/README.md](bench/README.md).
+Se o Claude Code mudar o formato das transcrições, o relatório diz "format not
+recognized" em vez de imprimir números errados.
 
-### Onde ainda há margem
+## Limites
 
-Estes números são uma medição atual, não um teto. Eles vão se mover conforme
-mudarem as regras, os modelos e o próprio Claude Code, e a intenção é continuar
-melhorando e republicar os arquivos brutos a cada vez.
-
-Duas coisas aparecem nos dados:
-
-- **Nem toda tarefa melhora.** No Sonnet 5.5, seis das oito tarefas usam mais
-  tokens com o ThinWindow do que sem ele; no Opus 5.5 e no Haiku 4.5, cinco. Só
-  neutralizar essas regressões — sem economizar um token a mais em nenhum outro
-  lugar — levaria o Sonnet 5.5 de −2,6% para cerca de −13,1%, o Opus 5.5 de
-  −2,9% para cerca de −7,4% e o Haiku 4.5 de −3,3% para cerca de −10,2%. A margem de
-  curto prazo está mais em não piorar as tarefas curtas do que em espremer as
-  longas. O que os rastros mostram de cada uma está na
-  [#7](https://github.com/thinwindow/thinwindow/issues/7).
-- **Os turnos são o fator inexplorado.** Como o custo é aproximadamente contexto
-  × turnos, um turno economizado vale tanto quanto uma leitura grande evitada. O
-  Sonnet 5.5 usou 5,4% menos turnos aqui e cortou o custo em 6,5%; o Haiku 4.5
-  usou 6,1% mais turnos e cortou o custo em 7,7%; o Opus 5.5 usou 1,3% mais
-  turnos e cortou o custo em 10,5%. Uma tentativa
-  anterior de regras explícitas de "use menos turnos" piorou o Sonnet 5 de forma
-  mensurável e foi revertida, em vez de mantida e silenciosamente excluída: esse
-  experimento revertido continua no histórico.
-
-## Diferenças entre v0.2.2 e v0.3.0
-
-Entre a 0.2.2 e a 0.3.0, o efeito medido do ThinWindow diminuiu nos três
-modelos, e boa parte dessa mudança veio de fora do plugin. Três coisas mudaram
-ao mesmo tempo:
-
-1. **Claude Code**: 2.1.282 na 0.2.2 e 2.1.287 na 0.3.0.
-2. **O modelo**: o Sonnet 5 foi substituído pelo Sonnet 5.5; o Opus 5.5 e o
-   Haiku 4.5 não mudaram.
-3. **O ambiente da conta do benchmark**: em uma das duas contas usadas na 0.3.0,
-   as sessões do Claude Code começam com ferramentas, skills e plugins
-   sincronizados da conta, os mesmos que os apps do Claude usam. As opções de
-   isolamento do benchmark não os removem, e cada turno carrega uns 10k tokens a
-   mais que na outra conta. As duas condições de cada tarefa rodaram com a mesma
-   mistura de contas, então a comparação continua pareada, mas a porcentagem
-   fica diluída.
-
-Uma nova forma de medir que separe esses efeitos é acompanhada em
-[#28](https://github.com/thinwindow/thinwindow/issues/28).
-
-### O que isso fez com os números (v0.2.2 vs v0.3.0)
-
-| Modelo | Tokens, 0.2.2 | Tokens, 0.3.0 | Custo, 0.2.2 | Custo, 0.3.0 |
-| --- | ---: | ---: | ---: | ---: |
-| Opus 5.5 | −15,8% | −2,9% | −19,4% | −10,5% |
-| Sonnet 5 → Sonnet 5.5 | −13,2% | −2,6% | −7,9% | −6,5% |
-| Haiku 4.5 | −23,0% | −3,3% | −20,2% | −7,7% |
-
-Mudança com o ThinWindow em relação à linha de base; soma das medianas por
-tarefa. Os intervalos estão em [Benchmark](#benchmark); cada execução bruta, em
-[`bench/results/`](bench/results) e
-[`bench/results/archive/`](bench/results/archive).
-
-O que as execuções de base (sem o ThinWindow) mostram:
-
-- **O Sonnet 5.5 melhorou muito por conta própria.** Na conta sem os extras
-  sincronizados (16 execuções, uma por tarefa e condição), a base do Sonnet 5.5
-  usou 0,90M tokens, contra 1,19M do Sonnet 5 na 0.2.2: cerca de um quarto a
-  menos, com um tamanho por turno parecido (17,5k contra 18,5k tokens). Com
-  menos para remover, o efeito do ThinWindow nessas execuções foi de −0,2%. Na
-  conta com os extras (32 execuções, uns 27,5k tokens por turno), foi de +4,5%.
-- A base do **Haiku 4.5** foi de 11,10M para 8,21M tokens. As execuções da 0.2.2
-  carregavam uns 43,5k tokens por turno e as da 0.3.0, todas na conta sem os
-  extras, uns 36,9k: o ambiente também mudou, e a queda não pode ser atribuída
-  só ao Claude Code.
-- A base do **Opus 5.5** não mudou (2,10M contra 2,08M tokens, ambas com uns 27k
-  por turno). O efeito menor na 0.3.0 não se explica por uma base mais enxuta.
-
-## O que o ThinWindow faz com a saída das ferramentas
-
-Estes números medem o tamanho da saída das ferramentas, não o custo. Vêm de uma
-repetição sem modelo: cada chamada a Read e Bash das execuções base é executada
-de novo, em um clone novo do repositório da sua tarefa, uma vez como o agente a
-enviou e outra como os hooks do ThinWindow a reescrevem ou recusam, e
-comparam-se os caracteres que o agente receberia. As chamadas que olham as
-mudanças do próprio agente (`git diff`, os testes) veem o repositório sem
-modificações, então seus tamanhos não são os que o agente viu. A repetição é determinística,
-exceto pelos tempos e caminhos temporários da saída, que mudam os totais em
-poucos caracteres de uma repetição para outra. Não precisa de chave de API;
-precisa de rede para os clones e a instalação de dependências, e leva de 15 a 25
-minutos em um notebook, quase tudo rodando os testes de novo:
-`node bench/input-size.mjs`, que grava
-[`bench/results/input-size.json`](bench/results/input-size.json).
-
-Reduzir a saída das ferramentas não é reduzir a conta. A saída das ferramentas
-é uma parte do que entra no contexto; o contexto é uma parte dos tokens; e os
-tokens são uma parte do custo, cada tipo ao seu preço. O efeito se dilui a cada
-passo. [Where the tokens go](docs/WHERE-THE-TOKENS-GO.md) (em inglês) mostra
-como a conta se divide.
-
-<!-- TIER1:START -->
-| Modelo | Chamadas nos rastros base | Repetidas | Alteradas pelos hooks | Saída das chamadas repetidas (caracteres) | Mudança |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Opus 5.5 | 106 | 52 | 2 | 83.849 → 83.856 | +0,0% |
-| Sonnet 5.5 | 0 | 0 | 0 | 0 → 0 | – |
-| Haiku 4.5 | 366 | 250 | 37 | 861.927 → 515.933 | −40,1% |
-
-Não repetidas: 183 chamadas que o rastro cortou (ele guarda 140 caracteres de cada), 33 que escrevem arquivos, rodam um script ou mudam o repositório, e 22 cujo arquivo não pôde ser identificado.
-
-A mudança na conta é outra grandeza, medida em [Benchmark](#benchmark), e não do mesmo tamanho:
-- Opus 5.5: os hooks alteram 2 de 106 chamadas e aumentam a saída repetida em 0,0%; no benchmark agiram em 1 de 24 execuções com ThinWindow, e a mudança medida no custo é −10,5% (IC 95% −16,5% a −3,0%).
-- Sonnet 5.5: os hooks alteram 0 de 0 chamadas e aumentam a saída repetida em 0,0%; no benchmark agiram em 3 de 24 execuções com ThinWindow, e a mudança medida no custo é −6,5% (IC 95% −20,0% a +7,6%).
-- Haiku 4.5: os hooks alteram 37 de 366 chamadas e reduzem a saída repetida em 40,1%; no benchmark agiram em 10 de 16 execuções com ThinWindow, e a mudança medida no custo é −7,7% (IC 95% −21,8% a +3,5%).
-
-Onde os hooks quase não agem, a mudança medida vem das regras, que mudam o que o agente faz, ou do ruído entre execuções, não de cortar a saída das ferramentas.
-<!-- TIER1:END -->
-
-## Contribuindo
-
-Este é exatamente o tipo de projeto que melhora com a carga de trabalho de
-outras pessoas, porque os limites acima são os limites da amostra de *uma
-pessoa só*.
-
-O mais útil, mais ou menos em ordem:
-
-1. **Resultados de benchmark com a sua stack.** Uma tarefa nova em
-   [`bench/tasks/`](bench/tasks) — outra linguagem, um monorepo, um framework
-   com muito código gerado — vale mais que uma opinião sobre as regras.
-2. **Uma regressão reproduzível.** Um caso em que o ThinWindow custe mais que a
-   baseline, com o JSONL que comprove, é um presente: as regressões acima são o
-   caminho mais claro para números melhores.
-3. **Propostas de regras e hooks**, com a medição que as justifique. As regras
-   são testadas contra o benchmark, não aceitas por soarem plausíveis; além disso,
-   o arquivo de regras tem um orçamento de tokens que a CI faz cumprir.
-
-O fluxo está em [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Escopo, limitações e isenção de responsabilidade
-
-Isto começou como uma ferramenta pessoal. Eu a criei para reduzir o custo do meu
-próprio fluxo de trabalho, e publiquei porque as medições podem ser úteis para
-outra pessoa — não porque seja um produto acabado com um contrato de suporte por
-trás.
-
-Leia os números com isso em mente:
-
-- **O benchmark é estreito e escolhido por mim.** Oito tarefas, dois
-  repositórios, três modelos, algumas repetições cada, tudo escolhido por mim,
-  com regras ajustadas contra essas mesmas tarefas. Dá para mostrar uma direção;
-  não dá para prometer uma porcentagem a você. Está publicado por inteiro, com
-  os arquivos brutos, justamente para que você julgue o quanto generaliza em vez
-  de acreditar num número de manchete.
-- **A contabilidade de tokens é volátil por natureza.** O que entra numa janela
-  de contexto depende da versão do modelo, do ambiente de execução do agente e do
-  seu prompt de sistema, da taxa de acerto de cache, de quais ferramentas estão
-  habilitadas, dos servidores MCP, do tamanho do repositório e de como a tarefa
-  se desenrola naquele dia. Qualquer um desses fatores pode mover o resultado
-  mais que o efeito medido aqui. Duas execuções idênticas da mesma tarefa podem
-  divergir bastante; as medianas e faixas das tabelas existem para tornar isso
-  visível, não para escondê-lo.
-- **Os resultados envelhecem.** Foram medidos com uma versão específica do
-  Claude Code e snapshots específicos dos modelos, e ambos mudam com frequência.
-  Serão medidos de novo, em vez de continuarem publicados sem revisão.
-- **Sem garantia.** Este software é fornecido "como está" sob a
-  [licença MIT](LICENSE), sem garantia de nenhum tipo. Você é responsável pelo
-  que roda no seu ambiente e pelo que gasta. Os hooks são projetados para falhar
-  em modo aberto e nunca bloquear uma chamada, e os testes cobrem esse comportamento,
-  mas nenhuma quantidade de testes é uma garantia: revise o código, rode os
-  testes e experimente num branch antes de confiar trabalho real a ele.
-- **Não substitui um bom prompt.** Ele remove desperdício; não deixa o agente
-  mais inteligente.
+- **O ThinWindow foi pensado para sessões longas,** e para voltar a sessões
+  grandes. Uma tarefa curta carrega pouco contexto para começar.
+- **Os hooks precisam do Claude Code.** Os outros agentes recebem as regras, e
+  o Cowork e o chat recebem as partes de [Onde funciona](#onde-funciona).
+- **Os valores em US$ são estimativas a preço de tabela da API.** Não são uma
+  conta.
+- **Sem garantia.** O ThinWindow é fornecido "como está", sob a
+  [licença MIT](LICENSE). Os hooks foram feitos para falhar abertos, e os
+  testes cobrem isso, mas revise o código antes de confiar trabalho real a ele.
 
 ## Perguntas frequentes
 
-**Isso deixa meu agente pior na tarefa?** É o que a coluna de sucesso em cada
-tabela mede. Uma economia que faz a tarefa falhar não é economia. Nos três
-modelos o sucesso foi idêntico ao da baseline, exceto em uma tarefa do Haiku,
-commander-rename-display-width: 1/2 sem o ThinWindow, 0/2 com ele. O Haiku tem
-dificuldade nessa tarefa de qualquer jeito: três das quatro execuções falharam,
-e todas levaram 35 turnos ou mais.
+**Ele deixa o Claude pior na tarefa?**
 
-**Por que não simplesmente pedir ao agente para ser breve?** Ajuda, e as regras
-pedem isso: a saída é só de 0,8% a 1,4% dos tokens, mas a cinco vezes o preço da
-entrada é de 19% a 27% do custo (veja [Por que o contexto pesa na
-conta](#por-que-o-contexto-pesa-na-conta)). O resto é contexto: uma resposta
-longa é paga uma vez, enquanto uma leitura longa é escrita no cache uma vez e
-lida de novo a cada turno seguinte.
+- Na validação da 0.4.0, todas as tarefas do benchmark e todas as cadeias de
+  retomada foram concluídas com o ThinWindow tantas vezes quanto sem ele.
+- Uma revisão às cegas das respostas finais as considerou corretas e completas
+  nas duas condições.
+- Todos os controles falham abertos.
 
-**Ele envia meu código ou telemetria para algum lugar?** Não. Não há código de
-rede neste projeto: sem analytics, sem relatórios de erro, sem "estatísticas
-anônimas de uso", sem checagem de licença ou de atualização. Os hooks são
-scripts locais de Node que leem a chamada da ferramenta e devolvem uma decisão;
-os logs truncados vão para um arquivo temporário no seu próprio disco. A única
-coisa que sai da sua máquina é o que o seu agente já estava mandando para o seu
-provedor de modelos — e o objetivo desta ferramenta é que isso seja menor.
+**Qual a diferença para o "Resume from summary" do Claude Code?**
 
-**Funciona fora do Claude Code?** As regras sim, via Agent Skills ou
-`AGENTS.md`. Os hooks — que fazem o trabalho pesado — são exclusivos do Claude
-Code, porque dependem da API de hooks do Claude Code para chamadas de ferramentas.
+- Esse diálogo aparece quando você faz `--resume` de uma sessão grande depois
+  de cerca de uma hora, nos planos Pro e Max.
+- O ThinWindow também cobre as sessões que você deixou abertas, mostra o que
+  custa continuar em tokens e US$ antes de você pagar, e guarda um resumo para
+  qualquer `/clear` posterior.
+
+**O aviso de sessão expirada vai me interromper?**
+
+- No máximo uma vez por pausa: só depois de uma hora parada, e só com mais de
+  100k tokens de contexto.
+- Envie o prompt de novo para continuar, ou desligue o aviso com
+  `"coldResumeNotice": false`.
+
+**Ele envia o meu código para algum lugar?** Não.
+
+- Não há código de rede: nem analytics, nem relatórios de falhas, nem
+  verificação de atualizações.
+- Os hooks são scripts Node locais.
+
+**Funciona fora do Claude Code?**
+
+- As regras sim, por Agent Skills ou `AGENTS.md`.
+- Os hooks precisam do Claude Code.
+- O Cowork e o chat recebem as partes de [Onde funciona](#onde-funciona).
+
+## Contribuir
+
+As contribuições mais úteis, em ordem:
+
+1. **Uma tarefa do seu próprio stack:** outra linguagem, um monorepo, um
+   framework com muito código gerado.
+2. **Uma regressão reproduzível,** com as linhas que a mostram.
+3. **Uma proposta de regra ou de hook,** com a tabela de conformidade
+   (`node bench/compliance.mjs`). Quando a decisão depende de como o modelo
+   reage, acrescente algumas execuções direcionadas, com os critérios de
+   aprovação escritos antes de rodá-las.
+
+O fluxo de trabalho está em [CONTRIBUTING.md](CONTRIBUTING.md) (em inglês).
 
 ## Licença
 
