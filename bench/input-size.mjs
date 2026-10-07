@@ -41,7 +41,8 @@ export const CLAUDE_CODE = {
   unchangedReread:
     'File unchanged since last read. The content from the earlier Read tool_result in this conversation is still current — refer to that instead of re-reading.',
 };
-// The trace keeps 140 characters per call; a call that long was cut short.
+// The trace keeps 140 characters per call; a call that long, or one that
+// ends with "…", was cut short.
 const TRACE_WIDTH = 140;
 
 // Commands replayed as they are. Anything else (scripts, installs, edits)
@@ -116,10 +117,11 @@ export function readChars(text, offset, limit) {
 export function parseStep(step) {
   const m = /^(\w+)(?: \[(\d+)\+(\d*)\])? ?(.*)$/.exec(step);
   if (!m) return null;
-  return { tool: m[1], offset: m[2] ? Number(m[2]) : undefined, limit: m[3] ? Number(m[3]) : undefined, arg: m[4], cut: step.length >= TRACE_WIDTH };
+  const cut = step.length >= TRACE_WIDTH || step.endsWith('…');
+  return { tool: m[1], offset: m[2] ? Number(m[2]) : undefined, limit: m[3] ? Number(m[3]) : undefined, arg: cut ? m[4].replace(/…$/, '') : m[4], cut };
 }
 
-const CLONE_PATH = /\/(?:private\/)?(?:var\/folders|tmp)\/\S*?thinwindow-bench-[A-Za-z0-9-]+?-[A-Za-z0-9]{6}(?=\/|\s|$)/g;
+const CLONE_PATH = /(?:<tmp>|\/(?:private\/)?(?:var\/folders|tmp))\/\S*?thinwindow-bench-[A-Za-z0-9-]+?-[A-Za-z0-9]{6}(?=\/|\s|$)/g;
 
 function trackedFiles(dir) {
   return runSync('git', ['ls-files'], { cwd: dir }).stdout.split('\n').filter(Boolean);

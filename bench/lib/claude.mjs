@@ -201,8 +201,9 @@ export function parseInit(stdout) {
 }
 
 // The agent's tool calls, one short line each, so a run can be compared with
-// its twin after the temp clone and the session are gone.
-export function parseTrace(stdout, { maxSteps = 80 } = {}) {
+// its twin after the temp clone and the session are gone. `scrub` runs before
+// the cut, so a path is never left half replaced.
+export function parseTrace(stdout, { maxSteps = 80, scrub = (s) => s } = {}) {
   const steps = [];
   for (const line of String(stdout || '').split('\n')) {
     let e;
@@ -217,7 +218,10 @@ export function parseTrace(stdout, { maxSteps = 80 } = {}) {
       const i = c.input || {};
       const range = i.offset != null || i.limit != null ? ` [${i.offset ?? 1}+${i.limit ?? ''}]` : '';
       const arg = String(i.file_path ?? i.command ?? i.pattern ?? i.description ?? '').replace(/\s+/g, ' ');
-      steps.push(`${c.name}${range} ${arg}`.slice(0, 140));
+      // A call cut short ends with "…": its length alone doesn't say so once
+      // a scrub has shortened its paths.
+      const step = scrub(`${c.name}${range} ${arg}`);
+      steps.push(step.length > 140 ? `${step.slice(0, 139)}…` : step);
     }
   }
   return steps;
@@ -226,7 +230,7 @@ export function parseTrace(stdout, { maxSteps = 80 } = {}) {
 // The last `chars` characters of each traced call's result, aligned with
 // parseTrace by index (null when the stream has no result for it), so a
 // repeated attempt can be told apart from a retry after an error (#7).
-export function parseTraceTails(stdout, { maxSteps = 80, chars = 200 } = {}) {
+export function parseTraceTails(stdout, { maxSteps = 80, chars = 200, scrub = (s) => s } = {}) {
   const ids = [];
   const tails = [];
   for (const line of String(stdout || '').split('\n')) {
@@ -245,7 +249,7 @@ export function parseTraceTails(stdout, { maxSteps = 80, chars = 200 } = {}) {
         const i = c.tool_use_id ? ids.indexOf(c.tool_use_id) : -1;
         if (i === -1) continue;
         const text = typeof c.content === 'string' ? c.content : (c.content || []).map((p) => p.text || '').join(' ');
-        const flat = text.replace(/\s+/g, ' ').trim();
+        const flat = scrub(text.replace(/\s+/g, ' ').trim());
         tails[i] = `${c.is_error ? '[error] ' : ''}${flat.slice(-chars)}`;
       }
     }
@@ -276,12 +280,16 @@ export function configDir(env = process.env) {
 
 export const shortHash = (s) => createHash('sha256').update(String(s)).digest('hex').slice(0, 12);
 
+// The Claude Code profile a run used: its config folder's name, hashed, so a
+// row doesn't carry the operator's folder names.
+export const profileLabel = (env = process.env) => (env.CLAUDE_CONFIG_DIR ? shortHash(basename(env.CLAUDE_CONFIG_DIR)) : 'default');
+
 // The machine and profile a run used. `account` is a label the operator
 // passes (--account), stored hashed: two profiles can share an account, and
 // one profile can be logged into another later.
 export function hostFingerprint({ account = null, env = process.env } = {}) {
   return {
-    profile: env.CLAUDE_CONFIG_DIR ? basename(env.CLAUDE_CONFIG_DIR) : 'default',
+    profile: profileLabel(env),
     account: account ? shortHash(account) : null,
     os: `${platform()} ${release()}`,
     node: process.version,

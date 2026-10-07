@@ -32,7 +32,7 @@ import { runProcess, runSync } from '../lib/proc.mjs';
 import { appendResult, localDate, readResultFile, readResults } from '../lib/results.mjs';
 import { median } from '../lib/stats.mjs';
 import { loadTask } from '../lib/tasks.mjs';
-import { isPublicRepo, keepTranscript, scrubber, sessionRecords } from '../lib/transcripts.mjs';
+import { isPublicRepo, keepTranscript, scrubRow, scrubber, sessionRecords } from '../lib/transcripts.mjs';
 import { cloneAt, makeWorkdir, removeWorkdir, runSetup, runVerify } from '../lib/workspace.mjs';
 
 export const CHAINS = [
@@ -203,6 +203,9 @@ export async function runJob({ chain, rep, model, budget, env, out, log, conditi
   let diffFile = null;
   const base = { v: 1, experiment: 'resume', chain, rep, taskA: taskA.id, taskB: taskB.id, model, modelResolved: resolveModel(model), ...env, condition };
   const call = (prompt, opts) => claude(prompt, { dir, model, budget, condition, run, ...opts });
+  // Rows quote the clone's and temp folders' paths (traces, the brief, errors).
+  const scrub = scrubber({ shell: true });
+  const append = (row) => appendResult(out, scrubRow(row, scrub));
   try {
     cloneAt(taskA.repo, taskA.commit, dir);
     const setup = taskA.setup ? await runSetup(taskA, dir) : { success: true };
@@ -213,7 +216,7 @@ export async function runJob({ chain, rep, model, budget, env, out, log, conditi
     const aVerify = await runVerify(taskA, dir);
     const aSession = a.parsed?.sessionId;
     const aReads = readPaths(a.res.stdout, dir);
-    appendResult(out, {
+    append({
       ...base,
       phase: 'A',
       startedAt: new Date().toISOString(),
@@ -222,7 +225,7 @@ export async function runJob({ chain, rep, model, budget, env, out, log, conditi
       requests: a.requests,
       aPass: aVerify.success,
       reads: aReads,
-      trace: parseTrace(a.res.stdout),
+      trace: parseTrace(a.res.stdout, { scrub }),
       ...harnessFields(run, a.res.stdout, a.parsed, { dir, out, repo: taskA.repo }),
     });
     log(`c${chain} r${rep} A: ${aVerify.success ? 'pass' : 'FAIL'} $${(a.parsed?.costUsd ?? 0).toFixed(3)}\n`);
@@ -265,7 +268,7 @@ export async function runJob({ chain, rep, model, budget, env, out, log, conditi
         coldReads = b.requests?.[0]?.cacheRead ?? 0;
       }
       if (b.skipped) {
-        appendResult(out, { ...base, phase: 'B', arm, skipped: true, error: b.error || 'budget reached' });
+        append({ ...base, phase: 'B', arm, skipped: true, error: b.error || 'budget reached' });
         log(`c${chain} r${rep} ${arm}: skipped\n`);
         continue;
       }
@@ -276,7 +279,7 @@ export async function runJob({ chain, rep, model, budget, env, out, log, conditi
       const warm = ownWarmUsd(row, aCost);
       const penalty = coldPenaltyUsd(coldReads, price);
       const bReads = readPaths(b.res.stdout, dir);
-      appendResult(out, {
+      append({
         ...base,
         phase: 'B',
         arm,
@@ -294,13 +297,13 @@ export async function runJob({ chain, rep, model, budget, env, out, log, conditi
         briefChars: arm === 'brief' ? brief.length : null,
         brief: arm === 'brief' ? brief : null,
         ...(arm === 'fresh' ? { briefFound } : {}),
-        trace: parseTrace(b.res.stdout),
+        trace: parseTrace(b.res.stdout, { scrub }),
         ...harnessFields(run, b.res.stdout, b.parsed, { dir, out, repo: taskB.repo }),
       });
       log(`c${chain} r${rep} ${arm}: B ${bVerify.success ? 'pass' : 'FAIL'}, A ${aAfter.success ? 'pass' : 'FAIL'}, $${warm.toFixed(3)} warm, $${(warm + penalty).toFixed(3)} cold\n`);
     }
   } catch (err) {
-    appendResult(out, { ...base, phase: 'error', error: String(err.message || err) });
+    append({ ...base, phase: 'error', error: String(err.message || err) });
     log(`c${chain} r${rep}: error: ${err.message}\n`);
   } finally {
     removeWorkdir(dir);
