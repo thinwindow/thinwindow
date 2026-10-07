@@ -66,7 +66,8 @@ switch.
   - "Read less" and "Say less" are unchanged.
 - The READMEs (English, Spanish and Portuguese) and the site describe the four
   moments of a session, where ThinWindow works and how it's checked. They quote
-  no benchmark numbers. The 0.3.0 tables, charts and
+  no benchmark numbers, and the site no longer publishes the charts or
+  `report.json`. The 0.3.0 tables, charts and
   `docs/WHERE-THE-TOKENS-GO.md` remain in the `v0.3.0` tag.
 - How ThinWindow is measured (#28), in `bench/README.md`:
   - unit tests;
