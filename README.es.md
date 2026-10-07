@@ -20,6 +20,10 @@
   <a href="README.md">English</a> · <b>Español</b> · <a href="README.pt-BR.md">Português</a>
 </p>
 
+<p align="center">
+  <a href="https://thinwindow.github.io/thinwindow/"><img src="assets/cover.png" alt="El sitio de documentación de ThinWindow" width="720"></a>
+</p>
+
 ## Por qué lo que se paga es el contexto
 
 Un agente de código paga más por lo que arrastra que por lo que escribe.
