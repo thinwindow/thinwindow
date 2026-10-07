@@ -20,6 +20,10 @@
   <a href="README.md">English</a> · <a href="README.es.md">Español</a> · <b>Português</b>
 </p>
 
+<p align="center">
+  <a href="https://thinwindow.github.io/thinwindow/"><img src="assets/cover.png" alt="O site de documentação do ThinWindow" width="720"></a>
+</p>
+
 ## Por que o contexto é a conta
 
 Um agente de código paga mais pelo que carrega do que pelo que escreve.
