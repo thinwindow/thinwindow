@@ -272,17 +272,19 @@ export function markdownReport(summaries) {
     if (s.method === 'hierarchical') lines.push(...hierarchicalLines(s), '');
     else if (T.tokensCI) lines.push(`Total tokens ${fmtPct(T.tokensDelta)} (95% CI ${fmtPct(T.tokensCI[0])} to ${fmtPct(T.tokensCI[1])}); cost ${fmtPct(T.costDelta)} (95% CI ${fmtPct(T.costCI[0])} to ${fmtPct(T.costCI[1])}).`, '');
     const errors = T.baseline.errors + T.thinwindow.errors;
+    const chains = s.model.endsWith('(chains)');
     lines.push(
       'Tokens are input + cache-creation + cache-read + output, summed over every model the run used. ' +
         'Per task: medians over all runs, failures included; min–max in parentheses. ' +
         `Total: sum of the per-task medians over the ${T.pairedTasks} tasks that have both conditions; success counts every run. ` +
-        'Δ = (thinwindow − baseline) / baseline. Cost is Claude Code\'s own estimate (`total_cost_usd`), not a bill. ' +
+        'Δ = (thinwindow − baseline) / baseline. ' +
+        (chains ? 'Cost is priced from token usage at list prices, not a bill. ' : 'Cost is Claude Code\'s own estimate (`total_cost_usd`), not a bill. ') +
         'Turns is Claude Code\'s `num_turns`: the top-level agent loop only. A run that delegates to a subagent ' +
         '(the Agent tool) can show few top-level turns while doing much more work inside it; Tokens and Cost already ' +
         'include that subagent work (via `modelUsage`), so they stay the fair comparison — Turns does not. ' +
         'The thinwindow rules and thresholds were tuned on these same tasks.' +
-        (s.method === 'hierarchical' ? ` ${HIERARCHICAL_NOTE}` : '') +
-        (s.model.endsWith('(chains)') ? ` ${CHAIN_NOTE}` : '') +
+        (s.method === 'hierarchical' ? ` ${hierarchicalNote(chains ? 'chain' : 'task')}` : '') +
+        (chains ? ` ${CHAIN_NOTE}` : '') +
         (errors ? ` ${errors} run(s) ended without usage data and count as failures.` : ''),
     );
     lines.push('');
@@ -350,12 +352,12 @@ function niceStepPct(max) {
 const fmtMde = (m) => (Number.isFinite(m) ? `±${Math.abs(m).toFixed(1)}%` : '–');
 const fmtCI = (ci) => (ci ? `${fmtPct(ci[0])} to ${fmtPct(ci[1])}` : 'n/a');
 
-export const HIERARCHICAL_NOTE =
+export const hierarchicalNote = (unit) =>
   'Intervals (0.4.0 method, #37): a seeded 95% bootstrap that resamples tasks, then runs within each task and condition. ' +
   'The smallest detectable effect is 2.8 × the bootstrap standard error (a 5% two-sided test with 80% power): a true change smaller than it is likely to go unseen. ' +
-  'Cost per completed task: everything a condition\'s runs cost, failures included, over the runs that passed.';
+  `Cost per completed ${unit}: everything a condition's runs cost, failures included, over the runs that passed.`;
 export const CHAIN_NOTE =
-  'A chain run is task A, then task B in the same clone: the baseline continues A\'s session, thinwindow starts fresh with `/thinwindow:resume`. ' +
+  'A chain run is task A, then task B in the same clone: the baseline continues A\'s session, ThinWindow starts fresh with `/thinwindow:resume`. ' +
   'It completes when A passes, B passes and A still passes after B. Its cost is priced from token usage, with B\'s first request re-written at the 1-hour cache-write price, as after an expired cache.';
 
 // The 0.4.0 lines under a table: the intervals and what they ran in.
@@ -371,7 +373,7 @@ export function hierarchicalLines(s) {
     `Environment: Claude Code ${e.claudeVersion ?? '?'} · effort ${e.effort ?? '?'} · profile ${e.profile ?? '?'} · account ${e.account ?? 'not recorded'} · ` +
       `${e.toolCount ?? '?'} tools${e.toolsHash ? ` (${e.toolsHash})` : ''} · ${e.skillCount ?? '?'} skills${e.skillsHash ? ` (${e.skillsHash})` : ''} + ${e.pluginSkillCount} ThinWindow · ${e.agentCount ?? '?'} agents` +
       `${e.toolList ? ` · --tools ${e.toolList}` : ''}${e.disallowedTools ? ` · --disallowedTools ${e.disallowedTools}` : ''}${e.agent ? ` · --agent ${e.agent}` : ''}.`,
-    `First request (median): baseline ${tok(e.baseline.firstRequest)}, thinwindow ${tok(e.thinwindow.firstRequest)} · cold first requests: baseline ${e.baseline.cold}/${e.baseline.runs}, thinwindow ${e.thinwindow.cold}/${e.thinwindow.runs}.`,
+    `First request (median): baseline ${tok(e.baseline.firstRequest)}, ThinWindow ${tok(e.thinwindow.firstRequest)} · cold first requests: baseline ${e.baseline.cold}/${e.baseline.runs}, ThinWindow ${e.thinwindow.cold}/${e.thinwindow.runs}.`,
   ];
   return lines;
 }
@@ -509,8 +511,9 @@ export function svgChart(s) {
   return `${o.filter(Boolean).join('\n')}\n`;
 }
 
+// claude-sonnet-5-5 (chains) -> claude-sonnet-5-5-chains
 function slug(s) {
-  return String(s).replace(/[^A-Za-z0-9._-]+/g, '_');
+  return String(s).replace(/ \((\w+)\)$/, '-$1').replace(/[^A-Za-z0-9._-]+/g, '_');
 }
 
 async function main() {

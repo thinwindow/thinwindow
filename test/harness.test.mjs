@@ -12,7 +12,7 @@ import { ROOT_DIR, RESULTS_DIR } from '../bench/lib/paths.mjs';
 import { readResultFile } from '../bench/lib/results.mjs';
 import { dedupeRuns, versionDir } from '../bench/lib/results.mjs';
 import { bootstrapDelta, costPerCompleted, hierarchicalBootstrap, mulberry32, sumOfMedians } from '../bench/lib/stats.mjs';
-import { KEEP_ATTACHMENTS, isPublicRepo, keepTranscript, scrubTranscript, scrubber } from '../bench/lib/transcripts.mjs';
+import { KEEP_ATTACHMENTS, isPublicRepo, keepTranscript, scrubRow, scrubTranscript, scrubber } from '../bench/lib/transcripts.mjs';
 import { UsageError, defaultOut, parseCli, planRuns } from '../bench/run.mjs';
 import { chainRuns, envMismatch, markdownReport, since, summarize } from '../bench/report.mjs';
 import { tempDir } from './helpers.mjs';
@@ -71,8 +71,9 @@ test('runFingerprint: counts and hashes from init, ThinWindow skills apart, firs
   assert.equal(base.cacheState, 'cold');
   assert.equal(skin.cacheState, 'warm');
   assert.equal(runFingerprint('not json').toolCount, null);
-  const host = hostFingerprint({ account: 'acct-a', env: { CLAUDE_CONFIG_DIR: '/x/.claude-bench-flow' } });
-  assert.equal(host.profile, '.claude-bench-flow');
+  const host = hostFingerprint({ account: 'acct-a', env: { CLAUDE_CONFIG_DIR: '/x/bench-profile' } });
+  assert.match(host.profile, /^[0-9a-f]{12}$/, 'the folder name is hashed');
+  assert.notEqual(host.profile, hostFingerprint({ env: { CLAUDE_CONFIG_DIR: '/x/other-profile' } }).profile);
   assert.match(host.account, /^[0-9a-f]{12}$/);
   assert.notEqual(host.account, 'acct-a');
   assert.equal(hostFingerprint({ env: {} }).profile, 'default');
@@ -116,7 +117,7 @@ function row(task, condition, costUsd, extra = {}) {
     thinwindowVersion: '0.4.0-dev',
     effort: 'default',
     os: 'darwin 22.6.0',
-    profile: '.claude-bench-flow',
+    profile: 'p1p1p1p1p1p1',
     account: 'abc123abc123',
     maxTurns: 40,
     bare: false,
@@ -194,8 +195,8 @@ test('0.4.0 report: cost per completed task, intervals with the smallest detecta
   assert.ok(s.total.tokensMde > 0 && s.total.costMde > 0);
   const md = markdownReport([s]);
   assert.match(md, /Cost per completed task: −20\.0% \(95% interval .+; smallest detectable effect ±\d+\.\d%\)/);
-  assert.match(md, /Environment: Claude Code 2\.1\.289 · effort default · profile \.claude-bench-flow · account abc123abc123 · 28 tools \(aaaaaaaaaaaa\) · 17 skills \(bbbbbbbbbbbb\) \+ 4 ThinWindow/);
-  assert.match(md, /First request \(median\): baseline 19k tokens, thinwindow 21k tokens · cold first requests: baseline 0\/12, thinwindow 0\/12/);
+  assert.match(md, /Environment: Claude Code 2\.1\.289 · effort default · profile p1p1p1p1p1p1 · account abc123abc123 · 28 tools \(aaaaaaaaaaaa\) · 17 skills \(bbbbbbbbbbbb\) \+ 4 ThinWindow/);
+  assert.match(md, /First request \(median\): baseline 19k tokens, ThinWindow 21k tokens · cold first requests: baseline 0\/12, ThinWindow 0\/12/);
   assert.match(md, /resamples tasks, then runs within each task and condition/);
 });
 
@@ -267,7 +268,7 @@ const TRANSCRIPT = [
 ];
 
 test('kept transcripts: an allowlist of records, fields and attachments, with home and clone paths replaced', () => {
-  const scrub = scrubber({ clone: CLONE, home: HOME, config: `${HOME}/.claude-bench-flow`, plugin: `${HOME}/code/thinwindow`, user: 'someone', tmp: '/private/var/folders/xx/T' });
+  const scrub = scrubber({ clone: CLONE, home: HOME, config: `${HOME}/.claude-bench`, plugin: `${HOME}/code/thinwindow`, user: 'someone', tmp: '/private/var/folders/xx/T' });
   const out = scrubTranscript(TRANSCRIPT, scrub);
   const text = JSON.stringify(out);
   for (const secret of ['org-secret', 'You are', 'acct-skill', 'req-secret', 'sig-secret', 'all of it', 'opaque', HOME, 'someone', 'enqueue', 'totalCostUSD']) assert.ok(!text.includes(secret), secret);
@@ -282,6 +283,30 @@ test('kept transcripts: an allowlist of records, fields and attachments, with ho
   assert.equal(out[6].message.content[0].content[0].text, 'owner <user> in ~/x, skill in <plugin>/skills/resume');
   assert.equal(out[6].toolUseResult, undefined);
   assert.ok(isPublicRepo('https://github.com/tj/commander.js.git') && !isPublicRepo('/tmp/repo') && !isPublicRepo('git@github.com:x/y'));
+});
+
+test('the scrub catches machine paths cut short, the sandbox temp folder and slugged paths; rows keep their numbers', () => {
+  const scrub = scrubber({ home: HOME, config: `${HOME}/.claude-bench`, plugin: `${HOME}/code/thinwindow`, user: 'someone', tmp: '/var/folders/ab/cd12ef/T' });
+  assert.equal(scrub('`cd /private/var/folders/ab/cd1…` → exit 0'), '`cd <tmp>…` → exit 0');
+  assert.equal(scrub('ls /private/var/folders/ab/cd12'), 'ls <tmp>');
+  assert.equal(scrub('cat /private/var/folders/ab/cd12ef/T/thinwindow-bench-a/x.js'), 'cat <tmp>/thinwindow-bench-a/x.js');
+  assert.equal(
+    scrub('Output is being written to: /private/tmp/claude-501/-private-var-folders-ab-cd12ef-T-thinwindow-bench-resume-c2/s1/tasks/b5.output'),
+    'Output is being written to: <tmp>/-<tmp>-thinwindow-bench-resume-c2/s1/tasks/b5.output',
+  );
+  assert.equal(scrub('node /tmp/claude-501/tail.js'), 'node <tmp>/tail.js');
+  assert.equal(scrub('-rw-r--r--@ 1 someone staff 9 Oct 2 a.py'), '-rw-r--r--@ 1 <user> staff 9 Oct 2 a.py');
+  // Rows: shell words, since their traces are parsed as commands, and the
+  // clone keeps its folder name.
+  const shell = scrubber({ clone: '/var/folders/ab/cd12ef/T/thinwindow-bench-a', home: HOME, user: 'someone', tmp: '/var/folders/ab/cd12ef/T', shell: true });
+  const row = { costUsd: 0.071, totalTokens: 91000, trace: ['Bash cd /private/var/folders/ab/cd12ef/T/thinwindow-bench-a && npm test', 'Bash ls /private/var/folders/ab/cd1…'], traceTails: ['/tmp/claude-501/x', '1 someone staff'] };
+  assert.deepEqual(scrubRow(row, shell), {
+    costUsd: 0.071,
+    totalTokens: 91000,
+    trace: ['Bash cd $TMPDIR/thinwindow-bench-a && npm test', 'Bash ls $TMPDIR…'],
+    traceTails: ['$TMPDIR/x', '1 $USER staff'],
+  });
+  assert.equal(shell('/private/tmp/claude-501/-private-var-folders-ab-cd12ef-T-thinwindow-bench-a/s1'), '$TMPDIR/-TMPDIR-thinwindow-bench-a/s1');
 });
 
 test('keepTranscript writes only the named session, next to the results', () => {

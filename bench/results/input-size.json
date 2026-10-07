@@ -784,7 +784,7 @@
    "session": "2b1dc43b-98a4-4e83-951a-892bfaa50a30",
    "step": 10,
    "tool": "Bash",
-   "call": "Bash grep -r \"get_help_record\\|get_help_spec\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-help-spec-basel",
+   "call": "Bash grep -r \"get_help_record\\|get_help_spec\" $TMPDIR/thinwindow-bench-click-help-spec-basel",
    "skipped": "cut short in the trace"
   },
   {
@@ -1831,7 +1831,7 @@
    "session": "00bd4741-db36-4a6d-ad0f-a5320aa5cc04",
    "step": 5,
    "tool": "Bash",
-   "call": "Bash grep -n \"defaultValue\\|assignOptionsValues\\|isBoolean\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-command",
+   "call": "Bash grep -n \"defaultValue\\|assignOptionsValues\\|isBoolean\" $TMPDIR/thinwindow-bench-command",
    "skipped": "cut short in the trace"
   },
   {
@@ -1908,7 +1908,7 @@
    "session": "00bd4741-db36-4a6d-ad0f-a5320aa5cc04",
    "step": 12,
    "tool": "Bash",
-   "call": "Bash grep -n \"_findOption\\|_processOptions\\|_prepareForParse\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-comma",
+   "call": "Bash grep -n \"_findOption\\|_processOptions\\|_prepareForParse\" $TMPDIR/thinwindow-bench-comma",
    "skipped": "cut short in the trace"
   },
   {
@@ -2977,7 +2977,7 @@
    "session": "9e673fc2-9c3d-4401-94de-7ce8fb9711d7",
    "step": 6,
    "tool": "Bash",
-   "call": "Bash grep -n \"get_help_record\\|get_help_spec\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-help-spec-basel",
+   "call": "Bash grep -n \"get_help_record\\|get_help_spec\" $TMPDIR/thinwindow-bench-click-help-spec-basel",
    "skipped": "cut short in the trace"
   },
   {
@@ -3083,7 +3083,7 @@
    "session": "9e673fc2-9c3d-4401-94de-7ce8fb9711d7",
    "step": 16,
    "tool": "Bash",
-   "call": "Bash grep -n \"def test.*help_record\\|def test.*help_spec\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-hel",
+   "call": "Bash grep -n \"def test.*help_record\\|def test.*help_spec\" $TMPDIR/thinwindow-bench-click-hel",
    "skipped": "cut short in the trace"
   },
   {
@@ -3093,7 +3093,7 @@
    "session": "9e673fc2-9c3d-4401-94de-7ce8fb9711d7",
    "step": 17,
    "tool": "Bash",
-   "call": "Bash grep -n \"get_help_record\\|get_help_spec\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-help-spec-basel",
+   "call": "Bash grep -n \"get_help_record\\|get_help_spec\" $TMPDIR/thinwindow-bench-click-help-spec-basel",
    "skipped": "cut short in the trace"
   },
   {
@@ -3198,7 +3198,7 @@
    "session": "9e673fc2-9c3d-4401-94de-7ce8fb9711d7",
    "step": 28,
    "tool": "Bash",
-   "call": "Bash grep -n \"++enable\\|++disable\\|/enable\\|/disable\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-help-sp",
+   "call": "Bash grep -n \"++enable\\|++disable\\|/enable\\|/disable\" $TMPDIR/thinwindow-bench-click-help-sp",
    "skipped": "cut short in the trace"
   },
   {
@@ -3208,7 +3208,7 @@
    "session": "9e673fc2-9c3d-4401-94de-7ce8fb9711d7",
    "step": 29,
    "tool": "Bash",
-   "call": "Bash grep -B2 -A2 'prefix.*slash\\|/\\|any_prefix_is_slash' /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-hel",
+   "call": "Bash grep -B2 -A2 'prefix.*slash\\|/\\|any_prefix_is_slash' $TMPDIR/thinwindow-bench-click-hel",
    "skipped": "cut short in the trace"
   },
   {
@@ -3240,7 +3240,7 @@
    "session": "9e673fc2-9c3d-4401-94de-7ce8fb9711d7",
    "step": 33,
    "tool": "Bash",
-   "call": "Bash grep -n \"secondary_opts\\|_parse_decls\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-click-help-spec-baselin",
+   "call": "Bash grep -n \"secondary_opts\\|_parse_decls\" $TMPDIR/thinwindow-bench-click-help-spec-baselin",
    "skipped": "cut short in the trace"
   },
   {
@@ -3406,7 +3406,7 @@
    "session": "0f2894d1-3ac1-4ca0-a722-d18ab4b750cb",
    "step": 5,
    "tool": "Bash",
-   "call": "Bash grep -n \"\\.command\\|\\.addCommand\\|\\.alias\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-command-c",
+   "call": "Bash grep -n \"\\.command\\|\\.addCommand\\|\\.alias\" $TMPDIR/thinwindow-bench-commander-command-c",
    "skipped": "cut short in the trace"
   },
   {
@@ -3546,7 +3546,7 @@
    "session": "0f2894d1-3ac1-4ca0-a722-d18ab4b750cb",
    "step": 17,
    "tool": "Bash",
-   "call": "Bash grep -n \"addOption\\|_registerOption\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-command-clash-b",
+   "call": "Bash grep -n \"addOption\\|_registerOption\" $TMPDIR/thinwindow-bench-commander-command-clash-b",
    "skipped": "cut short in the trace"
   },
   {
@@ -3793,7 +3793,7 @@
    "session": "94caf4f3-8d99-4562-bfa3-0dfb70506100",
    "step": 2,
    "tool": "Bash",
-   "call": "Bash grep -r \"useColor\\|incrementNodeInspectorPort\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-extra",
+   "call": "Bash grep -r \"useColor\\|incrementNodeInspectorPort\" $TMPDIR/thinwindow-bench-commander-extra",
    "skipped": "cut short in the trace"
   },
   {
@@ -3803,7 +3803,7 @@
    "session": "94caf4f3-8d99-4562-bfa3-0dfb70506100",
    "step": 3,
    "tool": "Bash",
-   "call": "Bash grep -r \"incrementNodeInspectorPort\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-extract-utils-b",
+   "call": "Bash grep -r \"incrementNodeInspectorPort\" $TMPDIR/thinwindow-bench-commander-extract-utils-b",
    "skipped": "cut short in the trace"
   },
   {
@@ -3867,7 +3867,7 @@
    "session": "94caf4f3-8d99-4562-bfa3-0dfb70506100",
    "step": 12,
    "tool": "Bash",
-   "call": "Bash grep -n \"incrementNodeInspectorPort\\|useColor\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-extra",
+   "call": "Bash grep -n \"incrementNodeInspectorPort\\|useColor\" $TMPDIR/thinwindow-bench-commander-extra",
    "skipped": "cut short in the trace"
   },
   {
@@ -3877,7 +3877,7 @@
    "session": "94caf4f3-8d99-4562-bfa3-0dfb70506100",
    "step": 13,
    "tool": "Bash",
-   "call": "Bash grep -n \"export function\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-extract-utils-baseline-MzI",
+   "call": "Bash grep -n \"export function\" $TMPDIR/thinwindow-bench-commander-extract-utils-baseline-MzI",
    "skipped": "cut short in the trace"
   },
   {
@@ -3887,7 +3887,7 @@
    "session": "94caf4f3-8d99-4562-bfa3-0dfb70506100",
    "step": 14,
    "tool": "Bash",
-   "call": "Bash grep -n \"import.*useColor\" /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-extract-utils-baseline-Mz",
+   "call": "Bash grep -n \"import.*useColor\" $TMPDIR/thinwindow-bench-commander-extract-utils-baseline-Mz",
    "skipped": "cut short in the trace"
   },
   {
@@ -4879,7 +4879,7 @@
    "session": "f5f8874c-c55c-4b26-be30-d5898b4fcc13",
    "step": 0,
    "tool": "Bash",
-   "call": "Bash cd /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-ci-config-baseline-6ceVLt; ls .github/workflows; ",
+   "call": "Bash cd $TMPDIR/thinwindow-bench-commander-ci-config-baseline-6ceVLt; ls .github/workflows; ",
    "skipped": "cut short in the trace"
   },
   {
@@ -5467,7 +5467,7 @@
    "session": "b0dca9ee-dec3-4d94-8b15-c1fea1f0699d",
    "step": 0,
    "tool": "Bash",
-   "call": "Bash cd /private/var/folders/r8/646l9wk11vjccpbc8k8036kr0000gn/T/thinwindow-bench-commander-ci-config-baseline-JAaz7k; ls .github/workflows; ",
+   "call": "Bash cd $TMPDIR/thinwindow-bench-commander-ci-config-baseline-JAaz7k; ls .github/workflows; ",
    "skipped": "cut short in the trace"
   },
   {

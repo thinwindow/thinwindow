@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Every rule costs tokens in every session, and `rules/thinwindow.md` has a hard budget (~500 tokens). A rule is accepted only with a benchmark delta from `bench/` that shows fewer total tokens at an equal success rate. See CONTRIBUTING.md.
+        Every rule costs tokens in every session, and `rules/thinwindow.md` has a hard budget (~500 tokens). A rule comes with evidence: the compliance table (`node bench/compliance.mjs`) and, when the decision depends on how the model reacts, a few targeted runs whose pass and fail criteria are written before running them. See CONTRIBUTING.md.
   - type: textarea
     id: rule
     attributes:
@@ -23,5 +23,5 @@ body:
   - type: textarea
     id: evidence
     attributes:
-      label: Benchmark delta
-      description: Commands you ran, model, number of reps, and the report table before and after. Leave empty if you're asking for help measuring it.
+      label: Evidence
+      description: The compliance table, and any targeted runs (commands, model, reps, the criteria you wrote first, and the report). Leave empty if you're asking for help measuring it.
