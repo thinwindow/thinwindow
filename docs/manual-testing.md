@@ -2,8 +2,8 @@
 
 The unit tests (`node --test`) run the hook scripts with the same JSON that
 Claude Code sends, but only a real session proves that Claude Code loads the
-plugin and acts on the hook output. These steps take about ten minutes and use
-a handful of short prompts.
+plugin and acts on the hook output. Steps 1–15 and 17–18 take about fifteen
+minutes and use a handful of short prompts; step 16 needs an idle hour.
 
 Requirements: Claude Code 2.1.139 or newer (hooks use the exec form with
 `args`), and Node.js 18 or newer on `PATH`.
@@ -43,8 +43,8 @@ tail -f /tmp/thinwindow-debug.txt | grep -i -E 'thinwindow|hook'
 
 ## 3. The hooks are registered
 
-Run `/hooks`. Expect a `SessionStart` hook and a `PreToolUse` hook (matcher
-`Read|Bash`), both with source `Plugin Hooks`.
+Run `/hooks`. Expect four hooks with source `Plugin Hooks`: `SessionStart`,
+`UserPromptSubmit`, `Stop`, and `PreToolUse` (matcher `Read|Bash|Grep`).
 
 ## 4. SessionStart injects the rules
 
@@ -128,8 +128,66 @@ cd "$(node -p 'require("os").tmpdir()')/thinwindow/state"
 echo 'garbage' > "$(ls -t | head -n 1)"   # the newest file is the current session
 ```
 
-Any Read or Bash call in that session proceeds normally; thinwindow starts a
+Any Read or Bash call in that session proceeds normally; ThinWindow starts a
 fresh state.
+
+## 13. The brief is kept at every turn
+
+Ask Claude to add a line to `small.ts`. After the reply, a brief exists for
+this session (with `--plugin-dir`, the plugin's data folder is
+`thinwindow-inline`):
+
+```sh
+ls ~/.claude/plugins/data/*/briefs/*/
+```
+
+It holds the goal, the latest requests, `small.ts` among the changed files,
+the last commands and the last reply. The session's context didn't grow: the
+Stop hook prints nothing.
+
+## 14. `/thinwindow:brief` and `/thinwindow:resume`
+
+1. Type `/thinwindow:brief`. Claude replies with five lines: Summary, Stopped
+   at, Decisions, Didn't work, Next step.
+2. Type `/clear`, then `/thinwindow:resume what's next?`. The new session
+   starts from the brief: marked as reference, with its age, the commits made
+   since and the path to the full brief.
+
+## 15. The setup-cost notice
+
+Set `{ "setupNoticeMinTokens": 1 }` in `.thinwindow.json`, delete the week's
+mark (`rm "$(node -p 'require("os").tmpdir()')"/thinwindow/state/setup-*.mark`),
+and start a new session. After the first reply, one line shows what every
+request starts at, and its largest parts. In the desktop app it appears as a
+collapsed "Claude Code notice". It shows again only after a week.
+
+## 16. The cold-resume notice
+
+This one needs a real idle hour. Set `{ "coldResumeMinTokens": 1 }` in
+`.thinwindow.json`, send a prompt, and leave the session idle for over an
+hour. Then type `hola`.
+
+- The prompt is held: three lines with the idle time, what continuing
+  re-writes, and a fresh start.
+- In the desktop app it's an "A hook blocked your prompt" card.
+- Send it again: it goes through.
+- `/clear` isn't held either.
+
+## 17. `/thinwindow:report`
+
+Type `/thinwindow:report`, then `/thinwindow:report --json`. Expect aggregate
+numbers only: no prompts, paths or project names. The JSON has no US$
+amounts.
+
+## 18. The `thinwindow-minimal` profile
+
+```sh
+cp /path/to/thinwindow/profiles/thinwindow-minimal.md ~/.claude/agents/
+claude --agent thinwindow-minimal --plugin-dir /path/to/thinwindow
+```
+
+`/context` shows fewer system tools and no skill listing, and
+`/thinwindow:report` still runs. Delete the copy afterwards.
 
 ## Headless variant
 
