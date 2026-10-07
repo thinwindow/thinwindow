@@ -6,15 +6,17 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
-0.3.0 was measured, packaged and tagged at three different commits:
+## [0.4.0] - 2026-10-06
 
-- measured: `6546385`, the commit every 0.3.0 benchmark run used;
-- packaged: `f6d074a`, from which `scripts/build-directory.mjs` built the
-  `directory` branch at `a7cb8ce`, the commit the plugin directory installs;
-- tagged: `v0.3.0`, at `b874cf1`.
+ThinWindow now covers the whole session:
 
-The hooks, the skill and the rules are the same at all three; only the
-manifest's description differs.
+- what every request carries;
+- the context window while you work;
+- coming back to a session after its prompt cache expired;
+- where your sessions' context went.
+
+Nothing that worked in 0.3.0 stops working, and each new part has its own off
+switch.
 
 ### Added
 
@@ -22,10 +24,10 @@ manifest's description differs.
   transcripts, as aggregate numbers. `--json` prints a summary you can choose
   to share. The skill is user-invoked only, so it adds nothing to the skill
   listing.
-- `/thinwindow:resume`: after `/clear`, start from a brief of at most ~150
-  tokens of your last session in this project instead of re-paying its whole
+- `/thinwindow:resume`: after `/clear`, start from a brief of your last session
+  in this project, at most 600 characters, instead of re-paying its whole
   context. A Stop hook keeps the brief at every turn without calling a model;
-  it is stored in the plugin's data folder, deleted after 7 days, and turned
+  it is stored in the plugin's data folder, removed once it's 7 days old, and turned
   off with `"briefs": false`.
 - `/thinwindow:brief`: Claude writes a handoff of the session while the cache
   is still warm, kept in the brief.
@@ -62,8 +64,48 @@ manifest's description differs.
   - The first "Write less" rule keeps its three checks in fewer words.
   - The opening line says that what the agent writes is re-sent too.
   - "Read less" and "Say less" are unchanged.
+- The READMEs (English, Spanish and Portuguese) and the site describe the four
+  moments of a session, where ThinWindow works and how it's checked. They quote
+  no benchmark numbers. The 0.3.0 tables, charts and
+  `docs/WHERE-THE-TOKENS-GO.md` remain in the `v0.3.0` tag.
+- How ThinWindow is measured (#28), in `bench/README.md`:
+  - unit tests;
+  - replays of recorded sessions;
+  - a few targeted runs;
+  - one pre-registered validation per release.
+
+  The launch target of 0.1–0.3, 25% fewer total tokens per task, is retired.
+- The benchmark harness (#37): one recorded environment for both conditions,
+  hierarchical intervals with the smallest detectable effect, resume chains,
+  and kept transcripts. Bench only, no effect on users.
+- Benchmark rows and kept transcripts carry no machine paths, user name or
+  account label. No number changed.
+- `bench/results/report.json` adds a note: 0.4.0 checked Cowork and the Claude
+  apps instead of measuring savings there. Its other fields are unchanged.
+
+### Fixed
+
+- `/thinwindow:report` shows "format not recognized", or its usage for an
+  unknown argument, instead of failing: a failing command aborts the skill.
+
+### Measured
+
+- Before release, 0.4.0 was validated against Claude Code without the plugin,
+  with its method and pass rules posted before the first run (#38). Every
+  benchmark task and every resume chain completed with ThinWindow, as they did
+  without it. Results and raw rows: `bench/results/0.4.0/`.
 
 ## [0.3.0] - 2026-10-02
+
+0.3.0 was measured, packaged and tagged at three different commits:
+
+- measured: `6546385`, the commit every 0.3.0 benchmark run used;
+- packaged: `f6d074a`, from which `scripts/build-directory.mjs` built the
+  `directory` branch at `a7cb8ce`, the commit the plugin directory installs;
+- tagged: `v0.3.0`, at `b874cf1`.
+
+The hooks, the skill and the rules are the same at all three; only the
+manifest's description differs.
 
 ### Measured
 
