@@ -1,7 +1,7 @@
 // The same checks CI runs through scripts/check.mjs, plus unit tests for
 // the validators themselves.
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -19,8 +19,9 @@ import {
   validateTask,
 } from '../scripts/check.mjs';
 import { HOOK_ENV } from '../hooks/lib/hook-io.mjs';
-import { PATHS as DIRECTORY_PATHS, absoluteLinks } from '../scripts/build-directory.mjs';
+import { PATHS as DIRECTORY_PATHS, absoluteLinks, treeProblems } from '../scripts/build-directory.mjs';
 import { syncedContent } from '../scripts/sync-rules.mjs';
+import { tempDir } from './helpers.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -184,8 +185,19 @@ test('the directory branch points relative links at main', () => {
   );
   // Resolved from the file's own folder.
   assert.equal(absoluteLinks('[d](../../docs/a.md)', 'skills/thinwindow/SKILL.md'), '[d](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md)');
-  // A closed list: bench/, the website, images and CLAUDE.md stay out.
-  assert.deepEqual(DIRECTORY_PATHS, ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md']);
+  // A closed list: bench/, the website, images and CLAUDE.md stay out. The
+  // icon is the one image: the directory shows it on the listing.
+  assert.deepEqual(DIRECTORY_PATHS, ['.claude-plugin/plugin.json', '.claude-plugin/icon.svg', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md']);
+});
+
+test("the directory build keeps the plugin's icon and refuses any other image", () => {
+  const dir = tempDir('thinwindow-directory-');
+  mkdirSync(join(dir, '.claude-plugin'), { recursive: true });
+  writeFileSync(join(dir, '.claude-plugin', 'icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  writeFileSync(join(dir, 'README.md'), 'hello\n');
+  assert.deepEqual(treeProblems(dir).problems, []);
+  writeFileSync(join(dir, 'logo.png'), 'x');
+  assert.deepEqual(treeProblems(dir).problems, ['logo.png: an image or a binary file']);
 });
 
 test('the directory build pins README links and images to the commit it packages', () => {
