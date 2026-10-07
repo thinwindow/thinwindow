@@ -16,17 +16,17 @@
 // The two agent variants run only when minimal-tools meets G3's go line.
 //
 //   node bench/experiments/setup.mjs --dry-run [--model m]
-//   CLAUDE_CONFIG_DIR=~/.claude-bench-flow node bench/experiments/setup.mjs [--model m]
+//   CLAUDE_CONFIG_DIR=~/.claude-bench node bench/experiments/setup.mjs [--model m]
 //   node bench/experiments/setup.mjs --analyze bench/results/experiments/setup-<date>.jsonl
 //
 // Records keep token usage, tool and skill counts, built-in tool names and
 // setup sizes by attachment type, never transcripts.
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { claudeEnv, claudeVersion, firstUsage, parseInit, parseResult } from '../lib/claude.mjs';
+import { claudeEnv, claudeVersion, firstUsage, parseInit, parseResult, profileLabel } from '../lib/claude.mjs';
 import { RESULTS_DIR } from '../lib/paths.mjs';
 import { priceOf, resolveModel } from '../lib/pricing.mjs';
 import { runProcess } from '../lib/proc.mjs';
@@ -195,7 +195,7 @@ async function runVariant(variant, { model, cwd, file, version, ...opts }) {
     model,
     modelResolved: resolveModel(model),
     claudeVersion: version,
-    profile: process.env.CLAUDE_CONFIG_DIR ? basename(process.env.CLAUDE_CONFIG_DIR) : 'default',
+    profile: profileLabel(),
     os: `${process.platform} ${(await import('node:os')).release()}`,
     startedAt: new Date().toISOString(),
     exit: res.code,

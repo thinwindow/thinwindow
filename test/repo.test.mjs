@@ -126,6 +126,11 @@ test('sync-rules replaces only the marked block', () => {
   const target = 'before\n<!-- rules:start (x) -->\nold\n<!-- rules:end -->\nafter\n';
   assert.equal(syncedContent(target, 'new rules\n'), 'before\n<!-- rules:start (x) -->\nnew rules\n<!-- rules:end -->\nafter\n');
   assert.throws(() => syncedContent('no markers', 'x'));
+  // The site shows the rules in a <pre> block, escaped.
+  assert.equal(
+    syncedContent('<!-- rules:start -->\nold\n<!-- rules:end -->', 'run `x <cmd>` & go\n', { html: true }),
+    '<!-- rules:start -->\n<pre><code>run `x &lt;cmd&gt;` &amp; go</code></pre>\n<!-- rules:end -->',
+  );
 });
 
 test('validateLabels', () => {

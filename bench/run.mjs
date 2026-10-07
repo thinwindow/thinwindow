@@ -22,7 +22,7 @@ import { runProcess, runSync, tail, which } from './lib/proc.mjs';
 import { appendResult, readResults, resultsPath, versionDir } from './lib/results.mjs';
 import { median, mulberry32, shuffle } from './lib/stats.mjs';
 import { loadTask, loadTasks, repoLabel } from './lib/tasks.mjs';
-import { isPublicRepo, keepTranscript, scrubber } from './lib/transcripts.mjs';
+import { isPublicRepo, keepTranscript, scrubRow, scrubber } from './lib/transcripts.mjs';
 import { cloneAt, makeWorkdir, removeWorkdir, runSetup, runVerify } from './lib/workspace.mjs';
 import { loadState, statePath } from '../hooks/lib/state.mjs';
 import { Budget, CHAINS, runJob } from './experiments/resume.mjs';
@@ -358,8 +358,9 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     // Claude Code reports it, or as the env override, or as "default".
     record.effort = parseInit(res.stdout)?.effort ?? agentEnv.CLAUDE_CODE_EFFORT_LEVEL ?? 'default';
     Object.assign(record, runFingerprint(res.stdout));
-    record.trace = parseTrace(res.stdout);
-    record.traceTails = parseTraceTails(res.stdout);
+    const scrub = scrubber({ shell: true });
+    record.trace = parseTrace(res.stdout, { scrub });
+    record.traceTails = parseTraceTails(res.stdout, { scrub });
     // For the manual review of final messages (#38).
     record.finalMessage = record.resultText ? scrubber({ clone: dir })(record.resultText).slice(0, 8000) : null;
     if (options.keepTranscripts && isPublicRepo(task.repo) && options.out) {
@@ -386,10 +387,12 @@ export async function runOne({ task, condition, rep, options, meta, env = proces
     record.success = false;
     record.error = String(err.message || err);
   } finally {
-    if (options.keep) record.workdir = dir;
-    else removeWorkdir(dir);
+    if (!options.keep) removeWorkdir(dir);
   }
-  return record;
+  // Traces, tails and messages quote the clone's and temp folders' paths.
+  const row = scrubRow(record, scrubber({ shell: true }));
+  if (options.keep) row.workdir = dir;
+  return row;
 }
 
 // What the agent changed and said, so a failed run can be diagnosed after

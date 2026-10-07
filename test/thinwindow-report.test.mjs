@@ -228,7 +228,7 @@ test('reads the transcripts of the Claude Code config in use', () => {
   assert.equal(defaultRoot({ CLAUDE_CONFIG_DIR: '/cfg' }, '/h'), join('/cfg', 'projects'));
 });
 
-test('CLI: --json and the text report run end to end; unknown flags are refused', () => {
+test('CLI: --json and the text report run end to end; an unknown flag prints the usage', () => {
   const c = corpus({ 'p/a.jsonl': [req('m1', T0, { write: 50000 }), req('m2', T0 + MIN), req('m3', T0 + 2 * MIN)] });
   const env = { ...process.env, CLAUDE_CONFIG_DIR: join(c.root, '..'), TMPDIR: c.stateBase, TEMP: c.stateBase, TMP: c.stateBase };
   const text = spawnSync(process.execPath, [SCRIPT], { env, encoding: 'utf8' });
@@ -236,5 +236,13 @@ test('CLI: --json and the text report run end to end; unknown flags are refused'
   assert.match(text.stdout, /^ThinWindow report: 1 sessions, 3 requests/);
   const json = spawnSync(process.execPath, [SCRIPT, '--json'], { env, encoding: 'utf8' });
   assert.equal(JSON.parse(json.stdout).requests, 3);
-  assert.equal(spawnSync(process.execPath, [SCRIPT, '--dir', '/'], { env, encoding: 'utf8' }).status, 2);
+  // Exit 0 every time: a failing injected command aborts /thinwindow:report.
+  const usage = spawnSync(process.execPath, [SCRIPT, '--dir', '/'], { env, encoding: 'utf8' });
+  assert.equal(usage.status, 0);
+  assert.match(usage.stdout, /^usage: thinwindow-report \[--json\]/);
+  const changed = { type: 'assistant', timestamp: new Date(T0).toISOString(), message: { id: 'm1', usage: { tokens: { in: 5 } } } };
+  const odd = corpus({ 'p/a.jsonl': [changed] });
+  const notRecognized = spawnSync(process.execPath, [SCRIPT], { env: { ...env, CLAUDE_CONFIG_DIR: join(odd.root, '..') }, encoding: 'utf8' });
+  assert.equal(notRecognized.status, 0);
+  assert.match(notRecognized.stdout, /format not recognized/);
 });

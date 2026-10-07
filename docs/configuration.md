@@ -1,6 +1,6 @@
 # Configuration
 
-thinwindow works without configuration. To change it, create
+ThinWindow works without configuration. To change it, create
 `.thinwindow.json` in the project root or `~/.thinwindow.json` in your home
 directory. Values in the project file override the home file; lists
 (`noisyCommands`, `allowlist.*`) from both files are combined.
@@ -24,7 +24,7 @@ directory. Values in the project file override the home file; lists
 | Key | Default | What it does |
 | --- | --- | --- |
 | `enabled` | `true` | `false` turns every hook off for that project (or everywhere, in `~/.thinwindow.json`). |
-| `maxReadLines` | `400` | A whole-file `Read` (no `offset`/`limit`) of a file with more lines than this is denied, and so is `cat` of such a file. |
+| `maxReadLines` | `400` | A whole-file `Read` (no `offset`/`limit`) of a file with more lines than this returns its first 120 lines and an outline (with `rewrite` off, it is refused), and `cat` of such a file is refused. |
 | `rewrite` | `true` | Runs uncapped noisy commands through `thinwindow-run` automatically (via the hook's `updatedInput`), so the agent gets a summary without spending a turn on a denial. The rewritten command still goes through your normal permission rules. `false` denies them instead, with a soft block. |
 | `briefs` | `true` | `false` stops the Stop hook from writing session briefs for `/thinwindow:resume`. Briefs already written are deleted after 7 days. |
 | `coldResumeNotice` | `true` | `false` turns off the cold-resume notice (see UserPromptSubmit below). |
@@ -32,8 +32,8 @@ directory. Values in the project file override the home file; lists
 | `setupNotice` | `true` | `false` turns off the setup-cost notice (see Stop below). |
 | `setupNoticeMinTokens` | `40000` | The smallest first request, in tokens, for which the setup-cost notice shows. |
 | `noisyCommands` | see below | Extra regular expressions for noisy commands. They are added to the built-in list. |
-| `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files thinwindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
-| `allowlist.commands` | `[]` | Regular expressions for Bash commands thinwindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
+| `allowlist.paths` | `[]` | Globs (`*`, `?`, `**`) for files ThinWindow never blocks, matched against the path relative to the project root and the absolute path. A glob without `/` matches the file name anywhere. |
+| `allowlist.commands` | `[]` | Regular expressions for Bash commands ThinWindow never blocks, tested against the whole command. Use it to exempt a built-in noisy pattern. |
 
 A missing, unreadable or mistyped file is ignored (with a debug message), and a
 key with the wrong type keeps its default.
@@ -42,7 +42,7 @@ key with the wrong type keeps its default.
 
 | Variable | Effect |
 | --- | --- |
-| `THINWINDOW=off` | Turns thinwindow off, whatever the config files say. `thinwindow-run` then runs the command with its output untouched. |
+| `THINWINDOW=off` | Turns ThinWindow off, whatever the config files say. `thinwindow-run` then runs the command with its output untouched. |
 | `THINWINDOW_DEBUG=1` | The hooks write each decision to stderr, which Claude Code keeps in its debug log (`claude --debug`, or `claude --debug-file <path>`). |
 
 ## What the hooks do
@@ -111,7 +111,7 @@ without a permission prompt, allow
 `Bash(thinwindow-run *)`, which no longer matches. Either rule approves every
 command it wraps.
 
-thinwindow never returns an `allow` decision, so it can't approve a tool call
+ThinWindow never returns an `allow` decision, so it can't approve a tool call
 your permission settings would have prompted for. If a hook fails for any
 reason, the tool call proceeds.
 
@@ -161,6 +161,10 @@ without a request re-writes the whole context at the cache-write price.
   `CLAUDE_CODE_SESSION_ATTENDED=1` for hooks in terminal, IDE and desktop
   sessions and `0` in `-p`, SDK and background ones. That variable isn't
   documented; without it, nothing is held.
+- Scheduled tasks, a `/loop` that fires at intervals over an hour, and the
+  usage-limit auto-continue send their prompts as plain text, and the hook
+  input doesn't say where a prompt came from. So one of them can be held, once
+  per idle gap.
 
 ## State and logs
 
@@ -169,11 +173,14 @@ without a request re-writes the whole context at the cache-write price.
   cold-resume notice was shown for. The same folder holds one
   `setup-<project hash>.mark` file per project, with when the setup-cost
   notice was last shown. Files older than a week are removed at the start of
-  a new session.
-- `thinwindow-run` logs go to `<os temp dir>/thinwindow/logs/` and are removed
-  after a week.
+  the next session.
+- `thinwindow-run` logs go to `<os temp dir>/thinwindow/logs/`. Logs older than
+  a week are removed the next time `thinwindow-run` runs.
 - Session briefs live in `<plugin data dir>/briefs/<project hash>/<session id>.json`
-  (`~/.claude/plugins/data/` holds the plugin data dir), and are removed after
-  a week, at the start of a new session. `/thinwindow:resume` reads the newest
-  one under 48 hours old for the current project. Nothing is written inside your repository, and nothing is
-  sent anywhere.
+  (`~/.claude/plugins/data/` holds the plugin data dir). Briefs older than a
+  week are removed at the start of the next session. `/thinwindow:resume` reads
+  the newest one under 48 hours old for the current project.
+- Claude Code deletes the plugin data dir when you uninstall the plugin. If you
+  remove ThinWindow from your account in the Claude desktop app, the folder can
+  stay: delete `~/.claude/plugins/data/thinwindow-*` to remove the briefs.
+- Nothing is written inside your repository, and nothing is sent anywhere.
