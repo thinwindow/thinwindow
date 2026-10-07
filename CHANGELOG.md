@@ -6,7 +6,107 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-06
+
+ThinWindow now covers the whole session:
+
+- what every request carries;
+- the context window while you work;
+- coming back to a session after its prompt cache expired;
+- where your sessions' context went.
+
+Nothing that worked in 0.3.0 stops working, and each new part has its own off
+switch.
+
+### Added
+
+- `/thinwindow:report`: where your sessions' context cost went, from your own
+  transcripts, as aggregate numbers. `--json` prints a summary you can choose
+  to share. The skill is user-invoked only, so it adds nothing to the skill
+  listing.
+- `/thinwindow:resume`: after `/clear`, start from a brief of your last session
+  in this project, at most 600 characters, instead of re-paying its whole
+  context. A Stop hook keeps the brief at every turn without calling a model;
+  it is stored in the plugin's data folder, removed once it's 7 days old, and turned
+  off with `"briefs": false`.
+- `/thinwindow:brief`: Claude writes a handoff of the session while the cache
+  is still warm, kept in the brief.
+- Cold-resume notice: when you come back to a session idle for over an hour
+  with at least 100k tokens of context, ThinWindow holds your first prompt
+  once and shows what continuing re-writes (tokens, and US$ at the model's
+  list price) next to a fresh start with `/clear` and `/thinwindow:resume`.
+  Send it again to continue. Commands and prompts in `-p`, SDK or background
+  sessions are never held. `"coldResumeNotice": false` turns it off, and
+  `"coldResumeMinTokens"` sets the threshold. `/thinwindow:report` counts the
+  notices and the prompts sent again after one.
+- Setup-cost notice: after a reply, when a session's first request is at
+  least 40k tokens, ThinWindow shows you one line with what every request in
+  the session starts at and its largest parts (skill listing, deferred tools,
+  MCP instructions, CLAUDE.md files), pointing to `/context`. At most once a
+  week per project, never in `-p`, SDK or background sessions, and never sent
+  to Claude. `"setupNotice": false` turns it off, and
+  `"setupNoticeMinTokens"` sets the threshold.
+- `profiles/thinwindow-minimal.md`, an opt-in agent profile you copy to
+  `~/.claude/agents/`: `claude --agent thinwindow-minimal` keeps Claude
+  Code's system prompt and your MCP tools, and removes the built-in tools the
+  maintainer's sessions used in under 0.5% of tool calls, the Skill tool's
+  listing with them. Typed skill commands still run. It isn't part of the
+  plugin, so it costs nothing to sessions that don't use it. Probe:
+  `bench/results/experiments/setup.md`.
+
+### Changed
+
+- The rules say the same in fewer words: 1,347 characters, down from 1,439,
+  with no rule removed. `bench/compliance.mjs` checked each rule against the
+  recorded benchmark runs.
+  - `git diff --stat` and `git log -n 10 --oneline` are now examples of
+    capped command output.
+  - The first "Write less" rule keeps its three checks in fewer words.
+  - The opening line says that what the agent writes is re-sent too.
+  - "Read less" and "Say less" are unchanged.
+- The READMEs (English, Spanish and Portuguese) and the site describe the four
+  moments of a session, where ThinWindow works and how it's checked. They quote
+  no benchmark numbers, and the site no longer publishes the charts or
+  `report.json`. The 0.3.0 tables, charts and
+  `docs/WHERE-THE-TOKENS-GO.md` remain in the `v0.3.0` tag.
+- How ThinWindow is measured (#28), in `bench/README.md`:
+  - unit tests;
+  - replays of recorded sessions;
+  - a few targeted runs;
+  - one pre-registered validation per release.
+
+  The launch target of 0.1–0.3, 25% fewer total tokens per task, is retired.
+- The benchmark harness (#37): one recorded environment for both conditions,
+  hierarchical intervals with the smallest detectable effect, resume chains,
+  and kept transcripts. Bench only, no effect on users.
+- Benchmark rows and kept transcripts carry no machine paths, user name or
+  account label. No number changed.
+- `bench/results/report.json` adds a note: 0.4.0 checked Cowork and the Claude
+  apps instead of measuring savings there. Its other fields are unchanged.
+
+### Fixed
+
+- `/thinwindow:report` shows "format not recognized", or its usage for an
+  unknown argument, instead of failing: a failing command aborts the skill.
+
+### Measured
+
+- Before release, 0.4.0 was validated against Claude Code without the plugin,
+  with its method and pass rules posted before the first run (#38). Every
+  benchmark task and every resume chain completed with ThinWindow, as they did
+  without it. Results and raw rows: `bench/results/0.4.0/`.
+
 ## [0.3.0] - 2026-10-02
+
+0.3.0 was measured, packaged and tagged at three different commits:
+
+- measured: `6546385`, the commit every 0.3.0 benchmark run used;
+- packaged: `f6d074a`, from which `scripts/build-directory.mjs` built the
+  `directory` branch at `a7cb8ce`, the commit the plugin directory installs;
+- tagged: `v0.3.0`, at `b874cf1`.
+
+The hooks, the skill and the rules are the same at all three; only the
+manifest's description differs.
 
 ### Measured
 
@@ -33,10 +133,15 @@ project uses [Semantic Versioning](https://semver.org).
   (`traceTails`), so a repeated attempt can be read from the result files
   (#7).
 - `scripts/build-directory.mjs` builds the `directory` branch the plugin
-  directory tracks: only the plugin's files, with the README's links pointing
-  at `main`.
+  directory tracks: only the plugin's files, with the README's links and
+  images pinned to the commit it packages.
 - The manifest names a support page (the issues) and a privacy page (what
   ThinWindow reads, writes and sends).
+- The READMEs show how to install from the plugin directory and link a video
+  of the install from the Claude desktop app.
+- A README section on what changed between the 0.2.2 and 0.3.0 measurements
+  (Claude Code, the Sonnet model, the account environment) and what it did to
+  the numbers.
 
 ### Changed
 
@@ -59,6 +164,9 @@ project uses [Semantic Versioning](https://semver.org).
   plugin directory."
 - The results, the site and `report.json` say every run was measured in
   Claude Code, not in Cowork or the Claude apps.
+- The tagline names Claude Code, Cowork and the Claude apps, the surfaces the
+  plugin directory lists ThinWindow for, and says the benchmark ran in Claude
+  Code. The Spanish README is written in the third person.
 - CI actions updated (#22–#26).
 
 ### Fixed
