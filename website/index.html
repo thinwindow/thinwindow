@@ -200,6 +200,7 @@
       <section id="rules" aria-labelledby="rules-h">
         <h2 id="rules-h"><span class="num">04</span>The rules</h2>
         <p>This is the complete text loaded into the agent's context, from <code>rules/thinwindow.md</code>. The same block is copied into the Agent Skill and the <code>AGENTS.md</code> snippet by <code>scripts/sync-rules.mjs</code>, and CI checks that the copies stay in sync.</p>
+<!-- rules:start (generated from rules/thinwindow.md by scripts/sync-rules.mjs; edit the source, not this block) -->
 <pre><code># thinwindow: spend fewer tokens
 
 Everything you read or write stays in context and is re-sent on every later turn. Read, write and say only what the task needs.
@@ -223,6 +224,7 @@ Say less
 - Don't narrate between tool calls; just make the next call.
 - End with at most three lines: what changed and where. No preamble, no restating the task, no step-by-step recap unless asked.
 - Cite `file:line` instead of pasting code back.</code></pre>
+<!-- rules:end -->
         <p class="muted small">"Read less" and "Print less" target the large, repeatedly re-sent part of the bill. "Write less" and "Say less" target output, the small part. The rules are tuned against the benchmark: a proposed rule is kept only if it measurably helps, and an attempt to add explicit "use fewer turns" rules was reverted after it made Sonnet 5 worse.</p>
       </section>
 

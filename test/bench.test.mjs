@@ -16,7 +16,7 @@ import { compliance, lastLine, loadRuns, noisy, reads } from '../bench/complianc
 import { listTaskIds, loadTasks, repoLabel } from '../bench/lib/tasks.mjs';
 import { UsageError, estimateCost, parseCli, planRuns, runBench } from '../bench/run.mjs';
 import { fmtPct, fmtTokens, markdownReport, summarize, svgChart } from '../bench/report.mjs';
-import { buildReport, costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, resultsBlock, staleRanges, tokenMix } from '../bench/docs.mjs';
+import { buildReport, costMix, headroom, modelLabel, outOfDate as benchDocsOutOfDate, tokenMix } from '../bench/docs.mjs';
 import { tempDir } from './helpers.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -490,12 +490,10 @@ test('modelLabel reads the family and version out of a model id', () => {
   assert.equal(modelLabel('claude-sonnet-5-5').label, 'Sonnet 5.5');
 });
 
-test('the results say where the runs were measured', () => {
+test('report.json says where the runs were measured, and that 0.4.0 measured no savings elsewhere', () => {
   const r = buildReport();
-  assert.match(resultsBlock(r, 'en'), /measured in Claude Code, not in Cowork or the Claude apps/);
-  assert.match(resultsBlock(r, 'es'), /se midieron en Claude Code, no en Cowork/);
-  assert.match(resultsBlock(r, 'pt-BR'), /medidas no Claude Code, não no Cowork/);
   assert.deepEqual(r.surfaces.measured, ['Claude Code']);
+  assert.match(r.note, /no savings were measured outside Claude Code/);
 });
 
 test('tokenMix is the share of billed tokens by kind', () => {
@@ -517,7 +515,7 @@ test('costMix weights each kind of token by its list price', () => {
   assert.equal(costMix([{ ...run, modelResolved: 'mystery' }]), null);
 });
 
-test('the README blocks and report.json match the committed runs', () => {
+test('report.json matches the committed runs', () => {
   // The same check CI runs: every published number comes from bench/results/.
   assert.deepEqual(benchDocsOutOfDate(), []);
 });
@@ -534,10 +532,6 @@ test('headroom clamps every regressing task to its baseline', () => {
   const h = headroom([t('saves', 100, 80), t('regresses', 100, 120)]);
   assert.equal(h.regressingTasks, 1);
   assert.equal(h.tokensDeltaNoRegressions, -10);
-});
-
-test('the website blocks and the prose ranges match the committed runs', () => {
-  assert.deepEqual(staleRanges(), []);
 });
 
 test('bootstrapDelta is seeded and brackets the change of a sum', () => {
