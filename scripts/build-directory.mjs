@@ -2,7 +2,8 @@
 // Builds the `directory` branch: only the files the plugin directory needs,
 // taken from HEAD, in a worktree next to this checkout. The directory's
 // scanner reads everything on the branch it tracks, so bench/, the website,
-// images and CLAUDE.md stay out. Relative links and images in the Markdown
+// images and CLAUDE.md stay out. The one image is the plugin's icon, which the
+// directory shows on the listing (its portal asks for .claude-plugin/icon.svg). Relative links and images in the Markdown
 // files point on GitHub at the commit the branch is built from, since their
 // targets are not on this branch and main can lag behind that commit.
 //
@@ -21,7 +22,8 @@ const REPO = 'https://github.com/thinwindow/thinwindow';
 const RAW = 'https://raw.githubusercontent.com/thinwindow/thinwindow';
 
 // The closed list (PLAN §3). Adding a path here is a decision, not a fix.
-export const PATHS = ['.claude-plugin/plugin.json', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md'];
+export const PATHS = ['.claude-plugin/plugin.json', '.claude-plugin/icon.svg', 'hooks', 'skills', 'rules', 'README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md'];
+export const ICON = '.claude-plugin/icon.svg';
 export const LIMITS = { files: 512, bytes: 256 * 1024 };
 const IMAGE = /\.(svg|png|jpe?g|gif|webp|ico)$/i;
 
@@ -60,7 +62,7 @@ export function treeProblems(dir) {
   for (const f of files) {
     const buf = readFileSync(join(dir, f));
     if (buf.length > LIMITS.bytes) problems.push(`${f}: ${buf.length} bytes (limit ${LIMITS.bytes})`);
-    if (IMAGE.test(f) || buf.includes(0)) problems.push(`${f}: an image or a binary file`);
+    if (f !== ICON && (IMAGE.test(f) || buf.includes(0))) problems.push(`${f}: an image or a binary file`);
   }
   return { files, problems };
 }
