@@ -496,19 +496,19 @@ Where your Claude Code sessions' context cost went, from the transcripts on
 this machine. Prints aggregate numbers only and sends nothing. --json prints a
 short summary you can choose to share.`;
 
-export async function main(argv = process.argv.slice(2), { stdout = process.stdout, stderr = process.stderr } = {}) {
-  if (argv.includes('-h') || argv.includes('--help')) {
+// Always exits 0, with a message: /thinwindow:report runs this through an
+// injected command, and a command that fails aborts the whole skill, so the
+// user would see neither the usage nor "format not recognized".
+// https://code.claude.com/docs/en/skills#inject-dynamic-context
+export async function main(argv = process.argv.slice(2), { stdout = process.stdout } = {}) {
+  const unknown = argv.filter((a) => a !== '--json');
+  if (unknown.length) {
     stdout.write(`${USAGE}\n`);
     return 0;
   }
-  const unknown = argv.filter((a) => a !== '--json');
-  if (unknown.length) {
-    stderr.write(`${USAGE}\n`);
-    return 2;
-  }
   const r = await buildReport();
   stdout.write(argv.includes('--json') ? formatJson(r) : formatText(r));
-  return r.error === 'format-not-recognized' ? 1 : 0;
+  return 0;
 }
 
 function isEntry() {
