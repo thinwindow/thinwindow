@@ -69,7 +69,7 @@ const realpath = (p) => {
 // turning each "/" into "-". On macOS /var and /tmp are links into /private,
 // so a path can also arrive with that prefix in front of the replaced part.
 const machinePaths = (tmp) => [
-  [new RegExp(`/private(?=${tmp.replace(/[$<>]/g, '\\$&')}|<clone>)`, 'g'), ''],
+  [/\/private(?=\$TMPDIR|<tmp>|<clone>)/g, ''],
   [/\/(?:private\/)?var\/folders\/[\w+-]*(?:\/[\w+-]*(?:\/T\b)?)?/g, tmp],
   [/\/(?:private\/)?tmp\/claude-\d+/g, tmp],
   [/-(?:private-)?var-folders-[\w+]+-[\w+]+-T(?=-)/g, `-${tmp.replace(/^\$/, '')}`],
