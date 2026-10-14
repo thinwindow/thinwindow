@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="#instalación"><b>Instalación</b></a> · <a href="#qué-hace-thinwindow">Qué hace</a> · <a href="#dónde-funciona">Dónde funciona</a> · <a href="#qué-lee-escribe-y-envía">Privacidad</a> · <a href="https://thinwindow.github.io/thinwindow/">Sitio de documentación</a> (en inglés)
+  <a href="#instalación"><b>Instalación</b></a> · <a href="#qué-hace-thinwindow">Qué hace</a> · <a href="#dónde-funciona">Dónde funciona</a> · <a href="#qué-lee-escribe-y-envía">Privacidad</a> · <a href="https://thinwindow.github.io/">Sitio de documentación</a> (en inglés)
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://thinwindow.github.io/thinwindow/"><img src="assets/cover.png" alt="El sitio de documentación de ThinWindow" width="720"></a>
+  <a href="https://thinwindow.github.io/"><img src="assets/cover.png" alt="El sitio de documentación de ThinWindow" width="720"></a>
 </p>
 
 ## Por qué lo que se paga es el contexto

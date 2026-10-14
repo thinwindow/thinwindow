@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="#instalação"><b>Instalação</b></a> · <a href="#o-que-o-thinwindow-faz">O que faz</a> · <a href="#onde-funciona">Onde funciona</a> · <a href="#o-que-ele-lê-escreve-e-envia">Privacidade</a> · <a href="https://thinwindow.github.io/thinwindow/">Site de documentação</a> (em inglês)
+  <a href="#instalação"><b>Instalação</b></a> · <a href="#o-que-o-thinwindow-faz">O que faz</a> · <a href="#onde-funciona">Onde funciona</a> · <a href="#o-que-ele-lê-escreve-e-envia">Privacidade</a> · <a href="https://thinwindow.github.io/">Site de documentação</a> (em inglês)
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://thinwindow.github.io/thinwindow/"><img src="assets/cover.png" alt="O site de documentação do ThinWindow" width="720"></a>
+  <a href="https://thinwindow.github.io/"><img src="assets/cover.png" alt="O site de documentação do ThinWindow" width="720"></a>
 </p>
 
 ## Por que o contexto é a conta
