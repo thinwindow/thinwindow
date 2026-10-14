@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="#install"><b>Install</b></a> · <a href="#what-thinwindow-does">What it does</a> · <a href="#where-it-works">Where it works</a> · <a href="#what-it-reads-writes-and-sends">Privacy</a> · <a href="https://thinwindow.github.io/thinwindow/">Docs site</a>
+  <a href="#install"><b>Install</b></a> · <a href="#what-thinwindow-does">What it does</a> · <a href="#where-it-works">Where it works</a> · <a href="#what-it-reads-writes-and-sends">Privacy</a> · <a href="https://thinwindow.github.io/">Docs site</a>
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://thinwindow.github.io/thinwindow/"><img src="assets/cover.png" alt="The ThinWindow documentation site" width="720"></a>
+  <a href="https://thinwindow.github.io/"><img src="assets/cover.png" alt="The ThinWindow documentation site" width="720"></a>
 </p>
 
 ## Why context is the bill
