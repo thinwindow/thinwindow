@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const RULES = join(ROOT, 'rules', 'thinwindow.md');
-export const TARGETS = [join(ROOT, 'skills', 'thinwindow', 'SKILL.md'), join(ROOT, 'adapters', 'AGENTS.md'), join(ROOT, 'website', 'index.html')];
+export const TARGETS = [join(ROOT, 'skills', 'thinwindow', 'SKILL.md'), join(ROOT, 'adapters', 'AGENTS.md')];
 
 const BLOCK = /(<!-- rules:start[^>]*-->\n)[\s\S]*?(<!-- rules:end -->)/;
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
