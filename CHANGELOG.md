@@ -6,6 +6,12 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-14
+
+### Changed
+
+- The docs site moved to https://thinwindow.github.io/.
+
 ## [0.4.0] - 2026-10-06
 
 ThinWindow now covers the whole session:
@@ -342,7 +348,9 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/thinwindow/thinwindow/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/thinwindow/thinwindow/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/thinwindow/thinwindow/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/thinwindow/thinwindow/compare/v0.2.0...v0.2.1
