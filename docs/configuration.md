@@ -13,6 +13,8 @@ directory. Values in the project file override the home file; lists
   "briefs": true,
   "coldResumeNotice": true,
   "coldResumeMinTokens": 100000,
+  "setupNotice": true,
+  "setupNoticeMinTokens": 40000,
   "noisyCommands": ["^just (build|test)\\b"],
   "allowlist": {
     "paths": ["docs/**", "*.lock"],
@@ -42,7 +44,7 @@ key with the wrong type keeps its default.
 
 | Variable | Effect |
 | --- | --- |
-| `THINWINDOW=off` | Turns ThinWindow off, whatever the config files say. `thinwindow-run` then runs the command with its output untouched. |
+| `THINWINDOW=off` | `off`, `0`, `false` or `disabled` turn ThinWindow off, whatever the config files say. `thinwindow-run` then runs the command with its output untouched. |
 | `THINWINDOW_DEBUG=1` | The hooks write each decision to stderr, which Claude Code keeps in its debug log (`claude --debug`, or `claude --debug-file <path>`). |
 
 ## What the hooks do
@@ -97,7 +99,8 @@ context.
 **PreToolUse `Grep`**
 
 - A content search (`output_mode: "content"`) with no `head_limit` gets
-  `head_limit: 100`. File-list and count searches are left alone.
+  `head_limit: 100`. File-list and count searches are left alone. With
+  `rewrite` off, the cap is not applied and the search runs as sent.
 
 **`thinwindow-run`** keeps the full log in the temp dir and prints the exit
 code and duration, then the last 10 lines when the command succeeded, or the

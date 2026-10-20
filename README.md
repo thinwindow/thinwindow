@@ -257,10 +257,12 @@ checked with a different method
   plugin, on real open-source repositories. Its method and pass rules were
   posted before the first run
   ([#38](https://github.com/thinwindow/thinwindow/issues/38)).
-  - Every benchmark task and every resume chain completed with ThinWindow, as
-    they did without it.
+  - On Sonnet 5.5, every benchmark task and every resume chain completed with
+    ThinWindow, as they did without it.
   - When the second task of a chain started fresh after the prompt cache
-    expired, it cost less per completed chain than continuing.
+    expired, it cost less per completed chain than continuing. The expiry was
+    priced in from each run's token counts, not waited out; with a warm cache,
+    continuing cost less.
 
 The method, the raw rows and the agents' scrubbed transcripts are public:
 [`bench/README.md`](bench/README.md).
@@ -377,8 +379,8 @@ recognized" instead of printing wrong numbers.
 
 **Does it make Claude worse at the task?**
 
-- In 0.4.0's validation, every benchmark task and resume chain completed with
-  ThinWindow as often as without it.
+- In 0.4.0's validation on Sonnet 5.5, every benchmark task and resume chain
+  completed with ThinWindow as often as without it.
 - A blind review of final answers found them correct and complete in both
   conditions.
 - Every guard fails open.

@@ -6,6 +6,25 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Changed
+
+- The plugin manifest's homepage points to https://thinwindow.github.io/.
+- The READMEs name the model the 0.4.0 validation ran on (Sonnet 5.5), and say
+  that the expired cache in the resume chains was priced in from token counts,
+  not waited out.
+- `SECURITY.md` lists the four hook events and everything they read and write,
+  including transcripts and briefs.
+- `docs/configuration.md` lists every value that turns ThinWindow off, shows
+  the setup-notice keys in its example, and says that `"rewrite": false`
+  leaves Grep searches uncapped.
+- CI uses `actions/checkout` v7 and `actions/stale` v11.
+
+### Fixed
+
+- `scripts/check.mjs` reads a skill's `metadata.internal` flag with a line
+  scan instead of a regular expression that could backtrack exponentially
+  (CodeQL `js/redos`).
+
 ## [0.4.1] - 2026-10-14
 
 ### Changed

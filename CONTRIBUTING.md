@@ -45,7 +45,7 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
   ```
 - `rules/thinwindow.md` stays at or under ~500 tokens (2,000 characters); CI
   enforces it. After editing it, run `node scripts/sync-rules.mjs` so the
-  copies in `SKILL.md`, `adapters/AGENTS.md` and the site match.
+  copies in `SKILL.md` and `adapters/AGENTS.md` match.
 - Every number in the docs comes from `bench/` results. No estimates,
   testimonials or star counts.
 - Hooks fail open: any error must let the tool call proceed. Hooks never

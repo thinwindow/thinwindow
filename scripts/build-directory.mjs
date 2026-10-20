@@ -3,7 +3,8 @@
 // taken from HEAD, in a worktree next to this checkout. The directory's
 // scanner reads everything on the branch it tracks, so bench/, the website,
 // images and CLAUDE.md stay out. The one image is the plugin's icon, which the
-// directory shows on the listing (its portal asks for .claude-plugin/icon.svg). Relative links and images in the Markdown
+// directory shows on the listing (its portal asks for .claude-plugin/icon.svg).
+// Relative links and images in the Markdown
 // files point on GitHub at the commit the branch is built from, since their
 // targets are not on this branch and main can lag behind that commit.
 //

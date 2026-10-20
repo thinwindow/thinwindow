@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Copies rules/thinwindow.md (the single source of truth) into the files that
-// must carry the rules inline: the Agent Skill, the AGENTS.md adapter and the
-// site, which shows them in an HTML <pre> block.
+// must carry the rules inline: the Agent Skill and the AGENTS.md adapter.
 // `node scripts/sync-rules.mjs --check` exits 1 when a copy is out of date.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
