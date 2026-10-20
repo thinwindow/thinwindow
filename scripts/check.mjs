@@ -29,7 +29,6 @@ const SKILL_FIELDS = new Set(['name', 'description', 'license', 'compatibility',
 // Claude Code-only fields, accepted in skills that `npx skills` hides
 // (`metadata:` with `internal: true`), so other agents never install them.
 const CLAUDE_CODE_SKILL_FIELDS = new Set(['disable-model-invocation']);
-const INTERNAL = /^metadata:[ \t]*\n(?:[ \t]+.*\n)*?[ \t]+internal:[ \t]*true[ \t]*$/m;
 const HOOK_EVENTS = new Set([
   'SessionStart', 'Setup', 'InstructionsLoaded', 'UserPromptSubmit', 'UserPromptExpansion', 'MessageDisplay',
   'PreToolUse', 'PermissionRequest', 'PostToolUse', 'PostToolUseFailure', 'PostToolBatch', 'PermissionDenied',
@@ -156,11 +155,24 @@ export function parseFrontmatter(text) {
 
 // Agent Skills: name is 1-64 lowercase letters, digits and hyphens and
 // matches its directory; description is 1-1024 characters.
+// True when the frontmatter has a `metadata:` block with `internal: true`
+// among its indented lines. A line scan, so no regex can backtrack on it.
+function isInternal(frontmatter) {
+  const lines = frontmatter.split('\n');
+  const start = lines.findIndex((l) => /^metadata:[ \t]*$/.test(l));
+  if (start < 0) return false;
+  for (const line of lines.slice(start + 1)) {
+    if (!/^[ \t]/.test(line)) break;
+    if (/^[ \t]+internal:[ \t]*true[ \t]*$/.test(line)) return true;
+  }
+  return false;
+}
+
 export function validateSkill(text, dirName) {
   const fm = parseFrontmatter(text);
   if (!fm) return ['missing YAML frontmatter'];
   const e = [];
-  const internal = INTERNAL.test(/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)[1].replace(/\r/g, ''));
+  const internal = isInternal(/^---\r?\n([\s\S]*?)\r?\n---/.exec(text)[1].replace(/\r/g, ''));
   for (const k of Object.keys(fm)) {
     if (SKILL_FIELDS.has(k) || (internal && CLAUDE_CODE_SKILL_FIELDS.has(k))) continue;
     e.push(`frontmatter field ${k} is not in the Agent Skills standard`);
