@@ -171,7 +171,7 @@ test('the directory branch points relative links at main', () => {
   const isDir = (p) => p === 'bench/results';
   const md = [
     '![chart](bench/results/chart.svg) [raw](bench/results) [docs](docs/a.md#x "t") [top](#install) [x](https://e.com/a)',
-    '<a href="README.es.md">es</a> <img src="assets/i.png">',
+    '<a href="CONTRIBUTING.md">contributing</a> <img src="assets/i.png">',
   ].join('\n');
   assert.equal(
     absoluteLinks(md, 'README.md', isDir),
@@ -179,7 +179,7 @@ test('the directory branch points relative links at main', () => {
       '![chart](https://raw.githubusercontent.com/thinwindow/thinwindow/main/bench/results/chart.svg)' +
         ' [raw](https://github.com/thinwindow/thinwindow/tree/main/bench/results)' +
         ' [docs](https://github.com/thinwindow/thinwindow/blob/main/docs/a.md#x "t") [top](#install) [x](https://e.com/a)',
-      '<a href="https://github.com/thinwindow/thinwindow/blob/main/README.es.md">es</a>' +
+      '<a href="https://github.com/thinwindow/thinwindow/blob/main/CONTRIBUTING.md">contributing</a>' +
         ' <img src="https://raw.githubusercontent.com/thinwindow/thinwindow/main/assets/i.png">',
     ].join('\n'),
   );

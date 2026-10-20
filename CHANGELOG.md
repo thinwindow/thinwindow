@@ -9,7 +9,7 @@ project uses [Semantic Versioning](https://semver.org).
 ### Changed
 
 - The plugin manifest's homepage points to https://thinwindow.github.io/.
-- The READMEs name the model the 0.4.0 validation ran on (Sonnet 5.5), and say
+- The README names the model the 0.4.0 validation ran on (Sonnet 5.5), and says
   that the expired cache in the resume chains was priced in from token counts,
   not waited out.
 - `SECURITY.md` lists the four hook events and everything they read and write,
@@ -24,6 +24,12 @@ project uses [Semantic Versioning](https://semver.org).
 - `scripts/check.mjs` reads a skill's `metadata.internal` flag with a line
   scan instead of a regular expression that could backtrack exponentially
   (CodeQL `js/redos`).
+
+### Removed
+
+- The Spanish and Portuguese READMEs. The docs are in English only, and the two
+  files were also removed from the repository's history, so the commit ids of
+  every release from 0.2.0 on changed.
 
 ## [0.4.1] - 2026-10-14
 
@@ -125,17 +131,18 @@ switch.
 
 0.3.0 was measured, packaged and tagged at three different commits:
 
-- measured: `6546385`, the commit every 0.3.0 benchmark run used;
-- packaged: `f6d074a`, from which `scripts/build-directory.mjs` built the
+- measured: `f4a8850` (recorded as `6546385` in the bench rows, its id before
+  the history rewrite), the commit every 0.3.0 benchmark run used;
+- packaged: `ca5a8b9`, from which `scripts/build-directory.mjs` built the
   `directory` branch at `a7cb8ce`, the commit the plugin directory installs;
-- tagged: `v0.3.0`, at `b874cf1`.
+- tagged: `v0.3.0`, at `b42729a`.
 
 The hooks, the skill and the rules are the same at all three; only the
 manifest's description differs.
 
 ### Measured
 
-- 128 runs at `6546385` with Claude Code 2.1.287: Opus 5.5 and Sonnet 5.5
+- 128 runs at `f4a8850` with Claude Code 2.1.287: Opus 5.5 and Sonnet 5.5
   with three runs per task and condition, Haiku 4.5 with two. Against the runs
   without ThinWindow: 7–11% lower cost and 3–6% fewer tokens on runs that
   passed their hidden check, with the same success rate on all three models.

@@ -196,8 +196,7 @@ How ThinWindow is measured from 0.4.0 is "Measurement (0.4.0)" below and
   `cinemagoria/.github`), dependabot for actions, and a stale workflow (60 days).
 - `CONTRIBUTING.md` (a new rule must come with a benchmark delta), `SECURITY.md`,
   `CODE_OF_CONDUCT.md` (Contributor Covenant), `CHANGELOG.md`, `LICENSE` (MIT).
-- `README.md`, `README.es.md` and `README.pt-BR.md` carry the same content in
-  three languages: what ThinWindow does at each moment of a session, install,
+- `README.md`, in English only, covers what ThinWindow does at each moment of a session, install,
   where it works, how it's checked, config, what it reads, writes and sends,
   and a FAQ. They quote no benchmark numbers; the measurements live in
   `bench/`.

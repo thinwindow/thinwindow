@@ -17,10 +17,6 @@
 </p>
 
 <p align="center">
-  <b>English</b> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português</a>
-</p>
-
-<p align="center">
   <a href="https://thinwindow.github.io/"><img src="assets/cover.png" alt="The ThinWindow documentation site" width="720"></a>
 </p>
 
