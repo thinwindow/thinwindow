@@ -317,6 +317,21 @@ function findScopeIssues(parsed, ctx) {
       while (k < cw.length && cw[k].text.startsWith('-')) k += cw[k].text === '-C' || cw[k].text === '-c' ? 2 : 1;
       const note = `thinwindow ran \`${text}\` as git diff --stat to show what changed first. Run git diff -- <path> for the files you need.`;
       hits.push({ text, reason, wrappers, edits: [{ at: cw[k].end, insert: ' --stat' }], note });
+      continue;
+    }
+    if (argv.some((a) => /^-(exec|execdir|ok|okdir)$/.test(a))) continue;
+    reason = checkGitLog(argv);
+    if (reason) {
+      let k = 1;
+      while (k < cw.length && cw[k].text !== 'log') k++;
+      const note = `thinwindow ran \`${text}\` with -n 20, the last 20 commits. Add a range or --since for others.`;
+      hits.push({ text, reason, wrappers, edits: [{ at: cw[k].end, insert: ' -n 20' }], note });
+      continue;
+    }
+    reason = checkListing(argv, here);
+    if (reason) {
+      const note = `thinwindow limited \`${text}\` to its first ${SEARCH_CAP_LINES} lines. Narrow it (-maxdepth, a subdirectory, a name pattern) if you need more.`;
+      hits.push({ text, reason, wrappers, edits: [{ at: stage.end, insert: ` | head -n ${SEARCH_CAP_LINES}` }], note });
     }
   }
   return hits;
@@ -425,12 +440,17 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
     for (const stage of p.stages) {
       const argv = words(stage);
       if (argv.length === 0) continue;
-      const reason =
-        (PRINTERS.has(baseName(argv[0])) && checkPrinter(argv, ctx)) || checkGitLog(argv) || checkListing(argv, ctx);
+      const printer = PRINTERS.has(baseName(argv[0])) && checkPrinter(argv, ctx);
+      const reason = printer || checkGitLog(argv) || checkListing(argv, ctx);
       if (!reason) continue;
-      // find -exec runs a command per file, which may print nothing: a soft
-      // block. A retry lets this find through and checks the rest.
-      if (baseName(argv[0]) === 'find' && argv.some((a) => /^-(exec|execdir|ok|okdir)$/.test(a))) {
+      const exec = baseName(argv[0]) === 'find' && argv.some((a) => /^-(exec|execdir|ok|okdir)$/.test(a));
+      // In rewrite mode, an unbounded listing or git log that starts a
+      // pipeline is capped in place below (findScopeIssues) instead of refused.
+      if (!printer && !exec && config.rewrite && stage === p.stages[0]) continue;
+      // find -exec runs a command per file, which may print nothing, and
+      // cutting its output short could stop it halfway: a soft block. A retry
+      // lets this find through and checks the rest.
+      if (exec) {
         if (retried || consumeDenied(state, key)) {
           retried = true;
           continue;

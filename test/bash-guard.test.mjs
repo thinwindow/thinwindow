@@ -50,7 +50,7 @@ const DENIED_ANTI_PATTERNS = [
 
 for (const cmd of DENIED_ANTI_PATTERNS) {
   test(`denies anti-pattern: ${cmd}`, () => {
-    const r = decide(cmd);
+    const r = decide(cmd, { config: soft() });
     assert.equal(r.action, 'deny', JSON.stringify(r));
     assert.equal(r.kind, 'anti-pattern');
     assert.match(r.reason, /^thinwindow: /);
@@ -108,7 +108,7 @@ test('a ~ inside a path is literal (Windows short names)', () => {
 
 test('find . from a subdirectory of the repo is not "from the root"', () => {
   assert.equal(decide('find . -name "*.ts"', { cwd: join(proj.root, 'packages', 'app') }).action, 'allow');
-  assert.equal(decide('find ../.. -name "*.ts"', { cwd: join(proj.root, 'packages', 'app') }).action, 'deny');
+  assert.equal(decide('find ../.. -name "*.ts"', { cwd: join(proj.root, 'packages', 'app') }).action, 'rewrite');
 });
 
 const NOISY = [
@@ -195,8 +195,28 @@ test('noisy commands run as written by default, so permission rules still match 
 
 test('anti-pattern denials are not bypassed by retrying', () => {
   const state = { v: 1, agents: {}, denied: [] };
-  assert.equal(decide('git log', { state }).action, 'deny');
-  assert.equal(decide('git log', { state }).action, 'deny');
+  assert.equal(decide('cat big.txt', { state }).action, 'deny');
+  assert.equal(decide('cat big.txt', { state }).action, 'deny');
+});
+
+test('in rewrite mode an unbounded listing or git log is capped in place, not refused', () => {
+  const head = ' | head -n 100';
+  for (const [cmd, out] of [
+    ['find . -name "*.ts"', `find . -name "*.ts"${head}`],
+    [`find ${proj.root} -name grande.txt -not -path '*/node_modules/*' 2>/dev/null`, `find ${proj.root} -name grande.txt -not -path '*/node_modules/*' 2>/dev/null${head}`],
+    ['ls -R', `ls -R${head}`],
+    ['tree -a', `tree -a${head}`],
+    ['git log --oneline', 'git log -n 20 --oneline'],
+    ['git -C . log -p', 'git -C . log -n 20 -p'],
+    ['git log | cat', 'git log -n 20 | cat'],
+  ]) {
+    const r = decide(cmd);
+    assert.equal(r.action, 'rewrite', cmd);
+    assert.equal(r.command, out, cmd);
+    assert.match(r.context, /^thinwindow (limited|ran)/, cmd);
+  }
+  assert.equal(decide('cat big.txt').action, 'deny', 'a big cat is still refused');
+  assert.equal(decide('sudo find / -name x').action, 'deny', 'sudo is never rewritten');
 });
 
 test('RUN calls the skill runner with a quoted absolute path', () => {
@@ -416,15 +436,15 @@ test('each command is checked from the directory it runs in', () => {
   assert.equal(decide('cd src && grep -rn foo . && cd .. && grep -rn bar .').command, `cd src && grep -rn foo . && cd .. && grep${' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build'} -rn bar . | head -n 100`);
 });
 
-test('find -delete runs; find -exec is a soft block; a bare find from the root stays refused', () => {
+test('find -delete runs; find -exec is a soft block; a bare find from the root is capped', () => {
   assert.equal(decide("find . -name '*.tmp' -delete").action, 'allow');
   const state = { v: 1, agents: {}, denied: [] };
   const exec = decide("find . -name '*.js' -exec wc -l {} +", { state });
   assert.equal(exec.action, 'deny');
   assert.match(exec.reason, /repeat the exact same command/);
   assert.equal(decide("find . -name '*.js' -exec wc -l {} +", { state }).action, 'allow');
-  assert.equal(decide('find . -name x', { state }).action, 'deny');
-  assert.equal(decide('find . -name x', { state }).action, 'deny');
+  assert.equal(decide('find . -name x', { state }).action, 'rewrite');
+  assert.equal(decide('find . -name x', { state }).action, 'rewrite');
 });
 
 test('trimOutput cuts only when exit 0 means the noisy parts succeeded and printed it all', () => {
@@ -440,8 +460,8 @@ test('a retried find -exec still gets the rest of the command checked', () => {
   const cmd = "find . -name '*.orig' -exec rm {} \\; && git log";
   assert.equal(decide(cmd, { state }).action, 'deny');
   const again = decide(cmd, { state });
-  assert.equal(again.action, 'deny');
-  assert.match(again.reason, /git log without -n/);
+  assert.equal(again.action, 'rewrite');
+  assert.match(again.command, /&& git log -n 20$/);
   assert.equal(decide('grep -rn -T TODO test').action, 'allow', 'grep -T takes no value');
 });
 

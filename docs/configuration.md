@@ -76,11 +76,15 @@ context.
 
 - Denied outright, with a cheaper replacement: `cat` (or `bat`, `less`,
   `more`, `nl`, `tac`) of a file over `maxReadLines` lines, of a lockfile, or
-  of a minified or binary file; `git log` without `-n`, a range or `--since`;
-  `ls -R`; `tree` without `-L`; `find` from the repo root without
-  `-maxdepth` (with `-delete` it runs, since it prints nothing; with `-exec` or
-  `-execdir` it is a soft block). Output piped into `head`, `tail`, `grep`, `wc` and similar, or
-  redirected to a file, is considered capped and is not blocked.
+  of a minified or binary file.
+- Capped in place, with a note to the agent: `ls -R`, `tree` without `-L` and
+  `find` from the repo root without `-maxdepth` get `| head -n 100`; `git log`
+  without `-n`, a range or `--since` gets `-n 20`. With `rewrite` off they are
+  denied instead. `find -delete` runs as it is, since it prints nothing, and
+  `find -exec` or `-execdir` is a soft block, since cutting its output short
+  could stop it halfway.
+- Output piped into `head`, `tail`, `grep`, `wc` and similar, or redirected to
+  a file, is considered capped and is not blocked.
 - Noisy commands (install, build, test and lint for npm, pnpm, yarn, bun,
   pip, uv, poetry, pytest, cargo, go, gradle, maven, dotnet, make and more;
   see `DEFAULT_NOISY_COMMANDS` in `hooks/lib/config.mjs`) that aren't capped by
