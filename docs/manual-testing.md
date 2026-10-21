@@ -10,7 +10,7 @@ Requirements: Claude Code 2.1.139 or newer (hooks use the exec form with
 
 ## 1. Prepare a scratch project
 
-Use a throwaway git repo so nothing real is touched:
+Use a throwaway git repo so nothing real changes:
 
 ```sh
 mkdir -p /tmp/thinwindow-manual && cd /tmp/thinwindow-manual
@@ -43,8 +43,9 @@ tail -f /tmp/thinwindow-debug.txt | grep -i -E 'thinwindow|hook'
 
 ## 3. The hooks are registered
 
-Run `/hooks`. Expect four hooks with source `Plugin Hooks`: `SessionStart`,
-`UserPromptSubmit`, `Stop`, and `PreToolUse` (matcher `Read|Bash|Grep`).
+Run `/hooks`. Expect five hooks with source `Plugin Hooks`: `SessionStart`,
+`UserPromptSubmit`, `Stop`, `PreToolUse` (matcher `Read|Bash|Grep`) and
+`PostToolUse` (matcher `Bash`).
 
 ## 4. SessionStart injects the rules
 
@@ -84,13 +85,15 @@ replacement. `git log -n 3 --oneline` runs normally.
 
 Prompt: `Run exactly this command: npm test`
 
-Expect no denial: the command runs as
-`node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs' npm test`. The output is
-a summary: an `exit 0 · <duration> · <n> lines of output` header, the last 10
-lines (the last 40 and the error-like lines when the command fails), and
-`full log: <temp dir>/thinwindow/logs/...log`. The log file holds every line.
-Then prompt `Run exactly this command: thinwindow-run npm test`: the hook
-points it at the same path, so there is no *command not found*. A normal
+Expect no denial and no rewrite: the command runs as `npm test`, and a
+permission prompt appears only if your settings would prompt for `npm test`.
+When it succeeds with more than 10 lines, Claude gets a summary: `$ npm test`,
+an `exit 0 · <duration> · <n> lines of output` header, the last 10 lines, and
+`full log: <temp dir>/thinwindow/logs/...log`. The log file holds every line,
+and the debug log has a `Bash trim:` line. Make the test fail: its output comes
+back whole. Then prompt `Run exactly this command: thinwindow-run npm test`: the hook
+points it at `node '<plugin dir>/skills/thinwindow/scripts/thinwindow-run.mjs'`, so
+there is no *command not found*. A normal
 permission prompt still appears if your settings would prompt for it; allowing
 `Bash(node '*/skills/thinwindow/scripts/thinwindow-run.mjs' *)` in your
 permission settings silences it.
@@ -169,8 +172,10 @@ hour. Then type `hola`.
 
 - The prompt is held: three lines with the idle time, what continuing
   re-writes, and a fresh start.
-- In the desktop app it's an "A hook blocked your prompt" card.
 - Send it again: it goes through.
+- In the desktop app the prompt goes through at once, with one notice line
+  that says what it re-writes. With `"coldResumeMode": "block"` it is held
+  there too: note whether your text is still in the input box.
 - `/clear` isn't held either.
 
 ## 17. `/thinwindow:report`

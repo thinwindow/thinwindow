@@ -12,15 +12,17 @@ const STDIN_TIMEOUT_MS = 5000;
 // The only environment variables the hooks read: the off switch, the debug
 // switch, the project dir and plugin data dir Claude Code sets
 // (https://code.claude.com/docs/en/plugins-reference#environment-variables),
-// and whether a person is at the session, which Claude Code sets for hooks
-// without documenting it ("1" or "0", seen in 2.1.289).
-// Nothing else from the environment is read or passed around.
+// whether a person is at the session, which Claude Code sets for hooks
+// without documenting it ("1" or "0", seen in 2.1.289), and which app runs the
+// session, also undocumented ("claude-desktop" in the desktop app's Code tab,
+// seen in 2.1.299). Nothing else from the environment is read or passed around.
 export const HOOK_ENV = {
   THINWINDOW: process.env.THINWINDOW,
   THINWINDOW_DEBUG: process.env.THINWINDOW_DEBUG,
   CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
   CLAUDE_PLUGIN_DATA: process.env.CLAUDE_PLUGIN_DATA,
   CLAUDE_CODE_SESSION_ATTENDED: process.env.CLAUDE_CODE_SESSION_ATTENDED,
+  CLAUDE_CODE_ENTRYPOINT: process.env.CLAUDE_CODE_ENTRYPOINT,
 };
 
 export function debugEnabled(env = HOOK_ENV) {

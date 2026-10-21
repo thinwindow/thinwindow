@@ -45,7 +45,6 @@ test('the rules keep every starting rule from the spec', () => {
     'over ~300 lines',
     "Don't re-read",
     'Cap command output',
-    'thinwindow-run',
     'git diff --stat',
     'git log -n 10 --oneline',
     'Stop exploring',
@@ -157,7 +156,7 @@ test('labels.json defines every label the templates and the stale workflow use',
 });
 
 test('the hooks read only the environment variables they name', () => {
-  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR', 'CLAUDE_PLUGIN_DATA', 'CLAUDE_CODE_SESSION_ATTENDED']);
+  assert.deepEqual(Object.keys(HOOK_ENV), ['THINWINDOW', 'THINWINDOW_DEBUG', 'CLAUDE_PROJECT_DIR', 'CLAUDE_PLUGIN_DATA', 'CLAUDE_CODE_SESSION_ATTENDED', 'CLAUDE_CODE_ENTRYPOINT']);
   for (const dir of ['hooks', 'hooks/lib']) {
     for (const f of readdirSync(join(ROOT, dir)).filter((n) => n.endsWith('.mjs'))) {
       const reads = readFileSync(join(ROOT, dir, f), 'utf8').match(/process\.env(\.\w+)?/g) || [];

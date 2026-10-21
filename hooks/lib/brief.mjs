@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { closeSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, rmdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { loadConfig } from './config.mjs';
+import { findGitRoot } from './files.mjs';
 import { HOOK_ENV, debug } from './hook-io.mjs';
 import { pruneFiles, safeId, saveState } from './state.mjs';
 
@@ -19,9 +20,9 @@ export const BRIEF_MAX_AGE_MS = 48 * 60 * 60 * 1000;
 export const MAX_READ_BYTES = 4 * 1024 * 1024;
 const MAX_GIT_FILES = 200;
 const WRITE_TOOLS = /^(Bash|PowerShell|Edit|MultiEdit|Write|NotebookEdit)$/;
-// The prefix the Bash hook adds to run a command through thinwindow-run
-// (RUN in bash-guard.mjs, not imported: the Stop hook loads only this file).
-const RUN_PREFIX = /^node '[^']*thinwindow-run\.mjs' /;
+// The prefix the Bash hook gives a direct thinwindow-run call, anywhere in
+// the command (RUN in bash-guard.mjs, not imported: the Stop hook loads less).
+const RUN_PREFIX = /node '[^']*thinwindow-run\.mjs' /g;
 const GIT_TIMEOUT_MS = 1000;
 
 // A path inside cwd as a relative, forward-slash path; others unchanged.
@@ -207,7 +208,9 @@ export function updateBrief({ dataDir, projectDir, sessionId, transcriptPath, cw
   if (size === brief.offset && (last === null || last === brief.last)) return { path, skipped: true };
   if (size < brief.offset) brief = emptyBrief(); // the transcript was replaced
   const read = readNewRecords(transcriptPath, brief.offset, brief.skip);
-  foldRecords(brief, read.records, { cwd });
+  // Edited files relative to the repository root, like git status's paths, so
+  // a session in a subdirectory doesn't list a file twice.
+  foldRecords(brief, read.records, { cwd: (cwd && findGitRoot(cwd)) || cwd });
   if (last !== null) brief.last = last;
   brief.offset = read.offset;
   brief.skip = read.skip;
@@ -269,25 +272,30 @@ export function pruneBriefs(dataDir, { now = Date.now() } = {}) {
 
 // --- /thinwindow:resume ---
 
-// This project's most recently written brief, if it is under 48 hours old.
+// This project's most recently written brief that has a goal, if it is under
+// 48 hours old. A session with no prompt yet writes an empty one.
 export function latestBrief(dataDir, projectDir, now = Date.now()) {
   const dir = briefsDir(dataDir, projectDir);
-  let best = null;
   let names = [];
   try {
     names = readdirSync(dir).filter((n) => n.endsWith('.json'));
   } catch {
     return null;
   }
+  const found = [];
   for (const name of names) {
     try {
       const mtime = statSync(join(dir, name)).mtimeMs;
-      if (now - mtime < BRIEF_MAX_AGE_MS && (!best || mtime > best.mtime)) best = { path: join(dir, name), mtime };
+      if (now - mtime < BRIEF_MAX_AGE_MS) found.push({ path: join(dir, name), mtime });
     } catch {
       // Removed meanwhile.
     }
   }
-  return best && { path: best.path, brief: loadBrief(best.path), mtime: best.mtime };
+  for (const f of found.sort((a, b) => b.mtime - a.mtime)) {
+    const brief = loadBrief(f.path);
+    if (brief.goal !== null) return { ...f, brief };
+  }
+  return null;
 }
 
 function commitsSince(dir, iso) {
@@ -310,7 +318,7 @@ function ago(ms) {
 // since, and where the full brief is.
 export function resumeText({ dataDir, projectDir, now = Date.now() }) {
   const found = dataDir && projectDir ? latestBrief(dataDir, projectDir, now) : null;
-  if (!found || found.brief.goal === null) return 'No ThinWindow brief from the last 48 hours for this project.\n';
+  if (!found) return 'No ThinWindow brief from the last 48 hours for this project.\n';
   const { path, brief, mtime } = found;
   const commits = commitsSince(projectDir, brief.updated || new Date(mtime).toISOString());
   let since = '';

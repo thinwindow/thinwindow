@@ -92,15 +92,17 @@ the smallest change; don't narrate between tool calls, and end with three
 lines at most. They stay under 2,000 characters, which CI enforces:
 [`rules/thinwindow.md`](rules/thinwindow.md).
 
-**The guards.** Hooks that act on the tool call itself, before its result
-enters the context, so enforcing them costs no turn.
+**The guards.** Hooks that act on the tool call itself, before or after it
+runs but before its result enters the context, so enforcing them costs no
+turn.
 
 - **Read guard:**
   - a whole-file read of a file over 400 lines returns its first 120 lines
     and a line-numbered outline, so the next read can target a range;
   - re-reading an unchanged file that's already in context is refused.
 - **Bash guard:**
-  - installs, builds, tests and lints run through `thinwindow-run`;
+  - installs, builds, tests and lints run as written, and a long output from
+    one that succeeded is cut to its last lines;
   - recursive searches with no limit are capped, and a bare `git diff` runs
     as `git diff --stat`;
   - `cat` of a lockfile or a huge file, `git log` without a limit, `ls -R`,
@@ -108,9 +110,10 @@ enters the context, so enforcing them costs no turn.
     command to run instead.
 - **Grep cap:** a content search with no limit gets one of 100 lines.
 
-**`thinwindow-run`.** It runs a noisy command, keeps the full log in a temp
-file, and shows Claude the exit code, the tail and the error lines. Short
-output comes back as it is.
+**Long output.** When an install, build, test or lint succeeds, Claude gets its
+last 10 lines and the path of a log in a temp folder that holds all of it.
+Short output, and the output of a failed run, comes back as Claude Code returns
+it, so Claude sees the error.
 
 **Fails open.**
 
@@ -118,7 +121,8 @@ output comes back as it is.
 - Repeating a refused read or noisy command goes through too, and the few
   commands that are always refused come with one that works. Claude can't get
   stuck.
-- ThinWindow never approves a call your permission settings would ask about.
+- ThinWindow never approves a call your permission settings would ask about,
+  and noisy commands run as written, so your permission rules match them.
 
 ### Between sessions: resume without paying twice
 
@@ -146,8 +150,10 @@ A fresh start from a short brief re-writes ~55k tokens (~US$0.44): /clear, then 
 
 - **You decide every time:** send the prompt again to continue.
 - **Never held:** commands, and prompts in `-p`, SDK or background sessions.
-- **In the desktop app,** the notice is an "A hook blocked your prompt" card,
-  with "Edit prompt" to send it again.
+- **In the desktop app** a held prompt isn't put back in the input box, so
+  there the notice doesn't hold it: the prompt goes through, and one line says
+  what it re-writes and what a fresh start would re-write next time.
+  `"coldResumeMode": "block"` holds it in the desktop app too.
 
 **`/thinwindow:resume`.** After `/clear`, it starts the new session from this
 project's newest brief, up to 48 hours old. You can add your next request
@@ -275,14 +281,26 @@ Project values override home values.
 | `maxReadLines` | `400` | Lines above which a whole-file read is shortened |
 | `rewrite` | `true` | Fixes wasteful calls in place; `false` refuses them instead |
 | `briefs` | `true` | `false` stops keeping session briefs |
-| `coldResumeNotice` | `true` | `false` turns off the cold-resume notice |
+| `coldResumeMode` | `"block"`; `"notify"` in the desktop app | `"block"` holds the prompt once, `"notify"` lets it through with one line, `"off"` turns the notice off |
+| `coldResumeNotice` | `true` | `false` is the same as `"coldResumeMode": "off"` |
 | `coldResumeMinTokens` | `100000` | Smallest context the notice holds a prompt for |
 | `setupNotice` | `true` | `false` turns off the setup-cost notice |
 | `setupNoticeMinTokens` | `40000` | Smallest first request the notice shows for |
 | `noisyCommands` | built-in list | Extra noisy-command patterns |
-| `allowlist.paths`, `allowlist.commands` | `[]` | Files and commands ThinWindow never touches |
+| `allowlist.paths`, `allowlist.commands` | `[]` | Files and commands ThinWindow never blocks |
 
 Every option, and what each hook does: [docs/configuration.md](docs/configuration.md).
+
+## Upgrading from 0.4
+
+- **Noisy commands run as written.** ThinWindow no longer rewrites them to
+  `node '…/thinwindow-run.mjs' <cmd>`; a new hook after each `Bash` call cuts
+  the output of the ones that succeeded. A permission rule you added for
+  `thinwindow-run` is no longer needed.
+- **In the desktop app** the cold-resume notice lets the prompt through with
+  one line instead of holding it. `"coldResumeMode"` picks the behavior.
+- **`/thinwindow:report`** also counts the reads cut to an outline and the
+  command outputs cut.
 
 ## Upgrading from 0.3.0
 
@@ -304,10 +322,12 @@ Nothing that worked stops working, and every new part has its own off switch.
   - the tool call Claude Code passes to the hooks (a file path, a command or a
     search pattern), and the line count and outline of files Claude is about
     to read or print;
+  - the output of each `Bash` call that succeeded, which Claude Code passes to
+    the hook; it keeps and cuts only a noisy command's;
   - its settings in `.thinwindow.json`;
   - the environment variables `THINWINDOW`, `THINWINDOW_DEBUG`,
-    `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_DATA` and
-    `CLAUDE_CODE_SESSION_ATTENDED`;
+    `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_DATA`,
+    `CLAUDE_CODE_SESSION_ATTENDED` and `CLAUDE_CODE_ENTRYPOINT`;
   - before each prompt, the last 256 KB of the session's transcript, and the
     first 256 KB when a cold-resume notice is due;
   - at the end of each turn, the part of the transcript written since the
@@ -317,12 +337,14 @@ Nothing that worked stops working, and every new part has its own off switch.
     since the brief.
 
   It reads no credentials.
-- **Writes, to your operating system's temp folder:**
+- **Writes, to your operating system's temp folder,** in folders it creates so
+  only your user can open them:
   - one small file per session: which files and ranges were read, recent
     refusals, when a cold-resume notice was last shown, and counts of what the
     hooks did;
   - one tiny file per project: when the setup-cost notice was last shown;
-  - the full log of each command run through `thinwindow-run`.
+  - the full log of each command whose output was cut, and of each command run
+    through `thinwindow-run`.
 - **Writes, to the plugin's data folder** (`~/.claude/plugins/data/`): one
   small brief per session, in a folder per project. A brief holds **excerpts
   of your prompts and of Claude's replies**:
@@ -393,8 +415,9 @@ recognized" instead of printing wrong numbers.
 
 - At most once per idle gap: only after an hour idle, and only over 100k
   tokens of context.
+- In the desktop app it doesn't hold the prompt; it adds one line.
 - Send the prompt again to continue, or turn the notice off with
-  `"coldResumeNotice": false`.
+  `"coldResumeMode": "off"`.
 
 **Does it send my code anywhere?** No.
 
@@ -420,6 +443,11 @@ The most useful contributions, in order:
    running them.
 
 The workflow is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Also by the author
+
+- [antiagree](https://antiagree.github.io/): a reviewer with no stake in your plan. It checks the plan against your code and data, tries to kill it, and gives a GO / ITERATE / RETHINK / KILL verdict.
+- [nudgeist](https://nudgeist.github.io/): before an expensive model takes your message, a fast one checks whether a lighter model would do, and asks you first.
 
 ## License
 

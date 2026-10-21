@@ -20,7 +20,7 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
 | Path | What |
 | --- | --- |
 | `rules/thinwindow.md` | The rules. Single source of truth, injected at session start. |
-| `skills/thinwindow/` | The Agent Skill: the rules plus `thinwindow-run` (`scripts/thinwindow-run.mjs`), which the plugin's Bash hook also runs. |
+| `skills/thinwindow/` | The Agent Skill: the rules plus `thinwindow-run` (`scripts/thinwindow-run.mjs`); the plugin's Bash hooks share its summary code and point a direct `thinwindow-run` call at it. |
 | `adapters/AGENTS.md` | The rules as a snippet for agents that read AGENTS.md. |
 | `.claude-plugin/` | Plugin manifest and marketplace catalog. |
 | `hooks/` | `hooks.json` and the Node hook scripts; logic in `hooks/lib/`. |
@@ -52,7 +52,7 @@ To try your checkout in Claude Code, run `claude --plugin-dir .` and follow
   return `allow`; they only deny, rewrite, or stay silent.
 - Zero runtime dependencies. Node 18+, ESM, macOS, Linux and Windows.
 - No telemetry, no network calls.
-- Practice what we preach: grep before reading, read ranges, cap command
+- Follow the rules the plugin teaches: grep before reading, read ranges, cap command
   output.
 
 ## Commits and pull requests

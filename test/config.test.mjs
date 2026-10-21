@@ -12,6 +12,9 @@ test('defaults apply without config files', () => {
   assert.equal(c.maxReadLines, 400);
   assert.equal(c.rewrite, true);
   assert.equal(c.coldResumeNotice, true);
+  assert.equal(c.coldResumeMode, 'block');
+  assert.equal(loadConfig({ projectDir: tempDir(), home: tempDir(), env: { CLAUDE_CODE_ENTRYPOINT: 'claude-desktop' } }).coldResumeMode, 'notify');
+  assert.equal(loadConfig({ projectDir: tempDir(), home: tempDir(), env: { CLAUDE_CODE_ENTRYPOINT: 'claude-desktop-3p' } }).coldResumeMode, 'notify');
   assert.equal(c.coldResumeMinTokens, 100000);
   assert.equal(c.setupNotice, true);
   assert.equal(c.setupNoticeMinTokens, 40000);
@@ -60,11 +63,12 @@ test('broken or mistyped config falls back to defaults', () => {
   const proj = tempDir();
   writeFileSync(join(proj, '.thinwindow.json'), '{ not json');
   const home = tempDir();
-  writeFileSync(join(home, '.thinwindow.json'), JSON.stringify({ maxReadLines: 'lots', enabled: 'no', noisyCommands: ['(', 7], coldResumeNotice: 'no', coldResumeMinTokens: -1, setupNotice: 1, setupNoticeMinTokens: 1.5 }));
+  writeFileSync(join(home, '.thinwindow.json'), JSON.stringify({ maxReadLines: 'lots', enabled: 'no', noisyCommands: ['(', 7], coldResumeNotice: 'no', coldResumeMode: 'quiet', coldResumeMinTokens: -1, setupNotice: 1, setupNoticeMinTokens: 1.5 }));
   const c = loadConfig({ projectDir: proj, home, env: {} });
   assert.equal(c.enabled, true);
   assert.equal(c.maxReadLines, 400);
   assert.equal(c.coldResumeNotice, true);
+  assert.equal(c.coldResumeMode, 'block');
   assert.equal(c.coldResumeMinTokens, 100000);
   assert.equal(c.setupNotice, true);
   assert.equal(c.setupNoticeMinTokens, 40000);

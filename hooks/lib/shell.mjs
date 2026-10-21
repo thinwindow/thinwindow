@@ -311,6 +311,8 @@ export function commandWords(stage) {
     if (k >= w.length) break;
     const name = baseName(w[k].text);
     if (!Object.prototype.hasOwnProperty.call(WRAPPERS, name)) break;
+    // `command -v make` looks a name up instead of running it.
+    if (name === 'command' && /^-[pvV]*[vV]/.test(w[k + 1]?.text || '')) break;
     wrappers.push(name);
     const withValue = WRAPPERS[name];
     k++;
