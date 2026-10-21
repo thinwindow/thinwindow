@@ -103,11 +103,12 @@ turn.
 - **Bash guard:**
   - installs, builds, tests and lints run as written, and a long output from
     one that succeeded is cut to its last lines;
-  - recursive searches with no limit are capped, and a bare `git diff` runs
-    as `git diff --stat`;
-  - `cat` of a lockfile or a huge file, `git log` without a limit, `ls -R`,
-    `tree` without `-L` and an unbounded `find` are refused, with a cheaper
-    command to run instead.
+  - recursive searches, `find`, `ls -R` and `tree` with no limit are capped
+    to their first 100 lines, `git log` without a limit shows the last 20
+    commits, and a bare `git diff` runs as `git diff --stat`: the command still
+    runs, so nothing shows up as an error;
+  - `cat` of a lockfile or a huge file is refused, with a cheaper command to
+    run instead.
 - **Grep cap:** a content search with no limit gets one of 100 lines.
 
 **Long output.** When an install, build, test or lint succeeds, Claude gets its

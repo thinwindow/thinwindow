@@ -68,12 +68,12 @@ test('SessionStart on compact resets read tracking and keeps the counts', () => 
 });
 
 test('PreToolUse denies with the documented JSON shape', () => {
-  const r = runHook(PRE, { session_id: 'deny', cwd: proj.root, tool_name: 'Bash', tool_input: { command: 'git log' } });
+  const r = runHook(PRE, { session_id: 'deny', cwd: proj.root, tool_name: 'Bash', tool_input: { command: 'cat big.txt' } });
   assert.equal(r.status, 0);
   const out = r.json.hookSpecificOutput;
   assert.equal(out.hookEventName, 'PreToolUse');
   assert.equal(out.permissionDecision, 'deny');
-  assert.match(out.permissionDecisionReason, /git log/);
+  assert.match(out.permissionDecisionReason, /cat would print all 900 lines/);
   assert.deepEqual(Object.keys(r.json), ['hookSpecificOutput']);
 });
 
@@ -163,7 +163,7 @@ test('PreToolUse counts what thinwindow did per session', () => {
     });
   call('git diff');
   call('npm test');
-  call('git log');
+  call('cat big.txt');
   call('ls');
   call('thinwindow-run npm test');
   const state = JSON.parse(readFileSync(join(tmp, 'thinwindow', 'state', 'stats.json'), 'utf8'));
