@@ -171,12 +171,12 @@ test('sessions from a Claude Code newer than the checked one get a note', async 
 test("ThinWindow's own counts come from its state files, known keys only", async () => {
   const c = corpus({ 'p/a.jsonl': [req('m1', T0), req('m2', T0 + MIN), req('m3', T0 + 2 * MIN)] });
   mkdirSync(join(c.stateBase, 'thinwindow', 'state'), { recursive: true });
-  writeFileSync(join(c.stateBase, 'thinwindow', 'state', 's1.json'), JSON.stringify({ v: 1, agents: {}, denied: [], stats: { 'Bash.rewrite': 3, 'Read.deny': 1, 'Other.secret': 9 } }));
+  writeFileSync(join(c.stateBase, 'thinwindow', 'state', 's1.json'), JSON.stringify({ v: 1, agents: {}, denied: [], stats: { 'Bash.rewrite': 3, 'Read.deny': 1, 'Read.rewrite': 6, 'Bash.trim': 7, 'Other.secret': 9 } }));
   writeFileSync(join(c.stateBase, 'thinwindow', 'state', 's2.json'), JSON.stringify({ v: 1, agents: {}, denied: [], stats: { 'ColdResume.notice': 5, 'ColdResume.continue': 2, 'Setup.notice': 4 } }));
   const r = await buildReport(c);
-  assert.deepEqual(r.thinwindowLast7Days, { sessions: 2, actions: { 'Bash.rewrite': 3, 'Read.deny': 1, 'ColdResume.notice': 5, 'ColdResume.continue': 2, 'Setup.notice': 4 } });
+  assert.deepEqual(r.thinwindowLast7Days, { sessions: 2, actions: { 'Bash.rewrite': 3, 'Read.deny': 1, 'Read.rewrite': 6, 'Bash.trim': 7, 'ColdResume.notice': 5, 'ColdResume.continue': 2, 'Setup.notice': 4 } });
   // Distinct counts: the order doesn't depend on how the directory lists files.
-  assert.match(formatText(r), /cold-resume notices 5, setup-cost notices 4, commands rewritten 3, sent again after a notice 2, reads cut or refused 1/);
+  assert.match(formatText(r), /command outputs cut 7, long reads cut to an outline 6, cold-resume notices 5, setup-cost notices 4, commands rewritten 3, sent again after a notice 2, reads refused 1/);
 });
 
 test('no output string comes from transcript content', async () => {

@@ -68,6 +68,15 @@ function pruneLogs(dir, now = Date.now()) {
   }
 }
 
+// A new log file's path, in a directory only this user can open (logs can hold
+// secrets a build printed). Logs older than a week are removed first.
+export function newLogPath(display, base) {
+  const dir = logDir(base);
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  pruneLogs(dir);
+  return join(dir, `${stamp()}-${slug(display)}-${process.pid}.log`);
+}
+
 function quotePosix(arg) {
   return /^[\w@%+=:,./-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, `'\\''`)}'`;
 }
@@ -162,7 +171,8 @@ export function formatSummary({ display, code, signal, durationMs, summary, logP
   }
   const out = [];
   out.push(`$ ${display}`);
-  out.push(`${status} · ${formatDuration(durationMs)} · ${summary.lines} ${summary.lines === 1 ? 'line' : 'lines'} of output`);
+  const took = durationMs == null ? '' : ` · ${formatDuration(durationMs)}`;
+  out.push(`${status}${took} · ${summary.lines} ${summary.lines === 1 ? 'line' : 'lines'} of output`);
   const tail = ok ? summary.tail.slice(-SUCCESS_TAIL_LINES) : summary.tail;
   if (summary.lines > 0) {
     out.push(tail.length < summary.lines ? `--- last ${tail.length} lines ---` : '--- output ---');
@@ -198,10 +208,7 @@ export function run(args, { env = process.env, stdout = process.stdout, stderr =
       return;
     }
 
-    const dir = logDir(base);
-    mkdirSync(dir, { recursive: true });
-    pruneLogs(dir);
-    const logPath = join(dir, `${stamp()}-${slug(spec.display)}-${process.pid}.log`);
+    const logPath = newLogPath(spec.display, base);
     const log = createWriteStream(logPath);
     const summary = new Summarizer();
     const started = Date.now();

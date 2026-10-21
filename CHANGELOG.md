@@ -6,7 +6,30 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+
+- A hook after each Bash call: when a noisy command (an install, build, test
+  or lint, or several joined by `&&`) succeeds with more than 10 lines on
+  stdout or stderr, Claude gets that stream's last 10 lines and the path of a
+  log that holds all of it.
+- `coldResumeMode`: `"block"`, `"notify"` or `"off"`. In the desktop app the
+  default is `"notify"`, since the app doesn't put a held prompt back in the
+  input box: the prompt goes through, with one line on what it re-writes.
+
 ### Changed
+
+- Noisy commands run as written instead of through
+  `node '…/thinwindow-run.mjs'`, so permission rules such as
+  `Bash(npm test:*)` match them and no new permission prompt appears. The
+  output of a failed run comes back as Claude Code returns it.
+- The rules no longer suggest `thinwindow-run`; the Agent Skill still
+  documents it.
+- `/compact` and `/clear` reset only the read tracking. ThinWindow's counts
+  and the cold-resume mark stay.
+- `find … -delete` runs, and `find … -exec` is a soft block instead of a
+  refusal.
+- The state and log folders in the temp dir are created so only the user can
+  open them.
 
 - The plugin manifest's homepage points to https://thinwindow.github.io/.
 - The README names the model the 0.4.0 validation ran on (Sonnet 5.5), and says
@@ -21,6 +44,20 @@ project uses [Semantic Versioning](https://semver.org).
 
 ### Fixed
 
+- `/thinwindow:report` counts the reads cut to an outline and the command
+  outputs cut.
+- `command -v make` is no longer taken for a run of `make`.
+- A recursive search over the whole tree is capped when a flag takes a value
+  (`-A 3`, `-e`, `--context 2`), which was read as a path, and with `rg -L`,
+  which follows links and doesn't bound the output.
+- A `cd` later in a command no longer changes where earlier commands are
+  checked.
+- `/thinwindow:resume` and the cold-resume notice skip a newer brief that has
+  no goal yet.
+- The brief drops the runner's path anywhere in a command, and a session in a
+  subdirectory no longer lists an edited file twice.
+- The soft block for a noisy command says the runner shows 10 lines on
+  success, which is what it prints.
 - `scripts/check.mjs` reads a skill's `metadata.internal` flag with a line
   scan instead of a regular expression that could backtrack exponentially
   (CodeQL `js/redos`).

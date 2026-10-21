@@ -71,7 +71,7 @@ export async function handleSetupNotice(input, { env = HOOK_ENV, home, stateBase
     .map(([key, t]) => [SETUP_LABEL[key], t]);
   // The mark first: if it can't be written, nothing shows, rather than a
   // notice at every Stop.
-  mkdirSync(stateDir(stateBase), { recursive: true });
+  mkdirSync(stateDir(stateBase), { recursive: true, mode: 0o700 });
   // ponytail: two sessions of one project stopping at once can both show it.
   writeFileSync(mark, String(now));
   try {

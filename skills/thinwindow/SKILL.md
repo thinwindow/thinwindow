@@ -1,6 +1,6 @@
 ---
 name: thinwindow
-description: Spend fewer tokens by reading less. Use in any coding task that reads files or runs commands - locate with grep or glob before reading, read line ranges instead of whole files, skip re-reads, and cap command output with thinwindow-run.
+description: Spend fewer tokens by reading less. Use in any coding task that reads files or runs commands - locate with grep or glob before reading, read line ranges instead of whole files, skip re-reads, and cap command output.
 license: MIT
 ---
 
@@ -17,7 +17,7 @@ Read less
 - Don't send a subagent to explore what one grep answers.
 
 Print less
-- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, `git diff --stat`, `git log -n 10 --oneline`, or `thinwindow-run <cmd>` for installs, builds and tests.
+- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, `git diff --stat`, `git log -n 10 --oneline`.
 
 Write less
 - Before adding code, check that it needs to exist and that the codebase, standard library or platform doesn't already do it. Then make the smallest change that works.

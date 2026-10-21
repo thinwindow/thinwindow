@@ -11,6 +11,7 @@ import { makeProject, tempDir } from './helpers.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PRE = join(ROOT, 'hooks', 'pre-tool-use.mjs');
+const POST = join(ROOT, 'hooks', 'post-tool-use.mjs');
 const START = join(ROOT, 'hooks', 'session-start.mjs');
 const RULES = readFileSync(join(ROOT, 'rules', 'thinwindow.md'), 'utf8').trim();
 const proj = makeProject();
@@ -53,7 +54,7 @@ test('SessionStart injects the rules as additionalContext', () => {
   assert.deepEqual(r.json, { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: RULES } });
 });
 
-test('SessionStart on compact resets read tracking', () => {
+test('SessionStart on compact resets read tracking and keeps the counts', () => {
   const tmp = tempDir('thinwindow-tmp-');
   const env = { TMPDIR: tmp, TEMP: tmp, TMP: tmp };
   const small = join(proj.root, 'src', 'small.ts');
@@ -62,6 +63,8 @@ test('SessionStart on compact resets read tracking', () => {
   const start = runHook(START, { session_id: 'compact-1', hook_event_name: 'SessionStart', source: 'compact' }, env);
   assert.equal(start.json.hookSpecificOutput.additionalContext, RULES);
   assert.equal(runHook(PRE, readInput(small, 'compact-1'), env).stdout, '');
+  const state = JSON.parse(readFileSync(join(tmp, 'thinwindow', 'state', 'compact-1.json'), 'utf8'));
+  assert.deepEqual(state.stats, { 'Read.deny': 1 });
 });
 
 test('PreToolUse denies with the documented JSON shape', () => {
@@ -108,14 +111,32 @@ test('rewrite mode returns updatedInput without a permission decision', () => {
   writeFileSync(join(dir, '.thinwindow.json'), JSON.stringify({ rewrite: true }));
   const r = runHook(
     PRE,
-    { session_id: 'rw', cwd: dir, tool_name: 'Bash', tool_input: { command: 'npm test', description: 'Run tests' } },
+    { session_id: 'rw', cwd: dir, tool_name: 'Bash', tool_input: { command: 'git diff', description: 'Show changes' } },
     { CLAUDE_PROJECT_DIR: dir },
   );
   const out = r.json.hookSpecificOutput;
-  assert.deepEqual(out.updatedInput, { command: `${RUN} npm test`, description: 'Run tests' });
+  assert.deepEqual(out.updatedInput, { command: 'git diff --stat', description: 'Show changes' });
   assert.equal(out.permissionDecision, undefined);
-  // thinwindow-run's own output explains itself; no note is added.
-  assert.equal(out.additionalContext, undefined);
+  assert.match(out.additionalContext, /git diff --stat/);
+});
+
+test('PostToolUse replaces a long noisy output and leaves everything else alone', () => {
+  const input = {
+    session_id: 'post',
+    cwd: proj.root,
+    tool_name: 'Bash',
+    tool_input: { command: 'npm test' },
+    tool_response: { stdout: 'x\n'.repeat(500), stderr: '', interrupted: false, isImage: false },
+  };
+  const r = runHook(POST, input);
+  assert.equal(r.status, 0);
+  const out = r.json.hookSpecificOutput;
+  assert.equal(out.hookEventName, 'PostToolUse');
+  assert.match(out.updatedToolOutput.stdout, /^\$ npm test\nexit 0 · 500 lines of output\n/);
+  assert.equal(runHook(POST, { ...input, tool_input: { command: 'ls' } }).stdout, '');
+  assert.equal(runHook(POST, { ...input, tool_name: 'Read' }).stdout, '');
+  assert.equal(runHook(POST, input, { THINWINDOW: 'off' }).stdout, '');
+  assert.equal(runHook(POST, 'not json').status, 0);
 });
 
 test('a direct thinwindow-run call is pointed at the runner, even in soft-block mode', () => {
@@ -140,6 +161,7 @@ test('PreToolUse counts what thinwindow did per session', () => {
       env: { ...process.env, TMPDIR: tmp, TEMP: tmp, TMP: tmp, CLAUDE_PROJECT_DIR: proj.root },
       encoding: 'utf8',
     });
+  call('git diff');
   call('npm test');
   call('git log');
   call('ls');

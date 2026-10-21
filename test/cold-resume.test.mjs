@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from '
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { briefsDir } from '../hooks/lib/brief.mjs';
+import { briefsDir, emptyBrief } from '../hooks/lib/brief.mjs';
 import { handleUserPromptSubmit, IDLE_MS } from '../hooks/lib/cold-resume.mjs';
 import { firstRequest, lastRequest, readSlice } from '../hooks/lib/usage.mjs';
 import { COLD_GAP_MS, PRICES } from '../skills/thinwindow/scripts/thinwindow-report.mjs';
@@ -35,7 +35,8 @@ function session(records = [{ type: 'user', message: { content: 'Fix the pager.'
   const transcript = join(dir, 's1.jsonl');
   writeFileSync(transcript, jsonl(records));
   const input = { session_id: 's1', transcript_path: transcript, cwd: dir, hook_event_name: 'UserPromptSubmit', prompt: 'Go on.' };
-  const env = { CLAUDE_CODE_SESSION_ATTENDED: '1', CLAUDE_PROJECT_DIR: dir, CLAUDE_PLUGIN_DATA: '' };
+  // CLAUDE_CODE_ENTRYPOINT is cleared so the tests run the same inside the desktop app.
+  const env = { CLAUDE_CODE_SESSION_ATTENDED: '1', CLAUDE_CODE_ENTRYPOINT: '', CLAUDE_PROJECT_DIR: dir, CLAUDE_PLUGIN_DATA: '' };
   return { dir, transcript, input, env, opts: { env, home: tempDir('thinwindow-home-'), stateBase: tempDir('thinwindow-state-'), now: NOW } };
 }
 
@@ -108,7 +109,7 @@ test('offers /thinwindow:resume only when the newest brief in the project is thi
   const dir = briefsDir(data, s.dir);
   mkdirSync(dir, { recursive: true });
   const brief = (id, minAgo) => {
-    writeFileSync(join(dir, `${id}.json`), '{}');
+    writeFileSync(join(dir, `${id}.json`), JSON.stringify({ ...emptyBrief(), goal: 'Fix the pager.' }));
     utimesSync(join(dir, `${id}.json`), new Date(NOW - minAgo * MIN), new Date(NOW - minAgo * MIN));
   };
   brief('s1', 181);
@@ -122,6 +123,24 @@ test('offers /thinwindow:resume only when the newest brief in the project is thi
   brief('s2', 500);
   writeFileSync(join(s.dir, '.thinwindow.json'), JSON.stringify({ briefs: false }));
   assert.match(await line({ ...opts, stateBase: tempDir() }), /^A new session re-writes/);
+});
+
+test('in the desktop app it lets the prompt through with one line, unless a config file says block', async () => {
+  const s = session();
+  const desktop = { ...s.opts, env: { ...s.env, CLAUDE_CODE_ENTRYPOINT: 'claude-desktop' } };
+  assert.deepEqual(await handleUserPromptSubmit(s.input, desktop), {
+    systemMessage:
+      'ThinWindow: this session was idle 3 h and its prompt cache expired, so this message re-writes ~380k tokens ' +
+      '(~US$3.04 at Opus 5.5 list price). Next time, a fresh start (/clear, then your request) re-writes ~52k tokens (~US$0.42).',
+  });
+  assert.equal(await handleUserPromptSubmit(s.input, desktop), null, 'once per idle gap');
+  assert.deepEqual(stats(s), { 'ColdResume.notice': 1, 'ColdResume.continue': 1 });
+
+  for (const [mode, expected] of [['block', 'decision'], ['notify', 'systemMessage']]) {
+    const t = session();
+    writeFileSync(join(t.dir, '.thinwindow.json'), JSON.stringify({ coldResumeMode: mode }));
+    assert.ok(expected in (await handleUserPromptSubmit(t.input, { ...t.opts, env: { ...t.env, CLAUDE_CODE_ENTRYPOINT: mode === 'block' ? 'claude-desktop' : 'cli' } })), mode);
+  }
 });
 
 test('stays out of the way: a short gap, a small context, commands, unattended sessions, off switches', async () => {
@@ -138,7 +157,7 @@ test('stays out of the way: a short gap, a small context, commands, unattended s
   }
   for (const attended of ['0', '', undefined]) await silent(s, s.input, { ...s.opts, env: { ...s.env, CLAUDE_CODE_SESSION_ATTENDED: attended } });
   await silent(s, s.input, { ...s.opts, env: { ...s.env, THINWINDOW: 'off' } });
-  for (const config of [{ coldResumeNotice: false }, { enabled: false }]) {
+  for (const config of [{ coldResumeNotice: false }, { coldResumeMode: 'off' }, { coldResumeNotice: false, coldResumeMode: 'block' }, { enabled: false }]) {
     const off = session();
     writeFileSync(join(off.dir, '.thinwindow.json'), JSON.stringify(config));
     await silent(off);

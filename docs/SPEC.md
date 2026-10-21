@@ -47,8 +47,9 @@ Short imperative rules, final wording tuned with the benchmark. Starting set:
   around the matches.
 - Don't read a whole file over ~300 lines. Read ranges.
 - Don't re-read what is already in context unless the file changed.
-- Cap command output: quiet flags, `| tail -n 40`, `--max-count`, or run noisy
-  commands through `thinwindow-run`.
+- Cap command output: quiet flags, `| tail -n 40`, `--max-count`. (In the
+  plugin, the Bash hook cuts what a noisy command prints; the Agent Skill runs
+  noisy commands through `thinwindow-run`.)
 - Summaries before detail: `git diff --stat`, `git log -n 10 --oneline`.
 - Stop exploring once there is enough evidence to act.
 - Batch independent lookups into one call.
@@ -105,10 +106,19 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
     `-maxdepth` from the repo root, printing lockfiles or minified or binary
     files.
   - Noisy commands (install/build/test/lint, configurable list) that aren't
-    already capped → wrapped with `thinwindow-run` through `updatedInput`
-    (`"rewrite": true`, the default since the first Sonnet 5 runs: a denial
-    costs the agent a whole turn, which re-sends the full context). With
-    `"rewrite": false`, a soft block that suggests `thinwindow-run <cmd>`.
+    already capped → run as written (`"rewrite": true`, the default), so the
+    user's permission rules still match them, and PostToolUse cuts their
+    output. Until 0.5.0 they were wrapped with `thinwindow-run` through
+    `updatedInput`, which Claude Code checks against the permission rules, so
+    a rule such as `Bash(npm test:*)` stopped matching and a new prompt
+    appeared. With `"rewrite": false`, a soft block that suggests
+    `thinwindow-run <cmd>`.
+- **PostToolUse `Bash`** (`"rewrite": true`): noisy, uncapped commands joined
+  by `&&` (with `cd`s), nothing else, that succeeded and printed more than 10
+  lines on a stream → that stream cut to its last 10 lines through
+  `updatedToolOutput`, with the path of a log in the OS temp dir that holds the
+  whole output; a cut stdout has a header (command, duration, line count). A failed command fires PostToolUseFailure instead, which
+  can't replace output, so it comes back as Claude Code returns it.
 - **PreToolUse `Grep`**: a content search with no `head_limit` gets
   `head_limit: 100`.
 - **Stop**: update the session brief (#33) from what the transcript gained
@@ -123,12 +133,14 @@ Hooks (`hooks/hooks.json`, Node scripts in `hooks/`):
   request (read from the transcript's last 256 KB) is over an hour old and its
   context is at least `coldResumeMinTokens` (100k), hold the prompt once with
   what continuing re-writes and what a fresh start re-writes. Sending again
-  continues. Never hold a command, a prompt Claude Code writes itself, or a
+  continues. In the desktop app (`CLAUDE_CODE_ENTRYPOINT=claude-desktop`) a
+  held prompt isn't put back in the input box, so there the default is
+  `"coldResumeMode": "notify"`: the prompt goes through and one `systemMessage`
+  line says what it re-writes. Never hold a command, a prompt Claude Code writes itself, or a
   prompt in a session no person attends (`-p`, SDK, background).
 - **`thinwindow-run`** (`skills/thinwindow/scripts/thinwindow-run.mjs`): the
   plugin ships no `bin/`, which Cowork and the Claude apps refuse, so the Bash
-  hook runs it as `node '<path>'` and points a direct `thinwindow-run` call at
-  the same path. It runs the command, saves the full stdout and stderr to
+  hook points a direct `thinwindow-run` call at `node '<path>'`. It runs the command, saves the full stdout and stderr to
   a log in the OS temp dir (never inside the user's repo), prints the exit code,
   the duration, the last 10 lines on success (on failure, the last 40 lines and
   up to 40 deduplicated earlier lines that match error/fail/warn/panic/exception),
@@ -395,4 +407,4 @@ Don't build a gated feature before its gate decides.
 - Commits: Conventional Commits in English. No Co-Authored-By trailer or any
   Claude attribution.
 - No invented numbers, testimonials or star counts anywhere.
-- Practice what we preach: grep before reading, read ranges, cap command output.
+- Follow the rules the plugin teaches: grep before reading, read ranges, cap command output.

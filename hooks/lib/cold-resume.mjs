@@ -2,7 +2,9 @@
 // expired re-writes the whole context at the cache-write price. When that
 // context is large, the hook holds the prompt once and shows what continuing
 // re-writes, next to a fresh start from the session's brief (#33). Sending
-// again continues: the notice never acts for the user.
+// again continues: the notice never acts for the user. In notify mode (the
+// default in the desktop app) the prompt goes through and one line says what
+// it re-writes.
 // Claude Code runs UserPromptSubmit hooks synchronously before every prompt,
 // so this file loads only what the check needs; the price table and the brief
 // lookup load only when a notice is due.
@@ -54,7 +56,17 @@ export function noticeText({ idleMs, context, fresh, model, price, resume }) {
   ].join('\n');
 }
 
-// UserPromptSubmit: the block decision, or null to let the prompt through.
+// Notify mode's one line: the prompt already goes through, so it says what it
+// re-writes and what a fresh start would next time.
+export function notifyText({ idleMs, context, fresh, model, price, resume }) {
+  const cost = price ? ` (${usd(context, price)} at ${modelName(model)} list price)` : '';
+  const how = resume ? '/clear, then /thinwindow:resume <your request>' : '/clear, then your request';
+  const next = fresh ? ` Next time, a fresh start (${how}) re-writes ~${tokens(fresh)}${price ? ` (${usd(fresh, price)})` : ''}.` : '';
+  return `ThinWindow: this session was idle ${idleFor(idleMs)} and its prompt cache expired, so this message re-writes ~${tokens(context)}${cost}.${next}`;
+}
+
+// UserPromptSubmit: the block decision, a notice, or null to let the prompt
+// through as it is.
 export async function handleUserPromptSubmit(input, { env = HOOK_ENV, home, stateBase, now = Date.now() } = {}) {
   // Only someone at the session can answer. Claude Code sets this to "1" in
   // hooks of its terminal, IDE and desktop sessions and "0" for -p, SDK and
@@ -63,7 +75,7 @@ export async function handleUserPromptSubmit(input, { env = HOOK_ENV, home, stat
   if (!input.session_id || typeof input.transcript_path !== 'string') return null;
   const projectDir = env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   const config = loadConfig({ projectDir, env, home });
-  if (!config.enabled || !config.coldResumeNotice) return null;
+  if (!config.enabled || config.coldResumeMode === 'off') return null;
   const last = lastRequest(readSlice(input.transcript_path));
   if (!last || now - last.at <= IDLE_MS || last.context < config.coldResumeMinTokens) return null;
 
@@ -75,14 +87,14 @@ export async function handleUserPromptSubmit(input, { env = HOOK_ENV, home, stat
   const resume = Boolean(config.briefs && own && briefs.latestBrief(dataDir, projectDir, now)?.path === own);
   const first = firstRequest(readSlice(input.transcript_path, { fromEnd: false }));
   const model = resolveModel(last.model);
-  const reason = noticeText({
+  const facts = {
     idleMs: now - last.at,
     context: last.context,
     fresh: first && first.context + (resume ? RESUME_TOKENS : 0),
     model,
     price: model && PRICES[model],
     resume,
-  });
+  };
   // Once per idle gap: keyed to the last request, so any prompt after the
   // notice goes through, however long the user takes, until a request runs.
   const show = updateState(
@@ -97,5 +109,6 @@ export async function handleUserPromptSubmit(input, { env = HOOK_ENV, home, stat
   );
   // Sizes only, never the prompt.
   debug(show ? `UserPromptSubmit: cold-resume notice, ${tokens(last.context)}` : 'UserPromptSubmit: sent again after a cold-resume notice', env);
-  return show ? { decision: 'block', reason } : null;
+  if (!show) return null;
+  return config.coldResumeMode === 'notify' ? { systemMessage: notifyText(facts) } : { decision: 'block', reason: noticeText(facts) };
 }

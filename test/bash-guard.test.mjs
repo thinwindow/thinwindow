@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { RUN, checkBash, resolveRunner } from '../hooks/lib/bash-guard.mjs';
+import { RUN, checkBash, resolveRunner, trimOutput } from '../hooks/lib/bash-guard.mjs';
 import { loadConfig } from '../hooks/lib/config.mjs';
-import { lines, makeProject } from './helpers.mjs';
+import { lines, makeProject, tempDir } from './helpers.mjs';
 
 const proj = makeProject();
 // "rewrite": false restores the soft block for noisy commands.
@@ -187,24 +187,16 @@ test('an identical retry of a soft-blocked command goes through once', () => {
   assert.equal(decide('npm test -- --watch=false', { state, config }).action, 'deny');
 });
 
-test('noisy commands are rewritten through thinwindow-run by default', () => {
-  const r = decide('npm test');
-  assert.equal(r.action, 'rewrite');
-  assert.equal(r.command, `${RUN} npm test`);
+test('noisy commands run as written by default, so permission rules still match them', () => {
+  for (const cmd of ['npm test', 'cd app && CI=1 npm test -- -u && npm run build', 'timeout 60 cargo test', 'sudo apt-get install -y jq']) {
+    assert.deepEqual(decide(cmd), { action: 'allow', kind: 'ok' }, cmd);
+  }
 });
 
 test('anti-pattern denials are not bypassed by retrying', () => {
   const state = { v: 1, agents: {}, denied: [] };
   assert.equal(decide('git log', { state }).action, 'deny');
   assert.equal(decide('git log', { state }).action, 'deny');
-});
-
-test('rewrite mode wraps noisy commands with thinwindow-run', () => {
-  const config = { ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: true };
-  const r = decide('cd app && CI=1 npm test -- -u && npm run build', { config });
-  assert.equal(r.action, 'rewrite');
-  assert.equal(r.command, `cd app && CI=1 ${RUN} npm test -- -u && ${RUN} npm run build`);
-  assert.equal(decide('timeout 60 cargo test', { config }).command, `timeout 60 ${RUN} cargo test`);
 });
 
 test('RUN calls the skill runner with a quoted absolute path', () => {
@@ -216,11 +208,6 @@ test('resolveRunner points command-position thinwindow-run at the runner', () =>
   assert.equal(resolveRunner('cd app && CI=1 thinwindow-run npm i | tail -5'), `cd app && CI=1 ${RUN} npm i | tail -5`);
   assert.equal(resolveRunner('thinwindow-run a; thinwindow-run b'), `${RUN} a; ${RUN} b`);
   for (const cmd of ['echo thinwindow-run', 'npm test', `${RUN} npm test`, 'if then (']) assert.equal(resolveRunner(cmd), cmd);
-});
-
-test('rewrite mode leaves sudo commands to the soft block', () => {
-  const config = { ...loadConfig({ projectDir: proj.root, home: proj.home, env: {} }), rewrite: true };
-  assert.equal(decide('sudo apt-get install -y jq', { config }).action, 'deny');
 });
 
 test('allowlist.commands exempts matching commands', () => {
@@ -354,8 +341,114 @@ test('scope issues are fixed in place by default', () => {
   assert.equal(decide('git diff').command, 'git diff --stat');
   assert.equal(decide('git -C sub diff HEAD~1').command, 'git -C sub diff --stat HEAD~1');
   const both = decide('git diff && npm test');
-  assert.equal(both.command, `git diff --stat && ${RUN} npm test`);
+  assert.equal(both.command, 'git diff --stat && npm test');
   assert.match(both.context, /git diff --stat/);
-  assert.match(both.command, /thinwindow-run/);
   assert.equal(decide('sudo grep -rn foo .').action, 'deny');
+});
+
+// PostToolUse: what a successful Bash call returned, as Claude Code passes it.
+const ran = (command, stdout, stderr = '', extra = {}) => ({
+  tool_name: 'Bash',
+  tool_input: { command, description: 'x' },
+  tool_response: { stdout, stderr, interrupted: false, isImage: false, noOutputExpected: false, ...extra },
+  duration_ms: 3200,
+});
+const trim = (input, config = loadConfig({ projectDir: proj.root, home: proj.home, env: {} })) => {
+  const base = tempDir('thinwindow-trim-');
+  return { out: trimOutput({ input, config, base }), base };
+};
+
+test('trimOutput cuts a long successful noisy run to its last lines and keeps it all in a log', () => {
+  const stdout = `${lines(199, 'ok')}warning: slow test\nTests: 200 passed\n`;
+  const stderr = lines(30, 'npm warn deprecated');
+  const { out } = trim(ran('cd app && npm test', stdout, stderr));
+  const log = /full log: (\S+)/.exec(out.stdout)[1];
+  assert.equal(readFileSync(log, 'utf8'), `${stdout}\n--- stderr ---\n${stderr}`);
+  assert.equal(statSync(join(log, '..')).mode & 0o777, process.platform === 'win32' ? statSync(join(log, '..')).mode & 0o777 : 0o700);
+  assert.match(out.stdout, /^\$ cd app && npm test\nexit 0 · 3\.2s · 201 lines of output\n--- last 10 lines ---\n/);
+  assert.match(out.stdout, /Tests: 200 passed\n\(1 lines matching error\|fail\|warn\|panic\|exception are in the full log\)\n/);
+  assert.doesNotMatch(out.stdout, /ok 190\n/);
+  assert.match(out.stderr, /^--- last 10 of 30 stderr lines; full log: .+ ---\nnpm warn deprecated 21\n/);
+  assert.deepEqual(Object.keys(out), ['stdout', 'stderr', 'interrupted', 'isImage', 'noOutputExpected'], 'same shape as the tool result');
+});
+
+test('trimOutput leaves short, quiet, capped, background and other output as it is', () => {
+  const long = lines(300);
+  for (const input of [
+    ran('npm test', lines(10), lines(10)),
+    ran('ls -la', long),
+    ran('npm test | tail -n 400', long),
+    ran('npm test -- --silent', long),
+    ran('thinwindow-run npm test', long),
+    ran('npm test', long, '', { interrupted: true }),
+    ran('npm test', long, '', { backgroundTaskId: 'b1' }),
+    { ...ran('npm test', long), tool_input: { command: 'npm test', run_in_background: true } },
+    { ...ran('npm test', long), tool_response: 'Error: Exit code 1' },
+  ]) {
+    assert.equal(trim(input).out, null, JSON.stringify(input.tool_input));
+  }
+  const config = loadConfig({ projectDir: proj.root, home: proj.home, env: {} });
+  config.allowCommandPatterns = [/^npm test$/];
+  assert.equal(trim(ran('npm test', long), config).out, null, 'allowlisted');
+  const { out } = trim(ran('npm test', lines(5), long));
+  assert.equal(out.stdout, lines(5), 'a short stream stays whole');
+  assert.match(out.stderr, /last 10 of 300 stderr lines/);
+});
+
+test('command -v looks a name up, it does not run it', () => {
+  assert.equal(decide('command -v make', { config: soft() }).action, 'allow');
+  assert.equal(decide('command -V cargo', { config: soft() }).action, 'allow');
+  assert.equal(decide('command make', { config: soft() }).kind, 'noisy');
+});
+
+test('grep and rg flag values are neither the pattern nor a path', () => {
+  for (const cmd of ['grep -r -A 3 foo', 'grep -rn -e foo', 'grep -rn --context 2 foo .', 'rg -L foo .']) {
+    assert.equal(decide(cmd).kind, 'scope', cmd);
+  }
+  for (const cmd of ['grep -rn -A 3 foo src', 'grep -rn -e foo src', 'grep -r -f pats.txt src', 'rg -l foo .', 'rg -c foo']) {
+    assert.equal(decide(cmd).action, 'allow', cmd);
+  }
+});
+
+test('each command is checked from the directory it runs in', () => {
+  assert.equal(decide('grep -rn foo . && cd src').kind, 'scope');
+  assert.equal(decide('cd src && grep -rn foo .').action, 'allow');
+  assert.equal(decide('cd src && grep -rn foo . && cd .. && grep -rn bar .').command, `cd src && grep -rn foo . && cd .. && grep${' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build'} -rn bar . | head -n 100`);
+});
+
+test('find -delete runs; find -exec is a soft block; a bare find from the root stays refused', () => {
+  assert.equal(decide("find . -name '*.tmp' -delete").action, 'allow');
+  const state = { v: 1, agents: {}, denied: [] };
+  const exec = decide("find . -name '*.js' -exec wc -l {} +", { state });
+  assert.equal(exec.action, 'deny');
+  assert.match(exec.reason, /repeat the exact same command/);
+  assert.equal(decide("find . -name '*.js' -exec wc -l {} +", { state }).action, 'allow');
+  assert.equal(decide('find . -name x', { state }).action, 'deny');
+  assert.equal(decide('find . -name x', { state }).action, 'deny');
+});
+
+test('trimOutput cuts only when exit 0 means the noisy parts succeeded and printed it all', () => {
+  const long = lines(300);
+  for (const cmd of ['npm test && cat result.json', 'make && ./a.out', 'npm test || true', 'npm test; echo done', 'npm test 2>&1 | tee test.log', 'npm test &\nwait']) {
+    assert.equal(trim(ran(cmd, long)).out, null, cmd);
+  }
+  for (const cmd of ['npm ci && npm run build', 'cd app && CI=1 npm test']) assert.match(trim(ran(cmd, long)).out.stdout, /full log:/, cmd);
+});
+
+test('a retried find -exec still gets the rest of the command checked', () => {
+  const state = { v: 1, agents: {}, denied: [] };
+  const cmd = "find . -name '*.orig' -exec rm {} \\; && git log";
+  assert.equal(decide(cmd, { state }).action, 'deny');
+  const again = decide(cmd, { state });
+  assert.equal(again.action, 'deny');
+  assert.match(again.reason, /git log without -n/);
+  assert.equal(decide('grep -rn -T TODO test').action, 'allow', 'grep -T takes no value');
+});
+
+test('one identical retry lets every soft block in a command through', () => {
+  const state = { v: 1, agents: {}, denied: [] };
+  const cmd = "find . -name '*.pyc' -exec rm {} + && grep -rn foo .";
+  const config = soft();
+  assert.equal(decide(cmd, { state, config }).action, 'deny');
+  assert.deepEqual(decide(cmd, { state, config }), { action: 'allow', kind: 'retry' });
 });

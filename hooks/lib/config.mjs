@@ -40,12 +40,18 @@ export const DEFAULTS = Object.freeze({
   rewrite: true,
   briefs: true,
   coldResumeNotice: true,
+  // null: by surface, see loadConfig.
+  coldResumeMode: null,
   coldResumeMinTokens: 100000,
   setupNotice: true,
   setupNoticeMinTokens: 40000,
   noisyCommands: [],
   allowlist: Object.freeze({ paths: Object.freeze([]), commands: Object.freeze([]) }),
 });
+
+const COLD_RESUME_MODES = new Set(['block', 'notify', 'off']);
+// The desktop app's entrypoints (also with a third-party model provider).
+const DESKTOP = new Set(['claude-desktop', 'claude-desktop-3p']);
 
 function readJson(path) {
   try {
@@ -69,6 +75,7 @@ function merge(acc, raw) {
   if (typeof raw.rewrite === 'boolean') out.rewrite = raw.rewrite;
   if (typeof raw.briefs === 'boolean') out.briefs = raw.briefs;
   if (typeof raw.coldResumeNotice === 'boolean') out.coldResumeNotice = raw.coldResumeNotice;
+  if (COLD_RESUME_MODES.has(raw.coldResumeMode)) out.coldResumeMode = raw.coldResumeMode;
   if (Number.isInteger(raw.coldResumeMinTokens) && raw.coldResumeMinTokens > 0) out.coldResumeMinTokens = raw.coldResumeMinTokens;
   if (typeof raw.setupNotice === 'boolean') out.setupNotice = raw.setupNotice;
   if (Number.isInteger(raw.setupNoticeMinTokens) && raw.setupNoticeMinTokens > 0) out.setupNoticeMinTokens = raw.setupNoticeMinTokens;
@@ -93,6 +100,10 @@ export function loadConfig({ projectDir, env = HOOK_ENV, home = homedir() } = {}
   if (home) config = merge(config, readJson(join(home, '.thinwindow.json')));
   if (projectDir) config = merge(config, readJson(join(projectDir, '.thinwindow.json')));
   if (isOffSwitch(env)) config.enabled = false;
+  // The desktop app doesn't put a held prompt back in the input box, so there
+  // the cold-resume notice only informs unless a config file says otherwise.
+  if (!config.coldResumeMode) config.coldResumeMode = DESKTOP.has(env.CLAUDE_CODE_ENTRYPOINT) ? 'notify' : 'block';
+  if (!config.coldResumeNotice) config.coldResumeMode = 'off';
   config.noisyPatterns = compilePatterns([...DEFAULT_NOISY_COMMANDS, ...config.noisyCommands]);
   config.allowCommandPatterns = compilePatterns(config.allowlist.commands);
   config.allowPathPatterns = config.allowlist.paths.map(globToRegExp);

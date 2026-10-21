@@ -1,5 +1,5 @@
 {
-  "description": "thinwindow: inject the reading rules at session start, guard wasteful Read, Bash and Grep calls, keep a session brief at every Stop for /thinwindow:resume, show once a week per project how large each request's setup is, and hold the first prompt to a large session whose prompt cache expired, once, with what continuing costs. Schema: https://code.claude.com/docs/en/hooks#configuration and https://code.claude.com/docs/en/plugins-reference#hooks",
+  "description": "thinwindow: inject the reading rules at session start, guard wasteful Read, Bash and Grep calls, cut the output of noisy commands that succeeded, keep a session brief at every Stop for /thinwindow:resume, show once a week per project how large each request's setup is, and hold the first prompt to a large session whose prompt cache expired, once, with what continuing costs (in the desktop app, say it in one line instead). Schema: https://code.claude.com/docs/en/hooks#configuration and https://code.claude.com/docs/en/plugins-reference#hooks",
   "hooks": {
     "SessionStart": [
       {
@@ -46,6 +46,19 @@
             "type": "command",
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use.mjs"],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/post-tool-use.mjs"],
             "timeout": 10
           }
         ]

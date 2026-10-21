@@ -3,7 +3,7 @@
   "name": "thinwindow",
   "displayName": "ThinWindow",
   "version": "0.4.1",
-  "description": "Less in the window. Don't pay for it twice. ThinWindow keeps Claude Code's context window thin for the whole session: it trims oversized reads and command logs, shows what each request carries, and offers a fresh start from a short brief after the prompt cache expires. Plugin and Agent Skill.",
+  "description": "Keeps long Claude Code sessions cheap: it trims oversized reads and command logs, shows what each request carries, and offers a fresh start from a short brief when the prompt cache expires. Plugin and Agent Skill.",
   "author": {
     "name": "Iván Luna",
     "url": "https://github.com/imprvhub"

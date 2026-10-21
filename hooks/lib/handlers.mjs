@@ -4,11 +4,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
 import { HOOK_ENV, debug } from './hook-io.mjs';
-import { checkBash, resolveRunner } from './bash-guard.mjs';
+import { checkBash, resolveRunner, trimOutput } from './bash-guard.mjs';
 import { pruneBriefs } from './brief.mjs';
 import { checkGrepTool } from './grep-guard.mjs';
 import { checkRead } from './read-guard.mjs';
-import { pruneStates, resetState, updateState } from './state.mjs';
+import { pruneStates, resetReads, updateState } from './state.mjs';
 
 const PLUGIN_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const RULES_PATH = join(PLUGIN_ROOT, 'rules', 'thinwindow.md');
@@ -28,7 +28,7 @@ export function handleSessionStart(input, { env = HOOK_ENV, home, stateBase } = 
     return null;
   }
   if (input.source === 'compact' || input.source === 'clear') {
-    resetState(input.session_id, { base: stateBase });
+    resetReads(input.session_id, { base: stateBase });
     debug(`SessionStart(${input.source}): read-tracking state reset`, env);
   } else if (input.source === 'startup') {
     pruneStates({ base: stateBase });
@@ -97,5 +97,25 @@ export function handlePreToolUse(input, { env = HOOK_ENV, home, stateBase, now =
     };
   }
   return null;
+}
+
+// PostToolUse for Bash: in rewrite mode, cuts a noisy command's output after
+// it ran (trimOutput), so the command itself runs as written.
+// Output schema: https://code.claude.com/docs/en/hooks#posttooluse-decision-control
+export function handlePostToolUse(input, { env = HOOK_ENV, home, stateBase } = {}) {
+  if (input.tool_name !== 'Bash') return null;
+  const config = loadConfig({ projectDir: projectDirOf(input, env), env, home });
+  if (!config.enabled || !config.rewrite) return null;
+  const updatedToolOutput = trimOutput({ input, config, base: stateBase });
+  if (!updatedToolOutput) return null;
+  try {
+    updateState(input.session_id, (state) => {
+      state.stats = { ...state.stats, 'Bash.trim': (state.stats?.['Bash.trim'] || 0) + 1 };
+    }, { base: stateBase });
+  } catch {
+    // A lost count never costs the trim.
+  }
+  debug(`Bash trim: ${input.tool_input.command}`, env);
+  return { hookSpecificOutput: { hookEventName: 'PostToolUse', updatedToolOutput } };
 }
 

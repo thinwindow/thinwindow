@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { RUN } from '../hooks/lib/bash-guard.mjs';
-import { BRIEF_MAX_CHARS, briefsDir, buildBrief, emptyBrief, foldRecords, readNewRecords, renderBrief, resumeText, SHORT, updateBrief } from '../hooks/lib/brief.mjs';
+import { BRIEF_MAX_CHARS, briefsDir, buildBrief, emptyBrief, foldRecords, latestBrief, readNewRecords, renderBrief, resumeText, SHORT, updateBrief } from '../hooks/lib/brief.mjs';
 import { parseFrontmatter, validateSkill } from '../scripts/check.mjs';
 import { tempDir } from './helpers.mjs';
 
@@ -245,4 +245,33 @@ test('the resume and brief skills are user-invoked only', () => {
 test('a malformed record is skipped, not fatal', () => {
   const brief = foldRecords(emptyBrief(), [null, 42, { type: 'assistant', message: { content: [null, { type: 'text' }] } }, user('Go on.')]);
   assert.equal(brief.goal, 'Go on.');
+});
+
+test('a runner prefix anywhere in a command is dropped, and a subdirectory lists each file once', () => {
+  const s = session();
+  const sub = join(s.dir, 'src');
+  writeFileSync(s.transcript, jsonl([
+    user('Fix the pager.'),
+    assistant([{ type: 'tool_use', id: 'e1', name: 'Edit', input: { file_path: join(sub, 'pager.js') } }]),
+    user([{ type: 'tool_result', tool_use_id: 'e1', content: 'ok' }]),
+    assistant([{ type: 'tool_use', id: 'b1', name: 'Bash', input: { command: `cd .. && ${RUN} npm test` } }]),
+    user([{ type: 'tool_result', tool_use_id: 'b1', content: 'ok' }]),
+  ]));
+  updateBrief({ dataDir: s.data, projectDir: s.dir, sessionId: 's1', transcriptPath: s.transcript, cwd: sub, lastMessage: 'Done.' });
+  const text = renderBrief(JSON.parse(readFileSync(s.file, 'utf8')));
+  assert.match(text, /\nFiles edited: src\/pager\.js\n/);
+  assert.match(text, /\nCommands: `cd \.\. && npm test` → exit 0\n/);
+});
+
+test('/thinwindow:resume skips a newer brief that has no goal yet', () => {
+  const s = session();
+  writeFileSync(s.transcript, jsonl(turns(s.dir).flat()));
+  updateBrief({ dataDir: s.data, projectDir: s.dir, sessionId: 's1', transcriptPath: s.transcript, cwd: s.dir, lastMessage: 'Done.' });
+  const empty = join(tempDir('thinwindow-transcript-'), 's2.jsonl');
+  writeFileSync(empty, jsonl([{ type: 'queue-operation' }]));
+  updateBrief({ dataDir: s.data, projectDir: s.dir, sessionId: 's2', transcriptPath: empty, cwd: s.dir, lastMessage: '' });
+  const later = new Date(Date.now() + 60_000);
+  utimesSync(join(briefsDir(s.data, s.dir), 's2.json'), later, later);
+  assert.equal(latestBrief(s.data, s.dir, later.getTime()).path, s.file);
+  assert.match(resumeText({ dataDir: s.data, projectDir: s.dir }), /Goal: Fix the off-by-one/);
 });

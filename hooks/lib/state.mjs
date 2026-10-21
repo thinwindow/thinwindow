@@ -81,7 +81,8 @@ function withLock(path, fn) {
 // Loads the state, lets `fn` mutate it, and saves it. Returns fn's result.
 export function updateState(sessionId, fn, { base, now = Date.now() } = {}) {
   const path = statePath(sessionId, base);
-  mkdirSync(stateDir(base), { recursive: true });
+  // Only this user can open it: the OS temp dir can be shared (/tmp on Linux).
+  mkdirSync(stateDir(base), { recursive: true, mode: 0o700 });
   return withLock(path, () => {
     const state = loadState(path);
     state.denied = state.denied.filter((d) => now - d.at < RETRY_WINDOW_MS);
@@ -101,11 +102,15 @@ export function updateState(sessionId, fn, { base, now = Date.now() } = {}) {
   });
 }
 
-export function resetState(sessionId, { base } = {}) {
+// After /compact or /clear: what each agent read is gone from the context, but
+// the counts and the cold-resume mark still hold.
+export function resetReads(sessionId, { base } = {}) {
   try {
-    unlinkSync(statePath(sessionId, base));
+    updateState(sessionId, (state) => {
+      state.agents = {};
+    }, { base });
   } catch {
-    // Nothing to reset.
+    // An unwritable state folder never costs the rules their re-injection.
   }
 }
 
