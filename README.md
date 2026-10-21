@@ -1,6 +1,6 @@
 <div align="center">
 
-![ThinWindow logo](https://raw.githubusercontent.com/thinwindow/thinwindow/2efee86f0169f92f5ee0602964107555cb3bf071/assets/icon.iconset/icon_128x128.png)
+![ThinWindow logo](https://raw.githubusercontent.com/thinwindow/thinwindow/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/assets/icon.iconset/icon_128x128.png)
 
 </div>
 
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://thinwindow.github.io/"><img src="https://raw.githubusercontent.com/thinwindow/thinwindow/2efee86f0169f92f5ee0602964107555cb3bf071/assets/cover.png" alt="The ThinWindow documentation site" width="720"></a>
+  <a href="https://thinwindow.github.io/"><img src="https://raw.githubusercontent.com/thinwindow/thinwindow/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/assets/cover.png" alt="The ThinWindow documentation site" width="720"></a>
 </p>
 
 ## Why context is the bill
@@ -81,7 +81,7 @@ project's `.claude/settings.json`. ThinWindow never turns it on for you.
   list it among your subagents, one line with its tool list. Delete the file
   to remove it.
 - **The copy doesn't update itself** when Claude Code adds tools. The exact
-  list is in [the file](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/profiles/thinwindow-minimal.md).
+  list is in [the file](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/profiles/thinwindow-minimal.md).
 
 ### During: keep the window thin while you work
 
@@ -90,7 +90,7 @@ Claude's context: locate before reading and read only the range you need; cap
 command output; check that code needs to exist before writing it, then make
 the smallest change; don't narrate between tool calls, and end with three
 lines at most. They stay under 2,000 characters, which CI enforces:
-[`rules/thinwindow.md`](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/rules/thinwindow.md).
+[`rules/thinwindow.md`](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/rules/thinwindow.md).
 
 **The guards.** Hooks that act on the tool call itself, before or after it
 runs but before its result enters the context, so enforcing them costs no
@@ -103,11 +103,12 @@ turn.
 - **Bash guard:**
   - installs, builds, tests and lints run as written, and a long output from
     one that succeeded is cut to its last lines;
-  - recursive searches with no limit are capped, and a bare `git diff` runs
-    as `git diff --stat`;
-  - `cat` of a lockfile or a huge file, `git log` without a limit, `ls -R`,
-    `tree` without `-L` and an unbounded `find` are refused, with a cheaper
-    command to run instead.
+  - recursive searches, `find`, `ls -R` and `tree` with no limit are capped
+    to their first 100 lines, `git log` without a limit shows the last 20
+    commits, and a bare `git diff` runs as `git diff --stat`: the command still
+    runs, so nothing shows up as an error;
+  - `cat` of a lockfile or a huge file is refused, with a cheaper command to
+    run instead.
 - **Grep cap:** a content search with no limit gets one of 100 lines.
 
 **Long output.** When an install, build, test or lint succeeds, Claude gets its
@@ -214,7 +215,7 @@ OpenCode…). You get the rules, `thinwindow-run` and the report script:
 npx skills add thinwindow/thinwindow
 ```
 
-**Agents that read `AGENTS.md`:** paste [`adapters/AGENTS.md`](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/adapters/AGENTS.md)
+**Agents that read `AGENTS.md`:** paste [`adapters/AGENTS.md`](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/adapters/AGENTS.md)
 into your project's `AGENTS.md`.
 
 Turn ThinWindow off at any time with `THINWINDOW=off`, or with
@@ -267,7 +268,7 @@ checked with a different method
     continuing cost less.
 
 The method, the raw rows and the agents' scrubbed transcripts are public:
-[`bench/README.md`](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/bench/README.md).
+[`bench/README.md`](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/bench/README.md).
 
 ## Configuration
 
@@ -289,7 +290,7 @@ Project values override home values.
 | `noisyCommands` | built-in list | Extra noisy-command patterns |
 | `allowlist.paths`, `allowlist.commands` | `[]` | Files and commands ThinWindow never blocks |
 
-Every option, and what each hook does: [docs/configuration.md](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/docs/configuration.md).
+Every option, and what each hook does: [docs/configuration.md](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/docs/configuration.md).
 
 ## Upgrading from 0.4
 
@@ -390,7 +391,7 @@ recognized" instead of printing wrong numbers.
   chat get the parts listed in [Where it works](#where-it-works).
 - **US$ figures are estimates at the API list price.** They aren't a bill.
 - **No warranty.** ThinWindow is provided "as is" under the
-  [MIT License](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/LICENSE). The hooks are designed to fail open, and the tests
+  [MIT License](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/LICENSE). The hooks are designed to fail open, and the tests
   cover that, but review the code before you trust it with real work.
 
 ## FAQ
@@ -442,7 +443,7 @@ The most useful contributions, in order:
    reacts, add a few targeted runs whose pass criteria are written before
    running them.
 
-The workflow is in [CONTRIBUTING.md](https://github.com/thinwindow/thinwindow/blob/2efee86f0169f92f5ee0602964107555cb3bf071/CONTRIBUTING.md).
+The workflow is in [CONTRIBUTING.md](https://github.com/thinwindow/thinwindow/blob/a9a91ffd9747b120b87e52ffe4b1d1b266e0a7a3/CONTRIBUTING.md).
 
 ## Also by the author
 

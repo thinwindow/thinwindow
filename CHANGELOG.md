@@ -6,6 +6,15 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-21
+
+### Changed
+
+- An unbounded `find`, `ls -R` or `tree` is capped to its first 100 lines, and
+  `git log` without a limit to the last 20 commits, instead of being refused.
+  The command runs, so the session shows no failed tool call; with
+  `"rewrite": false` they are refused as before.
+
 ## [0.5.0] - 2026-10-21
 
 ### Added
@@ -413,7 +422,8 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/thinwindow/thinwindow/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/thinwindow/thinwindow/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/thinwindow/thinwindow/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...v0.4.0
