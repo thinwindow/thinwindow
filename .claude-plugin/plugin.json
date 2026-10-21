@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "thinwindow",
   "displayName": "ThinWindow",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Keeps long Claude Code sessions cheap: it trims oversized reads and command logs, shows what each request carries, and offers a fresh start from a short brief when the prompt cache expires. Plugin and Agent Skill.",
   "author": {
     "name": "Iván Luna",

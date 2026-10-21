@@ -6,6 +6,8 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+
 ### Added
 
 - A hook after each Bash call: when a noisy command (an install, build, test
@@ -411,7 +413,8 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/thinwindow/thinwindow/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/thinwindow/thinwindow/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/thinwindow/thinwindow/compare/v0.2.2...v0.3.0
