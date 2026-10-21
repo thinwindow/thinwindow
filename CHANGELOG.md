@@ -6,6 +6,76 @@ project uses [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+
+### Added
+
+- A hook after each Bash call: when a noisy command (an install, build, test
+  or lint, or several joined by `&&`) succeeds with more than 10 lines on
+  stdout or stderr, Claude gets that stream's last 10 lines and the path of a
+  log that holds all of it.
+- `coldResumeMode`: `"block"`, `"notify"` or `"off"`. In the desktop app the
+  default is `"notify"`, since the app doesn't put a held prompt back in the
+  input box: the prompt goes through, with one line on what it re-writes.
+
+### Changed
+
+- Noisy commands run as written instead of through
+  `node '…/thinwindow-run.mjs'`, so permission rules such as
+  `Bash(npm test:*)` match them and no new permission prompt appears. The
+  output of a failed run comes back as Claude Code returns it.
+- The rules no longer suggest `thinwindow-run`; the Agent Skill still
+  documents it.
+- `/compact` and `/clear` reset only the read tracking. ThinWindow's counts
+  and the cold-resume mark stay.
+- `find … -delete` runs, and `find … -exec` is a soft block instead of a
+  refusal.
+- The state and log folders in the temp dir are created so only the user can
+  open them.
+
+- The plugin manifest's homepage points to https://thinwindow.github.io/.
+- The README names the model the 0.4.0 validation ran on (Sonnet 5.5), and says
+  that the expired cache in the resume chains was priced in from token counts,
+  not waited out.
+- `SECURITY.md` lists the four hook events and everything they read and write,
+  including transcripts and briefs.
+- `docs/configuration.md` lists every value that turns ThinWindow off, shows
+  the setup-notice keys in its example, and says that `"rewrite": false`
+  leaves Grep searches uncapped.
+- CI uses `actions/checkout` v7 and `actions/stale` v11.
+
+### Fixed
+
+- `/thinwindow:report` counts the reads cut to an outline and the command
+  outputs cut.
+- `command -v make` is no longer taken for a run of `make`.
+- A recursive search over the whole tree is capped when a flag takes a value
+  (`-A 3`, `-e`, `--context 2`), which was read as a path, and with `rg -L`,
+  which follows links and doesn't bound the output.
+- A `cd` later in a command no longer changes where earlier commands are
+  checked.
+- `/thinwindow:resume` and the cold-resume notice skip a newer brief that has
+  no goal yet.
+- The brief drops the runner's path anywhere in a command, and a session in a
+  subdirectory no longer lists an edited file twice.
+- The soft block for a noisy command says the runner shows 10 lines on
+  success, which is what it prints.
+- `scripts/check.mjs` reads a skill's `metadata.internal` flag with a line
+  scan instead of a regular expression that could backtrack exponentially
+  (CodeQL `js/redos`).
+
+### Removed
+
+- The Spanish and Portuguese READMEs. The docs are in English only, and the two
+  files were also removed from the repository's history, so the commit ids of
+  every release from 0.2.0 on changed.
+
+## [0.4.1] - 2026-10-14
+
+### Changed
+
+- The docs site moved to https://thinwindow.github.io/.
+
 ## [0.4.0] - 2026-10-06
 
 ThinWindow now covers the whole session:
@@ -100,17 +170,18 @@ switch.
 
 0.3.0 was measured, packaged and tagged at three different commits:
 
-- measured: `6546385`, the commit every 0.3.0 benchmark run used;
-- packaged: `f6d074a`, from which `scripts/build-directory.mjs` built the
+- measured: `f4a8850` (recorded as `6546385` in the bench rows, its id before
+  the history rewrite), the commit every 0.3.0 benchmark run used;
+- packaged: `ca5a8b9`, from which `scripts/build-directory.mjs` built the
   `directory` branch at `a7cb8ce`, the commit the plugin directory installs;
-- tagged: `v0.3.0`, at `b874cf1`.
+- tagged: `v0.3.0`, at `b42729a`.
 
 The hooks, the skill and the rules are the same at all three; only the
 manifest's description differs.
 
 ### Measured
 
-- 128 runs at `6546385` with Claude Code 2.1.287: Opus 5.5 and Sonnet 5.5
+- 128 runs at `f4a8850` with Claude Code 2.1.287: Opus 5.5 and Sonnet 5.5
   with three runs per task and condition, Haiku 4.5 with two. Against the runs
   without ThinWindow: 7–11% lower cost and 3–6% fewer tokens on runs that
   passed their hidden check, with the same success rate on all three models.
@@ -342,7 +413,10 @@ benchmark harness. No benchmark results were recorded at this version.
   (Windows short names like `RUNNER~1`) as the home directory; only a
   leading `~` is.
 
-[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/thinwindow/thinwindow/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/thinwindow/thinwindow/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/thinwindow/thinwindow/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/thinwindow/thinwindow/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/thinwindow/thinwindow/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/thinwindow/thinwindow/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/thinwindow/thinwindow/compare/v0.2.0...v0.2.1

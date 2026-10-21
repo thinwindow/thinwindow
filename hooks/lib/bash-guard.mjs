@@ -1,14 +1,15 @@
 // PreToolUse guard for the Bash tool.
 // Bash input: { command, description?, timeout?, run_in_background? }
 // https://code.claude.com/docs/en/hooks#bash
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, parse as parsePath, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { countLines, isBinary, isLockfile, isMinified } from './files.mjs';
+import { countLines, findGitRoot, isBinary, isLockfile, isMinified } from './files.mjs';
 import { displayPath, isAllowlistedPath } from './read-guard.mjs';
 import { baseName, commandWords, parseShell } from './shell.mjs';
 import { consumeDenied, recordDenied } from './state.mjs';
+import { SUCCESS_TAIL_LINES, Summarizer, formatSummary, newLogPath } from '../../skills/thinwindow/scripts/thinwindow-run.mjs';
 
 // Later pipeline stages that bound what reaches the agent.
 const CAPPING = new Set(['head', 'tail', 'wc', 'grep', 'egrep', 'fgrep', 'rg', 'ag', 'sed', 'awk', 'jq', 'cut', 'uniq']);
@@ -66,17 +67,6 @@ function isDynamic(text) {
   return /[*?[$`]/.test(text) || text.startsWith('~');
 }
 
-function findGitRoot(start) {
-  let dir = start;
-  for (let i = 0; i < 100; i++) {
-    if (existsSync(join(dir, '.git'))) return dir;
-    const up = dirname(dir);
-    if (up === dir) return null;
-    dir = up;
-  }
-  return null;
-}
-
 function checkPrinter(argv, ctx) {
   for (const arg of argv.slice(1)) {
     if (arg === '-' || arg.startsWith('-') || isDynamic(arg)) continue;
@@ -132,6 +122,12 @@ function checkGitLog(argv) {
 const RECURSIVE_SHORT = /^-[a-zA-Z]*[rR][a-zA-Z]*$/;
 const RECURSIVE_LONG = new Set(['--recursive', '--dereference-recursive']);
 const BOUNDED_SHORT = /^-[a-zA-Z]*[clL][a-zA-Z]*$/;
+// In rg, -L follows symlinks; only -c and -l bound the output.
+const BOUNDED_SHORT_RG = /^-[a-zA-Z]*[cl][a-zA-Z]*$/;
+// Flags whose value is the next word, so it is neither the pattern nor a path.
+// (rg's -g/-t/-T take one too, but hasExcludeFlag lets those searches through
+// first; in grep, -T takes none.)
+const VALUE_FLAGS = new Set(['-A', '-B', '-C', '-e', '-f', '-m', '--after-context', '--before-context', '--context', '--regexp', '--file', '--max-count']);
 const BOUNDED_LONG = new Set(['--count', '--count-matches', '--files-with-matches', '--files-without-match', '--files']);
 const GREP_FAMILY = new Set(['grep', 'egrep', 'fgrep']);
 const RECURSIVE_BY_DEFAULT = new Set(['rg', 'ag']);
@@ -161,13 +157,29 @@ function checkGrep(argv, ctx) {
   if (!ripgrep && !family) return null;
   const rest = argv.slice(1);
   if (family && !rest.some((a) => RECURSIVE_SHORT.test(a) || RECURSIVE_LONG.has(a))) return null;
-  if (rest.some((a) => BOUNDED_SHORT.test(a) || BOUNDED_LONG.has(a))) return null;
+  const bounded = name === 'rg' ? BOUNDED_SHORT_RG : BOUNDED_SHORT;
+  if (rest.some((a) => bounded.test(a) || BOUNDED_LONG.has(a))) return null;
   if (hasMaxCountFlag(rest) || hasExcludeFlag(rest, ripgrep)) return null;
 
-  // First positional is the pattern; anything after it is a path. No path
-  // argument means grep/rg default to the current directory.
-  const positionals = rest.filter((a) => !a.startsWith('-'));
-  const paths = positionals.length >= 2 ? positionals.slice(1) : ['.'];
+  // The first positional is the pattern, unless -e or -f gave it; the rest are
+  // paths. No path means grep/rg search the current directory.
+  const positionals = [];
+  let patternFlag = false;
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (a === '--') {
+      positionals.push(...rest.slice(i + 1));
+      break;
+    }
+    if (!a.startsWith('-') || a === '-') {
+      positionals.push(a);
+      continue;
+    }
+    if (/^-[ef]/.test(a) || /^--(regexp|file)(=|$)/.test(a)) patternFlag = true;
+    if (VALUE_FLAGS.has(a)) i++;
+  }
+  const paths = patternFlag ? positionals : positionals.slice(1);
+  if (paths.length === 0) paths.push('.');
   if (!paths.some((p) => isRootish(p, ctx))) return null;
 
   const cap = ripgrep ? `rg -m 20 "<pattern>"` : `${name} -rn --max-count=20 "<pattern>" .`;
@@ -216,7 +228,8 @@ function checkListing(argv, ctx) {
   }
   if (name === 'find') {
     const rest = argv.slice(1);
-    if (rest.includes('-maxdepth')) return null;
+    // -delete prints nothing, so there is nothing to cap.
+    if (rest.includes('-maxdepth') || rest.includes('-delete')) return null;
     const paths = [];
     for (const a of rest) {
       if (a.startsWith('-') || a === '(' || a === '!') break;
@@ -287,7 +300,8 @@ function findScopeIssues(parsed, ctx) {
     if (cw.length === 0) continue;
     const argv = cw.map((w) => w.text);
     const text = ctx.source.slice(cw[0].start, stage.end).trim();
-    let reason = checkGrep(argv, ctx);
+    const here = { ...ctx, cwd: p.cwd ?? ctx.cwd };
+    let reason = checkGrep(argv, here);
     if (reason) {
       const grepFamily = GREP_FAMILY.has(baseName(argv[0]));
       const edits = [{ at: stage.end, insert: ` | head -n ${SEARCH_CAP_LINES}` }];
@@ -297,7 +311,7 @@ function findScopeIssues(parsed, ctx) {
       hits.push({ text, reason, wrappers, edits, note });
       continue;
     }
-    reason = checkGitDiff(argv, ctx);
+    reason = checkGitDiff(argv, here);
     if (reason) {
       let k = 1;
       while (k < cw.length && cw[k].text.startsWith('-')) k += cw[k].text === '-C' || cw[k].text === '-c' ? 2 : 1;
@@ -352,7 +366,7 @@ function findShortTruncations(parsed, ctx) {
     const n = headLines(words(p.stages[1]));
     const cw = commandWords(p.stages[0]).words;
     if (n === null || cw.length === 0 || baseName(cw[0].text) !== 'cat') continue;
-    const operands = cw.slice(1).filter((w) => !w.text.startsWith('-')).map((w) => expandOperand(w, ctx.cwd));
+    const operands = cw.slice(1).filter((w) => !w.text.startsWith('-')).map((w) => expandOperand(w, p.cwd ?? ctx.cwd));
     if (operands.some((o) => o === null)) continue;
     const files = operands.flat();
     if (files.length < 2) continue;
@@ -392,9 +406,15 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
   const parsed = parseShell(command);
   if (!parsed.ok) return { action: 'allow', kind: 'unparsed' };
   const ctx = { cwd: input.cwd || projectDir || process.cwd(), projectDir, config, home, source: command };
+  const key = `bash\u0000${input.agent_id || 'main'}\u0000${command}`;
+  // An identical retry of a soft-blocked command lets every soft block in it
+  // through; hard refusals still apply.
+  let retried = false;
 
   // Clear anti-patterns: deny and suggest a replacement.
   for (const p of parsed.pipelines) {
+    // Where this pipeline runs, for the checks below and the later ones.
+    p.cwd = ctx.cwd;
     const first = words(p.stages[0]);
     if (p.stages.length === 1 && first[0] === 'cd' && first.length === 2 && !isDynamic(first[1]) && first[1] !== '-') {
       // Follow `cd dir && ...` so relative paths resolve where they will run.
@@ -407,48 +427,52 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
       if (argv.length === 0) continue;
       const reason =
         (PRINTERS.has(baseName(argv[0])) && checkPrinter(argv, ctx)) || checkGitLog(argv) || checkListing(argv, ctx);
-      if (reason) return { action: 'deny', kind: 'anti-pattern', reason };
+      if (!reason) continue;
+      // find -exec runs a command per file, which may print nothing: a soft
+      // block. A retry lets this find through and checks the rest.
+      if (baseName(argv[0]) === 'find' && argv.some((a) => /^-(exec|execdir|ok|okdir)$/.test(a))) {
+        if (retried || consumeDenied(state, key)) {
+          retried = true;
+          continue;
+        }
+        recordDenied(state, key, now);
+        return { action: 'deny', kind: 'anti-pattern', reason: `${reason} To run it as it is, repeat the exact same command.` };
+      }
+      return { action: 'deny', kind: 'anti-pattern', reason };
     }
   }
 
   if (ti.run_in_background === true) return { action: 'allow', kind: 'background' };
 
-  // Scope issues (unbounded grep/rg/ag, git diff with no --stat or path) and
-  // uncapped noisy commands. Rewrite mode fixes them in this same call, so
-  // the agent doesn't spend a turn on a denial; sudo/doas commands are never
-  // rewritten.
+  // Scope issues (unbounded grep/rg/ag, git diff with no --stat or path).
+  // Rewrite mode fixes them in this same call, so the agent doesn't spend a
+  // turn on a denial; sudo/doas commands are never rewritten.
   const scopeIssues = findScopeIssues(parsed, ctx);
-  const noisy = findNoisy(parsed, ctx);
   // Only rewrite mode lifts a cap: a soft block would cost the turn it saves.
   const truncations = config.rewrite ? findShortTruncations(parsed, ctx) : [];
-  const privileged = [...scopeIssues, ...noisy].some((h) => h.wrappers.includes('sudo') || h.wrappers.includes('doas'));
-  if (config.rewrite && scopeIssues.length + noisy.length + truncations.length > 0 && !privileged) {
-    const edits = [
-      ...scopeIssues.flatMap((s) => s.edits),
-      ...truncations.flatMap((t) => t.edits),
-      ...noisy.map((h) => ({ at: h.cmdStart, insert: `${RUN} ` })),
-    ];
+  const privileged = scopeIssues.some((h) => h.wrappers.includes('sudo') || h.wrappers.includes('doas'));
+  if (config.rewrite && scopeIssues.length + truncations.length > 0 && !privileged) {
+    const edits = [...scopeIssues.flatMap((s) => s.edits), ...truncations.flatMap((t) => t.edits)];
     let rewritten = command;
     for (const e of edits.sort((a, b) => b.at - a.at)) rewritten = `${rewritten.slice(0, e.at)}${e.insert}${rewritten.slice(e.end ?? e.at)}`;
-    // thinwindow-run's own output says what it cut and where the full log is,
-    // so a noisy command needs no note; a short one comes back whole.
     const notes = [...scopeIssues.map((s) => s.note), ...truncations.map((t) => t.note)];
-    const kind = scopeIssues.length > 0 ? 'scope' : noisy.length > 0 ? 'noisy' : 'uncap';
-    return { action: 'rewrite', kind, command: rewritten, context: notes.join(' ') || undefined };
+    return { action: 'rewrite', kind: scopeIssues.length > 0 ? 'scope' : 'uncap', command: rewritten, context: notes.join(' ') };
   }
 
   if (scopeIssues.length > 0) {
-    const key = `bash\u0000${input.agent_id || 'main'}\u0000${command}`;
-    if (consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };
+    if (retried || consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };
     recordDenied(state, key, now);
     return { action: 'deny', kind: 'scope', reason: scopeIssues[0].reason };
   }
 
+  // Rewrite mode lets a noisy command run as written, so it still matches the
+  // user's permission rules, and cuts its output afterwards (trimOutput).
+  if (config.rewrite) return { action: 'allow', kind: 'ok' };
   // Noisy commands that aren't capped, with rewrite mode off: soft block.
+  const noisy = findNoisy(parsed, ctx);
   if (noisy.length === 0) return { action: 'allow', kind: 'ok' };
 
-  const key = `bash\u0000${input.agent_id || 'main'}\u0000${command}`;
-  if (consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };
+  if (retried || consumeDenied(state, key)) return { action: 'allow', kind: 'retry' };
   recordDenied(state, key, now);
   const first = noisy[0].text;
   return {
@@ -456,7 +480,65 @@ export function checkBash({ input, config, state, projectDir, now = Date.now(), 
     kind: 'noisy',
     reason:
       `thinwindow: \`${first}\` can print thousands of lines. Run it as \`thinwindow-run ${first}\` instead: ` +
-      'the full log goes to a temp file and you get the exit code, the last 40 lines and the error lines. ' +
+      `the full log goes to a temp file and you get the exit code and the last ${SUCCESS_TAIL_LINES} lines, ` +
+      'or on failure the last 40 lines and the error lines. ' +
       'Or cap it yourself (quiet flag, or | tail -n 40). To run it uncapped anyway, repeat the exact same command.',
   };
+}
+
+// True when exit 0 means every noisy part succeeded and all the output is
+// theirs: noisy commands and `cd`s joined by &&. `npm test && cat out.json`,
+// `make && ./a.out`, `npm test || true` or `npm test | tee log` are left as
+// they are.
+function onlyNoisy(parsed, ctx) {
+  const noisy = new Set(findNoisy(parsed, ctx).map((h) => h.pipeline));
+  const ps = parsed.pipelines;
+  return (
+    noisy.size > 0 &&
+    ps.every((p, i) => {
+      if (i > 0 && ctx.source.slice(ps[i - 1].end, p.start).trim() !== '&&') return false;
+      return p.stages.length === 1 && (noisy.has(p) || words(p.stages[0])[0] === 'cd');
+    })
+  );
+}
+
+const summarize = (text) => {
+  const s = new Summarizer();
+  s.push(text);
+  return s.finish();
+};
+
+// PostToolUse, rewrite mode: an uncapped noisy command ran as written; a long
+// output is cut to the last lines of each stream, and the whole of it goes to
+// a log file. Only a successful run fires PostToolUse; a failed one fires
+// PostToolUseFailure, which can't replace output, so it comes back as Claude
+// Code returns it. Returns the new tool_response, or null to keep it.
+// https://code.claude.com/docs/en/hooks#posttooluse-decision-control
+export function trimOutput({ input, config, base }) {
+  const ti = input.tool_input || {};
+  const res = input.tool_response;
+  const command = ti.command;
+  if (typeof command !== 'string' || ti.run_in_background === true) return null;
+  // Bash's tool_response is { stdout, stderr, interrupted, isImage, ... }; a
+  // command moved to the background has a backgroundTaskId.
+  if (!res || typeof res.stdout !== 'string' || res.interrupted || res.isImage || res.backgroundTaskId) return null;
+  if (config.allowCommandPatterns.some((re) => re.test(command))) return null;
+  const parsed = parseShell(command);
+  if (!parsed.ok || !onlyNoisy(parsed, { config, source: command })) return null;
+  const stderr = typeof res.stderr === 'string' ? res.stderr : '';
+  const out = summarize(res.stdout);
+  const err = summarize(stderr);
+  if (out.lines <= SUCCESS_TAIL_LINES && err.lines <= SUCCESS_TAIL_LINES) return null;
+  const logPath = newLogPath(command, base);
+  writeFileSync(logPath, stderr ? `${res.stdout}\n--- stderr ---\n${stderr}` : res.stdout);
+  const trimmed = { ...res };
+  if (out.lines > SUCCESS_TAIL_LINES) {
+    const durationMs = Number.isFinite(input.duration_ms) ? input.duration_ms : null;
+    trimmed.stdout = formatSummary({ display: command, code: 0, signal: null, durationMs, summary: out, logPath });
+  }
+  if (err.lines > SUCCESS_TAIL_LINES) {
+    const tail = err.tail.slice(-SUCCESS_TAIL_LINES).join('\n');
+    trimmed.stderr = `--- last ${SUCCESS_TAIL_LINES} of ${err.lines} stderr lines; full log: ${logPath} ---\n${tail}\n`;
+  }
+  return trimmed;
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // SessionStart hook: injects rules/thinwindow.md into the context and resets
-// read tracking after compaction. See lib/handlers.mjs.
+// read tracking after /compact and /clear. See lib/handlers.mjs.
 import { runHook } from './lib/hook-io.mjs';
 import { handleSessionStart } from './lib/handlers.mjs';
 

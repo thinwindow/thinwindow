@@ -1,7 +1,7 @@
 // File inspection helpers: line counts, binary sniffing, lockfile and
 // minified-file detection. All reads are bounded.
-import { closeSync, openSync, readSync, statSync } from 'node:fs';
-import { basename, extname } from 'node:path';
+import { closeSync, existsSync, openSync, readSync, statSync } from 'node:fs';
+import { basename, dirname, extname, join } from 'node:path';
 
 const CHUNK = 64 * 1024;
 // Past this size, counting stops and the file is simply "large".
@@ -43,6 +43,19 @@ const BINARY_EXT = new Set([
   '.o', '.a', '.lib', '.bin', '.wasm', '.pyc', '.woff', '.woff2', '.ttf', '.otf', '.eot',
   '.mp3', '.mp4', '.mov', '.avi', '.webm', '.ogg', '.wav', '.flac', '.sqlite', '.db',
 ]);
+
+// The repository root at or above `start` (a .git directory, or the .git file
+// of a worktree or submodule), or null.
+export function findGitRoot(start) {
+  let dir = start;
+  for (let i = 0; i < 100; i++) {
+    if (existsSync(join(dir, '.git'))) return dir;
+    const up = dirname(dir);
+    if (up === dir) return null;
+    dir = up;
+  }
+  return null;
+}
 
 export function fileInfo(path) {
   try {

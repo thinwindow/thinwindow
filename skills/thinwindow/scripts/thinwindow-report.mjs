@@ -73,8 +73,10 @@ const SIZE_LABEL = { under2k: 'under 2k chars', to8k: '2-8k', to32k: '8-32k', ov
 // ThinWindow's own per-session counts (hooks/lib/handlers.mjs and
 // hooks/lib/cold-resume.mjs, hooks/lib/setup-notice.mjs), by key.
 const ACTION_LABEL = {
-  'Read.deny': 'reads cut or refused',
+  'Read.rewrite': 'long reads cut to an outline',
+  'Read.deny': 'reads refused',
   'Bash.rewrite': 'commands rewritten',
+  'Bash.trim': 'command outputs cut',
   'Bash.deny': 'commands refused',
   'Grep.rewrite': 'searches capped',
   'ColdResume.notice': 'cold-resume notices',
