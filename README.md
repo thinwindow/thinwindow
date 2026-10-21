@@ -444,6 +444,11 @@ The most useful contributions, in order:
 
 The workflow is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Also by the author
+
+- [antiagree](https://antiagree.github.io/): a reviewer with no stake in your plan. It checks the plan against your code and data, tries to kill it, and gives a GO / ITERATE / RETHINK / KILL verdict.
+- [nudgeist](https://nudgeist.github.io/): before an expensive model takes your message, a fast one checks whether a lighter model would do, and asks you first.
+
 ## License
 
 MIT
