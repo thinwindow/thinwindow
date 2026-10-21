@@ -201,9 +201,11 @@ test('anti-pattern denials are not bypassed by retrying', () => {
 
 test('in rewrite mode an unbounded listing or git log is capped in place, not refused', () => {
   const head = ' | head -n 100';
+  const root = proj.root.replace(/\\/g, '/');
   for (const [cmd, out] of [
     ['find . -name "*.ts"', `find . -name "*.ts"${head}`],
-    [`find ${proj.root} -name grande.txt -not -path '*/node_modules/*' 2>/dev/null`, `find ${proj.root} -name grande.txt -not -path '*/node_modules/*' 2>/dev/null${head}`],
+    // Forward slashes, as a Bash command writes a Windows path.
+    [`find ${root} -name grande.txt -not -path '*/node_modules/*' 2>/dev/null`, `find ${root} -name grande.txt -not -path '*/node_modules/*' 2>/dev/null${head}`],
     ['ls -R', `ls -R${head}`],
     ['tree -a', `tree -a${head}`],
     ['git log --oneline', 'git log -n 20 --oneline'],
