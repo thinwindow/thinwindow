@@ -201,6 +201,9 @@ or:
 claude plugin install thinwindow@anthropic-plugin-directory
 ```
 
+The directory serves 0.4.0 for now; the newest version installs from this
+repository.
+
 **From this repository**, in Claude Code:
 
 ```
